@@ -20,19 +20,40 @@ export function configure(settings) {
   };
 }
 
-/** Beim ersten Tippen aufrufen — vorher lässt kein Browser Ton zu. */
+let lastFault = '';
+
+/** Beim Tippen aufrufen — vorher lässt kein Browser Ton zu. */
 export function unlock() {
   if (audio) {
     if (audio.state === 'suspended') audio.resume().catch(() => {});
     return;
   }
   const Ctor = window.AudioContext || window.webkitAudioContext;
-  if (!Ctor) return;
+  if (!Ctor) { lastFault = 'Dieser Browser kann keine Töne erzeugen (kein Web Audio).'; return; }
   try {
     audio = new Ctor();
-  } catch {
+    audio.resume?.().catch(() => {});
+  } catch (error) {
     audio = null;
+    lastFault = `Der Tonkanal ließ sich nicht öffnen (${error.name || 'Fehler'}).`;
   }
+}
+
+/**
+ * Was ist gerade mit dem Ton los? Für die Hörprobe in den Einstellungen —
+ * damit im Zweifel nicht geraten werden muss, woran es liegt.
+ */
+export function audioStatus() {
+  if (!enabled.sounds) return { ok: false, text: 'Töne sind in den Einstellungen ausgeschaltet.' };
+  if (!audio) return { ok: false, text: lastFault || 'Der Tonkanal wurde noch nicht geöffnet. Bildschirm einmal antippen.' };
+  if (audio.state === 'suspended') {
+    return { ok: false, text: 'Der Browser hält den Ton noch an. Nochmal tippen sollte helfen.' };
+  }
+  if (audio.state === 'closed') return { ok: false, text: 'Der Tonkanal wurde geschlossen. Seite neu laden.' };
+  return {
+    ok: true,
+    text: 'Ton wurde abgespielt. Kommt trotzdem nichts an, liegt es am Gerät: Lautlos-Schalter, Medienlautstärke oder — bei Brave — der Fingerprinting-Schutz.',
+  };
 }
 
 /**
@@ -41,6 +62,8 @@ export function unlock() {
  */
 function bell(freq, { at = 0, duration = 0.4, gain = 0.18, partial = 2.7 } = {}) {
   if (!audio) return;
+  // Der Browser darf den Kanal jederzeit angehalten haben.
+  if (audio.state === 'suspended') audio.resume().catch(() => {});
   const start = audio.currentTime + at;
 
   for (const [ratio, level, decay] of [[1, gain, duration], [partial, gain * 0.32, duration * 0.55]]) {
@@ -63,6 +86,7 @@ function bell(freq, { at = 0, duration = 0.4, gain = 0.18, partial = 2.7 } = {})
 /** Trockener kurzer Klick fürs Antippen. */
 function click(freq = 1050, gain = 0.07) {
   if (!audio) return;
+  if (audio.state === 'suspended') audio.resume().catch(() => {});
   const start = audio.currentTime;
   const osc = audio.createOscillator();
   const amp = audio.createGain();

@@ -10,7 +10,8 @@ import { PROVIDERS, provider, detectProvider } from './providers.js';
 import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
-import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate } from './feedback.js';
+import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus } from './feedback.js';
+import * as camera from './camera.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
 
@@ -116,6 +117,7 @@ function openFromHistory(entry) {
 /* ── Kamera & Erkennung ──────────────────────────────────── */
 
 function requestPhoto(input) {
+  unlock();                       // echte Geste — hier darf der Ton aufgehen
   if (!isConfigured(settings)) {
     toast('Erst die Erkennung einrichten.');
     openSettings();
@@ -123,6 +125,56 @@ function requestPhoto(input) {
   }
   input.value = '';
   input.click();
+}
+
+/* Die App-eigene Kamera. `capture="environment"` am Datei-Feld ist für
+   den Browser nur ein Vorschlag — viele Android-Browser nehmen trotzdem
+   die Frontkamera. Über getUserMedia lässt sich die Rückkamera
+   verbindlich anfordern. Klappt das nicht, bleibt das Datei-Feld. */
+async function openCamera() {
+  unlock();
+  if (!isConfigured(settings)) {
+    toast('Erst die Erkennung einrichten.');
+    openSettings();
+    return;
+  }
+  if (!camera.supported()) { requestPhoto($('#file-camera')); return; }
+
+  showView('camera');
+  try {
+    await camera.start($('#cam-video'));
+  } catch (error) {
+    await camera.stop();
+    showView('home');
+    toast(error.message);
+    requestPhoto($('#file-camera'));   // Notweg über die System-Kamera
+    return;
+  }
+
+  const torch = $('#btn-cam-torch');
+  torch.hidden = !camera.hasTorch();
+  torch.classList.remove('on');
+  $('#btn-cam-shoot').disabled = false;
+}
+
+async function closeCamera(view = 'home') {
+  await camera.stop();
+  showView(view);
+  if (view === 'home') renderHome();
+}
+
+async function shootPhoto() {
+  const button = $('#btn-cam-shoot');
+  button.disabled = true;
+  try {
+    const file = await camera.shoot($('#cam-video'));
+    cue.tick();
+    await camera.stop();
+    handleFiles([file]);
+  } catch (error) {
+    button.disabled = false;
+    toast(error.message || 'Die Aufnahme hat nicht geklappt.');
+  }
 }
 
 async function handleFiles(fileList) {
@@ -655,8 +707,28 @@ function adoptKey() {
 
 function wire() {
   // Home
-  $('#btn-capture').addEventListener('click', () => requestPhoto($('#file-camera')));
+  $('#btn-capture').addEventListener('click', openCamera);
   $('#btn-pick').addEventListener('click',    () => requestPhoto($('#file-gallery')));
+
+  // Kamera-Ansicht
+  $('#btn-cam-shoot').addEventListener('click', shootPhoto);
+  $('#btn-cam-close').addEventListener('click', () => closeCamera('home'));
+  $('#btn-cam-flip').addEventListener('click', async () => {
+    try {
+      await camera.flip($('#cam-video'));
+      $('#btn-cam-torch').hidden = !camera.hasTorch();
+      $('#btn-cam-torch').classList.remove('on');
+      $('#cam-hint').textContent = camera.facingNow() === 'environment'
+        ? 'Bon ganz ins Bild, von oben fotografieren.'
+        : 'Frontkamera — für Belege ist die Rückkamera schärfer.';
+    } catch (error) {
+      toast(error.message);
+    }
+  });
+  $('#btn-cam-torch').addEventListener('click', async () => {
+    const on = !$('#btn-cam-torch').classList.contains('on');
+    if (await camera.setTorch(on)) $('#btn-cam-torch').classList.toggle('on', on);
+  });
   $('#btn-open-review').addEventListener('click', () => { renderReview(); showView('review'); });
   $('#btn-open-finish').addEventListener('click', openSummary);
   $('#btn-settings').addEventListener('click', openSettings);
@@ -672,7 +744,7 @@ function wire() {
   }
 
   // Scan
-  $('#btn-scan-retry').addEventListener('click', () => requestPhoto($('#file-camera')));
+  $('#btn-scan-retry').addEventListener('click', openCamera);
   $('#btn-scan-model').addEventListener('click', openSettings);
   $('#btn-scan-back').addEventListener('click', () => { scanAbort?.abort(); showView(bill ? 'review' : 'home'); });
   $('#btn-scan-manual').addEventListener('click', () => {
@@ -686,7 +758,7 @@ function wire() {
 
   // Review
   $('#btn-review-back').addEventListener('click', () => { persist(); showView('home'); renderHome(); });
-  $('#btn-add-receipt').addEventListener('click', () => requestPhoto($('#file-camera')));
+  $('#btn-add-receipt').addEventListener('click', openCamera);
   $('#btn-all-mine').addEventListener('click', () => setAllMine(true));
   $('#btn-all-parents').addEventListener('click', () => setAllMine(false));
   $('#btn-add-item').addEventListener('click', () => openItemSheet(null));
@@ -724,9 +796,14 @@ function wire() {
     readSettingsForm();
   });
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());
-  $('#btn-try-sound').addEventListener('click', () => {
+  $('#btn-try-sound').addEventListener('click', async () => {
     unlock();
-    celebrate({ label: 'So klingt es', amount: euro(1799) });
+    await celebrate({ label: 'So klingt es', amount: euro(1799) });
+    const status = audioStatus();
+    const node = $('#sound-status');
+    node.hidden = false;
+    node.className = `test-result ${status.ok ? 'ok' : 'fail'}`;
+    node.textContent = status.text;
   });
   $('#btn-reset-usage').addEventListener('click', () => { clearUsage(); renderUsage(); });
   $('#btn-reset').addEventListener('click', () => {

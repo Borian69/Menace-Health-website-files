@@ -57,8 +57,9 @@ Belege sammeln sich über den Tag zu **einer** Abrechnung. Erst wenn Du sie
 abschließt, ist sie fertig — bis dahin kannst Du jederzeit weitere Bons anhängen,
 auch nachdem die App zwischendurch zu war.
 
-1. **Icon antippen → „Beleg scannen".** Die Kamera geht auf, Bon abfotografieren.
-   Es dürfen ruhig **mehrere Bons nebeneinander** liegen.
+1. **Icon antippen → „Beleg scannen".** Die Kamera öffnet sich in der App, mit
+   Rahmen zum Anlegen und — wo das Gerät es kann — Licht für dunkle Bons. Es
+   dürfen ruhig **mehrere Bons nebeneinander** liegen.
 2. **Warten.** Positionen, Preise und Warengruppen werden erkannt; unklare Zeilen
    danach nachgeschlagen. Lange Bons werden automatisch in überlappende
    Abschnitte zerlegt, damit die Schrift scharf bleibt.
@@ -178,6 +179,22 @@ Zwei Sicherungen greifen deshalb:
    hinterher, dass gewechselt wurde. Auf „Keins“ gestellt, zeigt die App
    stattdessen den Fehler.
 
+## Kamera
+
+Die Aufnahme läuft in der App, nicht über die System-Kamera. Grund ist ein
+handfester: `<input capture="environment">` ist für den Browser nur ein
+Vorschlag, und viele Android-Browser ignorieren die Richtung und öffnen die
+Frontkamera. Über `getUserMedia` mit `facingMode: environment` lässt sich die
+Rückkamera verbindlich anfordern.
+
+Nebeneffekte, die dem Zweck entgegenkommen: eine Vorschau mit Eck-Rahmen zum
+Anlegen, ein Licht-Knopf für dunkle Thermobons, kein App-Wechsel. Ausgelöst wird
+über `ImageCapture` — das liefert das volle Sensorbild statt nur eines
+Videobildes; wo der Browser das nicht kann, wird das laufende Bild abgegriffen.
+
+Verweigert das Gerät die Kamera, fällt die App auf das Datei-Feld zurück, und
+„Bild aus der Galerie wählen" geht ohnehin immer.
+
 ## Rückmeldung
 
 Erkannter Beleg und abgeschlossene Abrechnung werden bestätigt wie eine Zahlung
@@ -187,9 +204,15 @@ springen, Häkchen ploppen beim Antippen.
 
 Die Töne werden im Browser erzeugt, nicht als Datei geladen — die App bleibt
 dadurch ohne Zusatzgewicht und funktioniert offline. Ton und Vibration lassen
-sich einzeln abschalten (*Einstellungen → Rückmeldung*, mit Hörprobe). Wer im
-System „Bewegung reduzieren“ eingestellt hat, bekommt die Bestätigung ohne
-Animation.
+sich einzeln abschalten (*Einstellungen → Rückmeldung*). Wer im System „Bewegung
+reduzieren“ eingestellt hat, bekommt die Bestätigung ohne Animation.
+
+Die **Hörprobe** dort sagt hinterher, was tatsächlich passiert ist: ob der
+Tonkanal offen war, ob der Browser ihn angehalten hat, oder ob abgespielt wurde
+und es folglich am Gerät liegt. Web Audio hängt an der **Medienlautstärke** —
+steht das Telefon auf lautlos oder ist der Medienregler unten, bleibt es still,
+ohne dass die App das merken kann. Brave kann Web Audio zusätzlich über den
+Fingerprinting-Schutz dämpfen.
 
 ## Datenschutz
 

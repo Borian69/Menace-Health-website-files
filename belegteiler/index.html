@@ -75,6 +75,25 @@
   </div>
 </section>
 
+<!-- ══════════════════ KAMERA ══════════════════ -->
+<section class="view" id="view-camera">
+  <div class="cam-stage">
+    <video id="cam-video" playsinline muted autoplay></video>
+    <div class="cam-guide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p class="cam-hint" id="cam-hint">Bon ganz ins Bild, von oben fotografieren.</p>
+  </div>
+  <div class="cam-bar">
+    <button class="cam-side" id="btn-cam-torch" aria-label="Licht" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6l-1 7h4l-8 13 1.5-9H7L9 2Z"/></svg>
+    </button>
+    <button class="cam-shutter" id="btn-cam-shoot" aria-label="Auslösen"><span></span></button>
+    <button class="cam-side" id="btn-cam-flip" aria-label="Kamera wechseln">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-8Z"/><path d="M9.5 12.5 12 10l2.5 2.5"/><path d="M12 10v5"/></svg>
+    </button>
+  </div>
+  <button class="link-btn cam-close" id="btn-cam-close">Abbrechen</button>
+</section>
+
 <!-- ══════════════════ SCAN ══════════════════ -->
 <section class="view" id="view-scan">
   <div class="scan-stage">
@@ -299,6 +318,7 @@
           </label>
         </div>
         <button type="button" class="secondary-btn" id="btn-try-sound">Ausprobieren</button>
+        <div class="test-result" id="sound-status" hidden></div>
       </div>
 
       <div class="section">
