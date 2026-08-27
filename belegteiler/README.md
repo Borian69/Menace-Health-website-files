@@ -51,29 +51,37 @@ Danach startet sie wie eine normale App im Vollbild.
 
 ---
 
-## So läuft ein Einkauf ab
+## So läuft ein Einkaufstag ab
 
-1. **Icon antippen → „Beleg scannen“.** Die Kamera geht auf, Bon abfotografieren.
-   Es dürfen ruhig **mehrere Bons nebeneinander** liegen — sie werden einzeln
-   erkannt und in der Übersicht getrennt ausgewiesen.
-2. **Warten.** Das Bild wird zugeschnitten und gelesen. Lange Bons werden
-   automatisch in überlappende Abschnitte zerlegt, damit die Schrift scharf
-   bleibt.
-3. **Zuordnen.** Alle Positionen stehen nach Warengruppen sortiert da. Häkchen
-   setzen heißt „das ist meins“ — die Position fällt aus der Summe der Eltern
-   raus. Über *Alles meins* / *Alles für Eltern* kannst Du die Richtung
-   umdrehen, wenn nur ein paar Sachen für die Eltern sind.
-   Ein Tipp auf den Namen öffnet die Bearbeitung (Preis korrigieren, Kategorie
-   ändern, löschen). Über `+` unten fügst Du etwas hinzu, über `+` oben rechts
-   einen zweiten Beleg.
-4. **Prüfen.** Weicht die Summe der Positionen von der aufgedruckten Endsumme
-   ab, warnt die App. Schlecht lesbare Positionen bekommen einen gelben Punkt.
-5. **Übersicht erstellen → Als Bild teilen.** Das Bild landet direkt in
-   WhatsApp, Signal, Mail — wohin Du willst. Alternativ als Text kopieren oder
-   das Bild speichern.
+Belege sammeln sich über den Tag zu **einer** Abrechnung. Erst wenn Du sie
+abschließt, ist sie fertig — bis dahin kannst Du jederzeit weitere Bons anhängen,
+auch nachdem die App zwischendurch zu war.
 
-Jede fertige Abrechnung bleibt im Verlauf auf dem Startbildschirm und lässt sich
-später wieder öffnen.
+1. **Icon antippen → „Beleg scannen".** Die Kamera öffnet sich in der App, mit
+   Rahmen zum Anlegen und — wo das Gerät es kann — Licht für dunkle Bons. Es
+   dürfen ruhig **mehrere Bons nebeneinander** liegen.
+2. **Warten.** Positionen, Preise und Warengruppen werden erkannt; unklare Zeilen
+   danach nachgeschlagen. Lange Bons werden automatisch in überlappende
+   Abschnitte zerlegt, damit die Schrift scharf bleibt.
+3. **Zuordnen.** Häkchen setzen heißt „das ist meins" — die Position fällt aus der
+   Summe der Eltern raus. Über *Alles meins* / *Alles für Eltern* drehst Du die
+   Richtung um. Ein Tipp auf den Namen öffnet die Bearbeitung; dort steht die
+   Originalzeile vom Bon und ein Knopf zum Nachschlagen des Produkts.
+4. **Zurück zum Start.** Auf dem Startbildschirm steht jetzt die laufende
+   Abrechnung: Zwischensumme, wie viele Belege, welche Läden und um wie viel Uhr.
+   Der nächste Scan hängt sich automatisch daran.
+5. **Abrechnung erstellen.** Ab zwei Belegen gliedert sich die Rechnung nach
+   Einkauf: Laden, Datum und Uhrzeit als Überschrift, darunter die Positionen und
+   eine Zwischensumme. Bei einem einzelnen Beleg bleibt die Gliederung nach
+   Warengruppen.
+6. **Als Bild teilen.** Landet direkt in WhatsApp, Signal, Mail. Alternativ als
+   Text kopieren oder das Bild speichern.
+7. **Abschließen.** Damit wandert die Abrechnung in den Verlauf und das Fach ist
+   frei für den nächsten Tag. Vorher passiert das nicht — Du kannst also erst
+   teilen und später noch etwas ergänzen.
+
+Weicht die Summe der Positionen von der aufgedruckten Endsumme ab, warnt die App.
+Schlecht lesbare Positionen bekommen einen Punkt.
 
 ---
 
@@ -156,6 +164,67 @@ Voreingestellt ist ein kostenloses Modell. Kostenlose Modelle sind kleiner und
 lesen verknitterte Thermobons schlechter — wenn Positionen kryptisch bleiben oder
 die Summe nicht passt, lohnt sich der Schritt zu einem der Cent-Bruchteil-Modelle
 weiter unten in der Liste deutlich mehr, als er kostet.
+
+### Ausweichmodell
+
+Gratis-Modelle laufen auf knapper Kapazität und melden regelmäßig „überlastet“,
+auch beim ersten Scan des Tages — das hat mit der eigenen Nutzung nichts zu tun.
+Zwei Sicherungen greifen deshalb:
+
+1. Bei vorübergehenden Fehlern wartet die App die vom Anbieter genannte Zeit ab
+   (höchstens 25 Sekunden) und fragt still ein zweites Mal.
+2. Hilft das nicht, wechselt sie auf das **Ausweichmodell** aus den Einstellungen.
+   Voreingestellt ist Gemini 2.5 Flash Lite — das braucht Guthaben, kostet aber
+   nur einen Bruchteil eines Cents und ist immer erreichbar. Ein Hinweis sagt
+   hinterher, dass gewechselt wurde. Auf „Keins“ gestellt, zeigt die App
+   stattdessen den Fehler.
+
+## Kamera
+
+Die Aufnahme läuft in der App, nicht über die System-Kamera. Grund ist ein
+handfester: `<input capture="environment">` ist für den Browser nur ein
+Vorschlag, und viele Android-Browser ignorieren die Richtung und öffnen die
+Frontkamera. Über `getUserMedia` mit `facingMode: environment` lässt sich die
+Rückkamera verbindlich anfordern.
+
+Nebeneffekte, die dem Zweck entgegenkommen: eine Vorschau mit Eck-Rahmen zum
+Anlegen, ein Licht-Knopf für dunkle Thermobons, kein App-Wechsel. Ausgelöst wird
+über `ImageCapture` — das liefert das volle Sensorbild statt nur eines
+Videobildes; wo der Browser das nicht kann, wird das laufende Bild abgegriffen.
+
+Verweigert das Gerät die Kamera, fällt die App auf das Datei-Feld zurück, und
+„Bild aus der Galerie wählen" geht ohnehin immer.
+
+## Rückmeldung
+
+Erkannter Beleg und abgeschlossene Abrechnung werden bestätigt wie eine Zahlung
+am Handy: ein Ring läuft nach außen, ein Haken zeichnet sich, zwei helle
+Glockentöne, ein kurzer Impuls in der Hand. Beträge zählen hoch statt zu
+springen, Häkchen ploppen beim Antippen.
+
+Die Töne werden im Browser erzeugt, nicht als Datei geladen — die App bleibt
+dadurch ohne Zusatzgewicht und funktioniert offline. Ton und Vibration lassen
+sich einzeln abschalten (*Einstellungen → Rückmeldung*). Wer im System „Bewegung
+reduzieren“ eingestellt hat, bekommt die Bestätigung ohne Animation.
+
+Die **Hörprobe** dort sagt hinterher, was tatsächlich passiert ist: ob der
+Tonkanal offen war, ob der Browser ihn angehalten hat, oder ob abgespielt wurde —
+und über welchen der beiden Wege.
+
+**Zwei Wege, gleicher Klang.** Der schöne Weg ist Web Audio. Manche Browser
+dämpfen oder blockieren das aber (Brave zählt es zum Fingerprinting-Schutz), und
+dann bleibt still, was klingen sollte. Deshalb gibt es einen zweiten Weg:
+dieselben Glockentöne werden als Zahlenreihe berechnet, in eine WAV-Datei
+verpackt und von einem gewöhnlichen `<audio>`-Element abgespielt. Die App nimmt
+automatisch, was gerade funktioniert.
+
+**Lautstärke** ist einstellbar. Sie wirkt auf beide Wege — aber beide hängen an
+der **Medienlautstärke** des Geräts. Steht das Telefon auf lautlos oder ist der
+Medienregler unten, bleibt es still, und keine App kann das überstimmen.
+
+**Ausgabegerät** lässt sich nur am Rechner wählen; der Knopf erscheint auch nur
+dort. Auf dem Telefon entscheidet das Betriebssystem, wohin der Ton geht — eine
+Berechtigung dafür gibt es im Browser nicht.
 
 ## Datenschutz
 

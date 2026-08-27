@@ -1,25 +1,35 @@
 /* Ablaufsteuerung der App: Ansichten, Kamera, Erkennung, Zuordnung,
    Übersicht und Verlauf. */
 
-import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCents } from './util.js';
+import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCents, todayISO } from './util.js';
 import { CATEGORIES } from './categories.js';
-import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage } from './store.js';
+import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage, loadOpenBill, saveOpenBill, clearOpenBill } from './store.js';
 import { prepareImage } from './image.js';
-import { scanReceipt } from './scan.js';
-import { PROVIDERS, provider } from './providers.js';
+import { scanReceipt, testConnection } from './scan.js';
+import { PROVIDERS, provider, detectProvider } from './providers.js';
 import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
+import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus, canPickOutput, pickOutput } from './feedback.js';
+import * as camera from './camera.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
 
 let settings = loadSettings();
-let bill = null;
+let bill = loadOpenBill();   // die laufende Abrechnung, überlebt das Schließen der App
 let summary = null;
 let summaryBlob = null;
 let scanAbort = null;
-let editing = null;      // id der Position, die gerade im Sheet liegt
-let appendMode = false;  // true = Scan wird an die laufende Abrechnung angehängt
+let editing = null;          // id der Position, die gerade im Sheet liegt
+
+/* Jede Änderung sofort sichern. Eine laufende Abrechnung landet in
+   ihrem eigenen Fach, eine bereits abgeschlossene aktualisiert ihren
+   Eintrag im Verlauf. */
+function persist() {
+  if (!bill) return;
+  if (bill.done) pushHistory(structuredClone(bill));
+  else saveOpenBill(bill);
+}
 
 /* ── Ansichten & Rückmeldungen ───────────────────────────── */
 
@@ -41,6 +51,7 @@ function toast(message) {
 
 function renderHome() {
   $('#setup-card').hidden = isConfigured(settings);
+  renderOpenBill();
 
   const history = loadHistory();
   $('#history-section').hidden = history.length === 0;
@@ -65,9 +76,40 @@ function renderHome() {
   }
 }
 
+/** Die laufende Abrechnung als Karte über dem Verlauf. */
+function renderOpenBill() {
+  const card = $('#open-bill');
+  const running = bill && !bill.done ? bill : null;
+  card.hidden = !running || running.items.length === 0;
+  if (card.hidden) {
+    $('#hero-hint').textContent = 'Kamera öffnen und den Kassenbon abfotografieren. Mehrere Bons dürfen nebeneinander liegen.';
+    return;
+  }
+
+  const sums = totals(running);
+  const date = billDate(running);
+  const isToday = date === todayISO();
+
+  $('#open-label').textContent = isToday ? 'Heute' : formatDate(date);
+  $('#open-meta').textContent =
+    `${running.receipts.length} ${running.receipts.length === 1 ? 'Beleg' : 'Belege'} · `
+    + `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`;
+  countTo($('#open-amount'), sums.parents, euro);
+
+  const stores = $('#open-stores');
+  stores.replaceChildren();
+  for (const receipt of running.receipts) {
+    stores.append(el('span', {
+      class: 'open-store',
+      text: receipt.time ? `${receipt.store} · ${receipt.time}` : receipt.store,
+    }));
+  }
+
+  $('#hero-hint').textContent = 'Nächsten Beleg fotografieren — er wird an die laufende Abrechnung angehängt.';
+}
+
 function openFromHistory(entry) {
-  bill = structuredClone(entry);
-  appendMode = false;
+  bill = { ...structuredClone(entry), done: true };
   renderReview();
   showView('review');
 }
@@ -75,6 +117,7 @@ function openFromHistory(entry) {
 /* ── Kamera & Erkennung ──────────────────────────────────── */
 
 function requestPhoto(input) {
+  unlock();                       // echte Geste — hier darf der Ton aufgehen
   if (!isConfigured(settings)) {
     toast('Erst die Erkennung einrichten.');
     openSettings();
@@ -82,6 +125,56 @@ function requestPhoto(input) {
   }
   input.value = '';
   input.click();
+}
+
+/* Die App-eigene Kamera. `capture="environment"` am Datei-Feld ist für
+   den Browser nur ein Vorschlag — viele Android-Browser nehmen trotzdem
+   die Frontkamera. Über getUserMedia lässt sich die Rückkamera
+   verbindlich anfordern. Klappt das nicht, bleibt das Datei-Feld. */
+async function openCamera() {
+  unlock();
+  if (!isConfigured(settings)) {
+    toast('Erst die Erkennung einrichten.');
+    openSettings();
+    return;
+  }
+  if (!camera.supported()) { requestPhoto($('#file-camera')); return; }
+
+  showView('camera');
+  try {
+    await camera.start($('#cam-video'));
+  } catch (error) {
+    await camera.stop();
+    showView('home');
+    toast(error.message);
+    requestPhoto($('#file-camera'));   // Notweg über die System-Kamera
+    return;
+  }
+
+  const torch = $('#btn-cam-torch');
+  torch.hidden = !camera.hasTorch();
+  torch.classList.remove('on');
+  $('#btn-cam-shoot').disabled = false;
+}
+
+async function closeCamera(view = 'home') {
+  await camera.stop();
+  showView(view);
+  if (view === 'home') renderHome();
+}
+
+async function shootPhoto() {
+  const button = $('#btn-cam-shoot');
+  button.disabled = true;
+  try {
+    const file = await camera.shoot($('#cam-video'));
+    cue.tick();
+    await camera.stop();
+    handleFiles([file]);
+  } catch (error) {
+    button.disabled = false;
+    toast(error.message || 'Die Aufnahme hat nicht geklappt.');
+  }
 }
 
 async function handleFiles(fileList) {
@@ -115,26 +208,44 @@ async function handleFiles(fileList) {
     const parsed = await scanReceipt(parts, settings, signal);
     if (signal.aborted) return;
 
-    if (!appendMode || !bill) bill = createBill();
+    if (!bill || bill.done) bill = createBill();
     const added = addScan(bill, parsed);
-    appendMode = false;
+    persist();
     recordUsage(parsed.usage);
+
+    const sums = totals(bill);
+    await celebrate({
+      label: added.length > 1 ? `${added.length} Belege erfasst` : `${added[0]?.store || 'Beleg'} erfasst`,
+      amount: euro(sums.parents),
+    });
 
     renderReview();
     showView('review');
 
-    if (parsed.notes) toast(parsed.notes);
-    else if (added.length > 1) toast(`${added.length} Belege erkannt.`);
+    if (parsed.usage?.switchedTo) toast(`Ausgewichen auf ${modelLabel(parsed.usage.switchedTo)} — das gewählte Modell war nicht verfügbar.`);
+    else if (parsed.notes) toast(parsed.notes);
+    else if (bill.receipts.length > 1) toast(`${bill.receipts.length} Belege in dieser Abrechnung.`);
   } catch (error) {
     if (error.name === 'AbortError' || signal.aborted) return;
     showScanError(error);
   }
 }
 
+/** Lesbarer Name eines Modells, sonst die nackte Kennung. */
+function modelLabel(id) {
+  const entry = provider(settings.provider).models.find((model) => model.id === id);
+  return entry ? entry.label.split(' · ')[0] : id;
+}
+
+// Statuscodes, bei denen ein anderes Modell die naheliegende Abhilfe ist.
+const MODEL_TROUBLE = new Set([402, 404, 429, 502, 503, 504]);
+
 function showScanError(error) {
+  cue.error();
   document.body.classList.add('scan-failed');
   $('#scan-error').hidden = false;
   $('#scan-error-msg').textContent = error.message || 'Unbekannter Fehler.';
+  $('#btn-scan-model').hidden = !MODEL_TROUBLE.has(error.status);
 }
 
 /* ── Review ──────────────────────────────────────────────── */
@@ -146,7 +257,11 @@ function renderReview() {
 
   $('#review-store').textContent = storeLabel(bill);
   const sums = totals(bill);
-  $('#review-meta').textContent = `${formatDate(billDate(bill), { short: true })} · ${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`;
+  $('#review-meta').textContent = [
+    formatDate(billDate(bill), { short: true }),
+    bill.receipts.length > 1 ? `${bill.receipts.length} Belege` : null,
+    `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`,
+  ].filter(Boolean).join(' · ');
 
   const list = $('#category-list');
   list.replaceChildren();
@@ -169,12 +284,21 @@ function renderReview() {
 }
 
 function itemRow(item) {
+  // Bei mehreren Belegen muss erkennbar bleiben, wo die Position herkommt.
+  const source = bill.receipts.length > 1
+    ? (bill.receipts.find((receipt) => receipt.id === item.receiptId)?.store || '')
+    : '';
+
   const details = [
+    source,
     quantityLabel(item.quantity, item.unit),
     item.unitPrice && item.quantity !== 1 ? `à ${euro(item.unitPrice)}` : '',
   ].filter(Boolean).join(' · ');
 
-  return el('div', { class: `item${item.mine ? ' is-mine' : ''}${item.price < 0 ? ' is-negative' : ''}` },
+  return el('div', {
+    class: `item${item.mine ? ' is-mine' : ''}${item.price < 0 ? ' is-negative' : ''}`,
+    'data-item': item.id,
+  },
     el('button', {
       class: 'item-mark',
       html: CHECK_ICON,
@@ -195,10 +319,11 @@ function itemRow(item) {
 
 function renderTally() {
   const sums = totals(bill);
-  $('#tally-parents').textContent = euro(sums.parents);
+  countTo($('#tally-parents'), sums.parents, euro);
   $('#tally-mine').textContent = euro(sums.mine);
   $('#tally-total').textContent = euro(sums.total);
   $('#btn-to-summary').disabled = sums.count === 0;
+  $('#btn-to-summary').textContent = bill.receipts.length > 1 ? 'Abrechnung erstellen' : 'Übersicht erstellen';
 
   const printed = printedTotal(bill);
   const warning = $('#sum-warning');
@@ -217,11 +342,15 @@ function toggleMine(id) {
   const item = bill.items.find((entry) => entry.id === id);
   if (!item) return;
   item.mine = !item.mine;
+  cue.tick();
+  persist();
   renderReview();
+  pop(document.querySelector(`[data-item="${id}"] .item-mark`));
 }
 
 function setAllMine(value) {
   for (const item of bill.items) item.mine = value;
+  persist();
   renderReview();
 }
 
@@ -276,12 +405,14 @@ function saveItemSheet() {
   if (existing) Object.assign(existing, patch, { uncertain: false });
   else bill.items.push(createItem({ ...patch, receiptId: bill.receipts[0]?.id ?? null }));
 
+  persist();
   closeItemSheet();
   renderReview();
 }
 
 function deleteItem() {
   bill.items = bill.items.filter((entry) => entry.id !== editing);
+  persist();
   closeItemSheet();
   renderReview();
 }
@@ -292,9 +423,23 @@ function openSummary() {
   summary = buildSummary(bill, settings);
   summaryBlob = null;
   renderPaper($('#paper'), summary);
-  pushHistory(structuredClone(bill));
-  renderHome();
+  $('#btn-finish').hidden = Boolean(bill.done);
   showView('summary');
+}
+
+/** Abrechnung abschließen: ab in den Verlauf, das Fach wird frei. */
+function finishBill() {
+  if (!bill || bill.done) return;
+  bill.done = true;
+  bill.finishedAt = Date.now();
+  const final = summary ? summary.parents : totals(bill).parents;
+  pushHistory(structuredClone(bill));
+  clearOpenBill();
+  bill = null;
+  summary = null;
+  renderHome();
+  showView('home');
+  celebrate({ label: 'Abrechnung abgeschlossen', amount: euro(final), tone: 'done' });
 }
 
 async function summaryImage() {
@@ -374,12 +519,19 @@ function openSettings() {
   $('#set-proxy').value = settings.proxyUrl;
   $('#set-model').value = settings.model;
   $('#set-helper').value = settings.helperModel;
+  $('#set-fallback').value = settings.fallbackModel;
   $('#set-resolve').checked = settings.resolveUncertain;
+  $('#set-sounds').checked = settings.sounds !== false;
+  $('#set-haptics').checked = settings.haptics !== false;
+  $('#set-volume').value = Math.round((settings.volume ?? 0.7) * 100);
+  $('#volume-value').textContent = `${$('#set-volume').value} %`;
+  $('#output-field').hidden = !canPickOutput();
   $('#set-from').value  = settings.fromName;
   $('#set-to').value    = settings.toName;
   $('#set-pay').value   = settings.payTo;
   $('#set-show-mine').checked = settings.showMine;
   applyMode();
+  hideTestResult();
   renderUsage();
   showView('settings');
 }
@@ -428,9 +580,14 @@ function applyProvider() {
     ? 'Ein Zugang, viele Modelle — darunter kostenlose. Abgerechnet wird, was das gewählte Modell kostet.'
     : 'Direkt bei Anthropic. Kein kostenloses Kontingent, dafür sehr zuverlässig bei schwierigen Bons.';
 
-  for (const [select, chosen] of [['#set-model', settings.model], ['#set-helper', settings.helperModel]]) {
+  for (const [select, chosen] of [
+    ['#set-model', settings.model],
+    ['#set-helper', settings.helperModel],
+    ['#set-fallback', settings.fallbackModel],
+  ]) {
     const node = $(select);
     node.replaceChildren();
+    if (select === '#set-fallback') node.append(el('option', { value: '', text: 'Keins — Fehler stattdessen anzeigen' }));
     for (const entry of api.models) {
       node.append(el('option', { value: entry.id, text: entry.note ? `${entry.label} — ${entry.note}` : entry.label }));
     }
@@ -438,10 +595,52 @@ function applyProvider() {
     if (chosen && !api.models.some((m) => m.id === chosen)) {
       node.append(el('option', { value: chosen, text: `${chosen} (eigene Angabe)` }));
     }
-    node.value = chosen && [...node.options].some((o) => o.value === chosen) ? chosen : api.models[0].id;
+    node.value = [...node.options].some((o) => o.value === chosen)
+      ? chosen
+      : (select === '#set-fallback' ? '' : api.defaultModel);
   }
 
   $('#helper-field').hidden = !$('#set-resolve').checked;
+}
+
+function hideTestResult() {
+  $('#test-result').hidden = true;
+  $('#test-result').className = 'test-result';
+}
+
+let testAbort = null;
+async function runConnectionTest() {
+  const button = $('#btn-test');
+  const result = $('#test-result');
+
+  if (!isConfigured(settings)) {
+    result.hidden = false;
+    result.className = 'test-result fail';
+    result.textContent = 'Erst einen API-Key eintragen.';
+    return;
+  }
+
+  testAbort?.abort();
+  testAbort = new AbortController();
+
+  button.disabled = true;
+  button.textContent = 'Wird geprüft …';
+  result.hidden = false;
+  result.className = 'test-result';
+  result.textContent = `Frage ${$('#set-model').selectedOptions[0]?.textContent || settings.model} an …`;
+
+  try {
+    await testConnection(settings, testAbort.signal);
+    result.className = 'test-result ok';
+    result.textContent = 'Alles bereit — Schlüssel und Modell antworten. Du kannst scannen.';
+  } catch (error) {
+    if (error.name === 'AbortError') return;
+    result.className = 'test-result fail';
+    result.textContent = error.message || 'Der Test ist fehlgeschlagen.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Verbindung testen';
+  }
 }
 
 function readSettingsForm() {
@@ -457,13 +656,18 @@ function readSettingsForm() {
     proxyUrl: $('#set-proxy').value.trim(),
     model:       $('#set-model').value,
     helperModel: $('#set-helper').value,
+    fallbackModel: $('#set-fallback').value,
     resolveUncertain: $('#set-resolve').checked,
+    sounds:  $('#set-sounds').checked,
+    haptics: $('#set-haptics').checked,
+    volume:  Number($('#set-volume').value) / 100,
     fromName: $('#set-from').value,
     toName:   $('#set-to').value,
     payTo:    $('#set-pay').value,
     showMine: $('#set-show-mine').checked,
   });
   applyMode();
+  configureFeedback(settings);
   $('#helper-field').hidden = !settings.resolveUncertain;
 }
 
@@ -472,19 +676,65 @@ function switchProvider() {
   settings = saveSettings({ provider: $('#set-provider').value });
   const api = provider(settings.provider);
   if (!api.models.some((m) => m.id === settings.model)) {
-    settings = saveSettings({ model: api.models[0].id, helperModel: api.models[0].id });
+    settings = saveSettings({ model: api.defaultModel, helperModel: api.defaultModel });
   }
   applyProvider();
   $('#set-key').value = currentKey();
+  hideTestResult();
   readSettingsForm();
+}
+
+/* Am Präfix des Schlüssels lässt sich der Anbieter eindeutig ablesen.
+   Wer einen OpenRouter-Key einfügt, meint OpenRouter — dann stellt die
+   App Anbieter und Modell selbst um, statt es zu verlangen. */
+function adoptKey() {
+  const key = $('#set-key').value.trim();
+  const detected = detectProvider(key);
+  if (!detected || detected === settings.provider) return false;
+
+  const api = provider(detected);
+  settings = saveSettings({
+    provider: detected,
+    [detected === 'anthropic' ? 'apiKey' : 'openrouterKey']: key,
+    model: api.defaultModel,
+    helperModel: api.defaultModel,
+  });
+
+  $('#set-provider').value = detected;
+  applyProvider();
+  hideTestResult();
+  toast(`Auf ${api.label} umgestellt.`);
+  return true;
 }
 
 /* ── Verdrahtung ─────────────────────────────────────────── */
 
 function wire() {
   // Home
-  $('#btn-capture').addEventListener('click', () => { appendMode = false; requestPhoto($('#file-camera')); });
-  $('#btn-pick').addEventListener('click',    () => { appendMode = false; requestPhoto($('#file-gallery')); });
+  $('#btn-capture').addEventListener('click', openCamera);
+  $('#btn-pick').addEventListener('click',    () => requestPhoto($('#file-gallery')));
+
+  // Kamera-Ansicht
+  $('#btn-cam-shoot').addEventListener('click', shootPhoto);
+  $('#btn-cam-close').addEventListener('click', () => closeCamera('home'));
+  $('#btn-cam-flip').addEventListener('click', async () => {
+    try {
+      await camera.flip($('#cam-video'));
+      $('#btn-cam-torch').hidden = !camera.hasTorch();
+      $('#btn-cam-torch').classList.remove('on');
+      $('#cam-hint').textContent = camera.facingNow() === 'environment'
+        ? 'Bon ganz ins Bild, von oben fotografieren.'
+        : 'Frontkamera — für Belege ist die Rückkamera schärfer.';
+    } catch (error) {
+      toast(error.message);
+    }
+  });
+  $('#btn-cam-torch').addEventListener('click', async () => {
+    const on = !$('#btn-cam-torch').classList.contains('on');
+    if (await camera.setTorch(on)) $('#btn-cam-torch').classList.toggle('on', on);
+  });
+  $('#btn-open-review').addEventListener('click', () => { renderReview(); showView('review'); });
+  $('#btn-open-finish').addEventListener('click', openSummary);
   $('#btn-settings').addEventListener('click', openSettings);
   $('#btn-setup').addEventListener('click', openSettings);
   $('#btn-clear-history').addEventListener('click', () => {
@@ -498,20 +748,21 @@ function wire() {
   }
 
   // Scan
-  $('#btn-scan-retry').addEventListener('click', () => requestPhoto($('#file-camera')));
+  $('#btn-scan-retry').addEventListener('click', openCamera);
+  $('#btn-scan-model').addEventListener('click', openSettings);
   $('#btn-scan-back').addEventListener('click', () => { scanAbort?.abort(); showView(bill ? 'review' : 'home'); });
   $('#btn-scan-manual').addEventListener('click', () => {
-    if (!appendMode || !bill) bill = createBill();
+    if (!bill || bill.done) bill = createBill();
     if (!bill.receipts.length) addReceipt(bill, { store: 'Einkauf', items: [], receipt_total: null });
-    appendMode = false;
+    persist();
     renderReview();
     showView('review');
     openItemSheet(null);
   });
 
   // Review
-  $('#btn-review-back').addEventListener('click', () => { showView('home'); renderHome(); });
-  $('#btn-add-receipt').addEventListener('click', () => { appendMode = true; requestPhoto($('#file-camera')); });
+  $('#btn-review-back').addEventListener('click', () => { persist(); showView('home'); renderHome(); });
+  $('#btn-add-receipt').addEventListener('click', openCamera);
   $('#btn-all-mine').addEventListener('click', () => setAllMine(true));
   $('#btn-all-parents').addEventListener('click', () => setAllMine(false));
   $('#btn-add-item').addEventListener('click', () => openItemSheet(null));
@@ -526,26 +777,60 @@ function wire() {
   });
 
   // Übersicht
-  $('#btn-summary-back').addEventListener('click', () => showView('review'));
+  $('#btn-summary-back').addEventListener('click', () => { renderReview(); showView('review'); });
   $('#btn-share').addEventListener('click', shareSummary);
+  $('#btn-finish').addEventListener('click', finishBill);
   $('#btn-copy').addEventListener('click', copySummary);
   $('#btn-download').addEventListener('click', downloadSummary);
 
   // Einstellungen
   $('#btn-settings-back').addEventListener('click', () => { showView('home'); renderHome(); });
   $('#set-provider').addEventListener('change', switchProvider);
-  $('#settings-form').addEventListener('input', readSettingsForm);
+  $('#btn-test').addEventListener('click', runConnectionTest);
+  $('#settings-form').addEventListener('input', (event) => {
+    // Erkennt der Schlüssel seinen Anbieter selbst, ist das Formular
+    // danach schon gespeichert — sonst normal übernehmen.
+    if (event.target.id === 'set-key' && adoptKey()) return;
+    if (event.target.id === 'set-key') hideTestResult();
+    readSettingsForm();
+  });
   $('#settings-form').addEventListener('change', (event) => {
     if (event.target.id === 'set-provider') return;   // switchProvider hat schon gespeichert
+    if (event.target.id === 'set-model') hideTestResult();
     readSettingsForm();
   });
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());
+  $('#set-volume').addEventListener('input', () => {
+    $('#volume-value').textContent = `${$('#set-volume').value} %`;
+  });
+  $('#btn-pick-output').addEventListener('click', async () => {
+    unlock();
+    const node = $('#output-hint');
+    try {
+      node.textContent = `Ausgabe: ${await pickOutput()}`;
+    } catch (error) {
+      node.textContent = error.message;
+    }
+  });
+  $('#btn-try-sound').addEventListener('click', async () => {
+    unlock();
+    await celebrate({ label: 'So klingt es', amount: euro(1799) });
+    const status = audioStatus();
+    const node = $('#sound-status');
+    node.hidden = false;
+    node.className = `test-result ${status.ok ? 'ok' : 'fail'}`;
+    node.textContent = status.text;
+  });
   $('#btn-reset-usage').addEventListener('click', () => { clearUsage(); renderUsage(); });
   $('#btn-reset').addEventListener('click', () => {
     if (!confirm('Einstellungen und alle Abrechnungen von diesem Gerät löschen?')) return;
     clearEverything();
     location.reload();
   });
+
+  // Browser lassen Ton erst nach einer echten Geste zu.
+  document.addEventListener('pointerdown', unlock, { once: true });
+  document.addEventListener('touchstart', unlock, { once: true });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !$('#sheet-backdrop').hidden) closeItemSheet();
@@ -569,6 +854,7 @@ function registerServiceWorker() {
   navigator.serviceWorker.register('sw.js').catch(() => { /* offline-Betrieb ist optional */ });
 }
 
+configureFeedback(settings);
 fillCategorySelect();
 fillProviderSelect();
 wire();

@@ -4,6 +4,7 @@
 
 const SETTINGS_KEY = 'belegteiler.settings.v1';
 const HISTORY_KEY  = 'belegteiler.history.v1';
+const OPEN_KEY     = 'belegteiler.open.v1';
 const USAGE_KEY    = 'belegteiler.usage.v1';
 const HISTORY_MAX  = 25;
 
@@ -15,11 +16,15 @@ const DEFAULTS = {
   proxyUrl:      '',
   model:         'google/gemma-4-31b-it:free',
   helperModel:   'google/gemma-4-31b-it:free',
+  fallbackModel: 'google/gemini-2.5-flash-lite',
   resolveUncertain: true,
   fromName: '',
   toName:   '',
   payTo:    '',
   showMine: false,
+  sounds:   true,
+  haptics:  true,
+  volume:   0.7,
 };
 
 function read(key, fallback) {
@@ -78,6 +83,21 @@ export function pushHistory(entry) {
 
 export const clearHistory = () => write(HISTORY_KEY, []);
 
+/* ── Laufende Abrechnung ─────────────────────────────────────
+   Über den Tag werden Belege gesammelt. Diese offene Abrechnung
+   überlebt das Schließen der App und ist erst dann im Verlauf, wenn
+   sie ausdrücklich abgeschlossen wurde. */
+
+export const loadOpenBill = () => read(OPEN_KEY, null);
+
+export const saveOpenBill = (bill) => write(OPEN_KEY, bill);
+
+export function clearOpenBill() {
+  try {
+    localStorage.removeItem(OPEN_KEY);
+  } catch { /* nichts zu tun */ }
+}
+
 /* ── Verbrauch ───────────────────────────────────────────── */
 
 export const loadUsage = () => read(USAGE_KEY, { scans: 0, cents: 0, since: Date.now() });
@@ -97,6 +117,7 @@ export function clearEverything() {
   try {
     localStorage.removeItem(SETTINGS_KEY);
     localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(OPEN_KEY);
     localStorage.removeItem(USAGE_KEY);
   } catch { /* Privatmodus o. Ä. — dann gab es ohnehin nichts zu löschen. */ }
 }

@@ -30,6 +30,7 @@ const anthropic = {
   keyHint: 'Key auf console.anthropic.com erstellen. Guthaben nötig, eine kostenlose Stufe gibt es dort nicht.',
   needsJsonFallback: false,
 
+  defaultModel: 'claude-sonnet-5',
   models: [
     { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 · ~1 Cent', note: 'nur einfache Bons' },
     { id: 'claude-sonnet-5',  label: 'Claude Sonnet 5 · ~3 Cent' },
@@ -54,7 +55,7 @@ const anthropic = {
       model,
       max_tokens: maxTokens,
       system,
-      tools: [{ name: tool.name, description: tool.description, input_schema: tool.schema }],
+      ...(tool ? { tools: [{ name: tool.name, description: tool.description, input_schema: tool.schema }] } : {}),
       messages: [{ role: 'user', content }],
     };
   },
@@ -75,12 +76,16 @@ const anthropic = {
     return { args, text, usage: { cents: dollars * USD_TO_EUR * 100 } };
   },
 
-  error(status, payload) {
-    const detail = payload?.error?.message || '';
+  error(status, payload, { retryAfter } = {}) {
+    const detail = (payload?.error?.message || '').trim();
+    const quote = detail ? ` Anthropic meldet: „${detail}“` : '';
     if (status === 401) return 'Der Anthropic-Key wurde nicht akzeptiert. Bitte in den Einstellungen prüfen.';
-    if (status === 403) return 'Dieser Key darf das gewählte Modell nicht nutzen.';
-    if (status === 404) return 'Das gewählte Modell ist für diesen Zugang nicht verfügbar.';
-    if (status === 429) return 'Zu viele Anfragen oder Guthaben aufgebraucht. Kurz warten und erneut versuchen.';
+    if (status === 403) return `Dieser Key darf das gewählte Modell nicht nutzen.${quote}`;
+    if (status === 404) return `Das gewählte Modell ist für diesen Zugang nicht verfügbar.${quote}`;
+    if (status === 429) {
+      const wait = retryAfter ? ` Erneut möglich in etwa ${retryAfter} Sekunden.` : '';
+      return `Zu viele Anfragen oder Guthaben aufgebraucht.${wait}${quote}`;
+    }
     return detail;
   },
 };
@@ -99,11 +104,12 @@ const openrouter = {
   // Alle hier gelisteten Modelle können Bilder lesen und Funktionen
   // aufrufen. Centangaben sind Schätzungen für einen üblichen Bon;
   // abgerechnet wird, was OpenRouter je Anfrage zurückmeldet.
+  defaultModel: 'google/gemma-4-31b-it:free',
   models: [
-    { id: 'openrouter/free',                          label: 'Gratis · automatische Auswahl', note: 'OpenRouter wählt ein freies Modell' },
     { id: 'google/gemma-4-31b-it:free',               label: 'Gemma 4 31B · gratis' },
     { id: 'google/gemma-4-26b-a4b-it:free',           label: 'Gemma 4 26B · gratis' },
     { id: 'minimax/minimax-m3:free',                  label: 'MiniMax M3 · gratis' },
+    { id: 'openrouter/free',                          label: 'Gratis · automatische Auswahl', note: 'Modell wechselt, Ergebnis schwankt' },
     { id: 'qwen/qwen3.7-flash',                       label: 'Qwen3.7 Flash · ~0,03 Cent' },
     { id: 'mistralai/mistral-small-3.2-24b-instruct', label: 'Mistral Small 3.2 · ~0,05 Cent' },
     { id: 'openai/gpt-5-nano',                        label: 'GPT-5 nano · ~0,06 Cent' },
@@ -132,10 +138,12 @@ const openrouter = {
         { role: 'system', content: system },
         { role: 'user', content },
       ],
-      tools: [{ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.schema } }],
       // Nicht erzwungen: nicht jedes Modell auf OpenRouter beherrscht
       // tool_choice. Kommt kein Funktionsaufruf, greift der JSON-Notweg.
-      tool_choice: 'auto',
+      ...(tool ? {
+        tools: [{ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.schema } }],
+        tool_choice: 'auto',
+      } : {}),
     };
   },
 
@@ -150,13 +158,30 @@ const openrouter = {
     return { args, text, usage: { cents: dollars * USD_TO_EUR * 100 } };
   },
 
-  error(status, payload) {
-    const detail = payload?.error?.message || '';
+  error(status, payload, { retryAfter } = {}) {
+    const detail = (payload?.error?.message || '').trim();
+    const meta = payload?.error?.metadata || {};
+    const quote = detail ? ` OpenRouter meldet: „${detail}“` : '';
+
     if (status === 401) return 'Der OpenRouter-Key wurde nicht akzeptiert. Bitte in den Einstellungen prüfen.';
-    if (status === 402) return 'Das Guthaben bei OpenRouter reicht nicht. Ein Modell mit „gratis“ im Namen kommt ohne aus.';
-    if (status === 403) return `OpenRouter hat die Anfrage abgelehnt. ${detail}`.trim();
-    if (status === 404) return 'Dieses Modell gibt es bei OpenRouter nicht (mehr). Bitte in den Einstellungen ein anderes wählen.';
-    if (status === 429) return 'Grenze erreicht: Gratis-Modelle erlauben 20 Anfragen pro Minute und 50 pro Tag. Später erneut versuchen oder ein bezahltes Modell wählen.';
+    if (status === 402) return `Das Guthaben bei OpenRouter reicht für dieses Modell nicht. Ein Modell mit „gratis“ im Namen kommt ohne aus.${quote}`;
+    if (status === 404) return `Dieses Modell gibt es bei OpenRouter nicht (mehr). Bitte in den Einstellungen ein anderes wählen.${quote}`;
+
+    if (status === 429) {
+      // 429 heißt bei OpenRouter zweierlei: entweder das eigene
+      // Kontingent ist erschöpft, oder der Anbieter hinter dem Modell
+      // ist gerade überlastet. Nur der erste Fall liegt am Nutzer.
+      const own = meta.error_type === 'rate_limit_exceeded';
+      const wait = retryAfter ? ` Erneut möglich in etwa ${retryAfter} Sekunden.` : '';
+      return own
+        ? `Dein Kontingent ist erschöpft. Gratis-Modelle erlauben 20 Anfragen pro Minute und 50 pro Tag.${wait}${quote}`
+        : `Das Modell ist gerade überlastet — das liegt nicht an Dir. Ein anderes Modell aus der Liste hilft meist sofort.${wait}${quote}`;
+    }
+
+    if (status === 502 || status === 503) {
+      return `Der Anbieter hinter diesem Modell antwortet gerade nicht. Ein anderes Modell aus der Liste hilft meist sofort.${quote}`;
+    }
+    if (status === 403) return `OpenRouter hat die Anfrage abgelehnt.${quote}`;
     return detail;
   },
 };
@@ -166,6 +191,14 @@ const openrouter = {
 export const PROVIDERS = { anthropic, openrouter };
 
 export const provider = (id) => PROVIDERS[id] || PROVIDERS.openrouter;
+
+/** Erkennt am Präfix, zu welchem Anbieter ein Schlüssel gehört. */
+export function detectProvider(key) {
+  const value = (key || '').trim();
+  if (/^sk-or-/i.test(value)) return 'openrouter';
+  if (/^sk-ant-/i.test(value)) return 'anthropic';
+  return null;
+}
 
 const asObject = (value) => (typeof value === 'string' ? JSON.parse(value) : value);
 

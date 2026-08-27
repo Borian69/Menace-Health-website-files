@@ -112,7 +112,7 @@ function paint(ctx, summary, dry) {
 
   const subtitle = [
     [summary.weekday, summary.dateLabel].filter(Boolean).join(', '),
-    summary.receipts.length ? `${summary.receipts.length} Belege` : '',
+    summary.byStore ? `${summary.sections.length} Belege` : '',
     `${summary.countShown} ${summary.countShown === 1 ? 'Position' : 'Positionen'}`,
   ].filter(Boolean).join('  ·  ');
   ctx.font = `26px ${SANS}`;
@@ -122,19 +122,44 @@ function paint(ctx, summary, dry) {
   draw(() => { ctx.fillStyle = LINE; ctx.fillRect(PAD, y, CONTENT, 1); });
   y += 42;
 
-  // Positionen
-  for (const [index, group] of summary.groups.entries()) {
-    if (index > 0) y += 22;
+  // Positionen — nach Beleg oder nach Warengruppe gegliedert
+  for (const [index, group] of summary.sections.entries()) {
+    if (index > 0) y += summary.byStore ? 30 : 22;
 
-    ctx.font = `700 19px ${SANS}`;
-    const headline = group.label.toUpperCase();
-    const headWidth = trackedWidth(ctx, headline, 3.6);
-    draw(() => {
-      ctx.fillStyle = FAINT;
-      tracked(ctx, headline, PAD, y + 14, 3.6);
-      ctx.fillRect(PAD + headWidth + 18, y + 8, CONTENT - headWidth - 18, 1);
-    });
-    y += 14 + 24;
+    if (summary.byStore) {
+      // Ladenname groß, Datum und Uhrzeit rechts daneben
+      ctx.font = `600 34px ${SERIF}`;
+      const headWidth = ctx.measureText(group.label).width;
+      ctx.font = `21px ${SANS}`;
+      const metaWidth = group.meta ? ctx.measureText(group.meta).width : 0;
+      draw(() => {
+        ctx.font = `600 34px ${SERIF}`;
+        ctx.fillStyle = INK;
+        ctx.fillText(group.label, PAD, y + 26);
+        if (group.meta) {
+          ctx.font = `21px ${SANS}`;
+          ctx.fillStyle = '#93907F';
+          ctx.textAlign = 'right';
+          ctx.fillText(group.meta, W - PAD, y + 26);
+          ctx.textAlign = 'left';
+        }
+        ctx.fillStyle = LINE;
+        const from = PAD + headWidth + 20;
+        const to = W - PAD - metaWidth - (metaWidth ? 20 : 0);
+        if (to > from) ctx.fillRect(from, y + 18, to - from, 1);
+      });
+      y += 26 + 22;
+    } else {
+      ctx.font = `700 19px ${SANS}`;
+      const headline = group.label.toUpperCase();
+      const headWidth = trackedWidth(ctx, headline, 3.6);
+      draw(() => {
+        ctx.fillStyle = FAINT;
+        tracked(ctx, headline, PAD, y + 14, 3.6);
+        ctx.fillRect(PAD + headWidth + 18, y + 8, CONTENT - headWidth - 18, 1);
+      });
+      y += 14 + 24;
+    }
 
     for (const item of group.items) {
       const amount = euro(item.price);
@@ -172,37 +197,35 @@ function paint(ctx, summary, dry) {
       });
       y += 46;
     }
+
+    // Zwischensumme je Beleg
+    if (summary.byStore) {
+      y += 8;
+      draw(() => {
+        ctx.save();
+        ctx.setLineDash([2, 4]);
+        ctx.strokeStyle = LINE;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(PAD, y + 0.5);
+        ctx.lineTo(W - PAD, y + 0.5);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.font = `21px ${SANS}`;
+        ctx.fillStyle = '#93907F';
+        ctx.fillText('Zwischensumme', PAD + 2, y + 26);
+        ctx.textAlign = 'right';
+        ctx.fillText(euro(group.sum), W - PAD - 2, y + 26);
+        ctx.textAlign = 'left';
+      });
+      y += 34;
+    }
   }
 
   y += 30;
   draw(() => { ctx.fillStyle = LINE; ctx.fillRect(PAD, y, CONTENT, 1); });
   y += 40;
-
-  // Aufschlüsselung, wenn dem Ganzen mehrere Bons zugrunde liegen
-  if (summary.receipts.length) {
-    ctx.font = `700 19px ${SANS}`;
-    const headline = `${summary.receipts.length} BELEGE`;
-    const headWidth = trackedWidth(ctx, headline, 3.6);
-    draw(() => {
-      ctx.fillStyle = FAINT;
-      tracked(ctx, headline, PAD, y + 14, 3.6);
-      ctx.fillRect(PAD + headWidth + 18, y + 8, CONTENT - headWidth - 18, 1);
-    });
-    y += 14 + 22;
-
-    for (const receipt of summary.receipts) {
-      draw(() => {
-        ctx.font = `24px ${SANS}`;
-        ctx.fillStyle = MUTED;
-        ctx.fillText(`${receipt.store} · ${formatDate(receipt.date, { short: true })}`, PAD + 4, y + 18);
-        ctx.textAlign = 'right';
-        ctx.fillText(euro(receipt.parents), W - PAD - 4, y + 18);
-        ctx.textAlign = 'left';
-      });
-      y += 36;
-    }
-    y += 22;
-  }
 
   // Betrag — Beschriftung links, Summe rechts, beides auf einer Achse
   const boxHeight = 124;

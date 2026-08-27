@@ -44,6 +44,21 @@
       <button class="ghost-btn" id="btn-pick">Bild aus der Galerie wählen</button>
     </div>
 
+    <div class="open-bill" id="open-bill" hidden>
+      <div class="open-head">
+        <div>
+          <div class="open-label" id="open-label">Laufende Abrechnung</div>
+          <div class="open-meta" id="open-meta"></div>
+        </div>
+        <div class="open-amount" id="open-amount">0,00 €</div>
+      </div>
+      <div class="open-stores" id="open-stores"></div>
+      <div class="row-btns">
+        <button class="secondary-btn" id="btn-open-review">Ansehen &amp; zuordnen</button>
+        <button class="primary-btn" id="btn-open-finish">Abrechnung erstellen</button>
+      </div>
+    </div>
+
     <div class="section" id="history-section" hidden>
       <div class="section-head">
         <h2>Letzte Abrechnungen</h2>
@@ -58,6 +73,25 @@
       <button class="primary-btn" id="btn-setup">Jetzt einrichten</button>
     </div>
   </div>
+</section>
+
+<!-- ══════════════════ KAMERA ══════════════════ -->
+<section class="view" id="view-camera">
+  <div class="cam-stage">
+    <video id="cam-video" playsinline muted autoplay></video>
+    <div class="cam-guide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <p class="cam-hint" id="cam-hint">Bon ganz ins Bild, von oben fotografieren.</p>
+  </div>
+  <div class="cam-bar">
+    <button class="cam-side" id="btn-cam-torch" aria-label="Licht" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 2h6l-1 7h4l-8 13 1.5-9H7L9 2Z"/></svg>
+    </button>
+    <button class="cam-shutter" id="btn-cam-shoot" aria-label="Auslösen"><span></span></button>
+    <button class="cam-side" id="btn-cam-flip" aria-label="Kamera wechseln">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h11A2.5 2.5 0 0 1 20 8.5v8a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-8Z"/><path d="M9.5 12.5 12 10l2.5 2.5"/><path d="M12 10v5"/></svg>
+    </button>
+  </div>
+  <button class="link-btn cam-close" id="btn-cam-close">Abbrechen</button>
 </section>
 
 <!-- ══════════════════ SCAN ══════════════════ -->
@@ -80,6 +114,7 @@
         <button class="secondary-btn" id="btn-scan-retry">Nochmal versuchen</button>
         <button class="ghost-btn" id="btn-scan-manual">Manuell erfassen</button>
       </div>
+      <button class="secondary-btn" id="btn-scan-model" hidden>Anderes Modell wählen</button>
       <button class="link-btn" id="btn-scan-back">Abbrechen</button>
     </div>
   </div>
@@ -168,6 +203,7 @@
       </button>
       <button class="secondary-btn" id="btn-copy">Text kopieren</button>
       <button class="secondary-btn" id="btn-download">Bild speichern</button>
+      <button class="ghost-btn wide" id="btn-finish">Abrechnung abschließen</button>
     </div>
   </div>
 </section>
@@ -221,11 +257,19 @@
             <span class="switch-label">Unklare Positionen nachschlagen<small>Zweiter, sehr billiger Durchgang ohne Bild: bestimmt das Produkt hinter unklaren Kassenzeilen und erzeugt eine Suchanfrage zum Nachschlagen.</small></span>
           </label>
         </div>
+        <div class="field">
+          <label for="set-fallback">Ausweichmodell</label>
+          <select id="set-fallback" name="fallbackModel"></select>
+          <p class="field-hint">Springt ein, wenn das gewählte Modell überlastet ist oder sein Gratis-Kontingent leer. Braucht Guthaben — dafür scheitert kein Scan mehr an einem vollen Gratis-Modell. „Keins“ schaltet das ab.</p>
+        </div>
         <div class="field" id="helper-field">
           <label for="set-helper">Modell fürs Nachschlagen</label>
           <select id="set-helper" name="helperModel"></select>
           <p class="field-hint">Bekommt nur Text, keine Bilder — kostet daher fast nichts. Ein stärkeres Modell lohnt sich hier eher als beim Lesen.</p>
         </div>
+        <button type="button" class="secondary-btn" id="btn-test">Verbindung testen</button>
+        <div class="test-result" id="test-result" hidden></div>
+
         <div class="usage-card" id="usage-card" hidden>
           <div class="usage-figure" id="usage-amount">0 Cent</div>
           <div class="usage-note" id="usage-note"></div>
@@ -255,6 +299,40 @@
             <span class="switch-label">Eigene Positionen mit anzeigen<small>Sonst tauchen nur die Positionen der Eltern auf.</small></span>
           </label>
         </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>Rückmeldung</h2></div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-sounds" name="sounds">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Töne<small>Kurze Bestätigung beim Erfassen und Abschließen, wie beim Bezahlen am Handy.</small></span>
+          </label>
+        </div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-haptics" name="haptics">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Vibration<small>Sanftes Klopfen beim Zuordnen. Nicht jedes Gerät kann das.</small></span>
+          </label>
+        </div>
+        <div class="field">
+          <label for="set-volume">Lautstärke</label>
+          <div class="slider-row">
+            <svg class="slider-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/></svg>
+            <input type="range" id="set-volume" name="volume" min="0" max="100" step="5">
+            <span class="slider-value" id="volume-value">70 %</span>
+          </div>
+          <p class="field-hint">Der Ton läuft über die <b>Medienlautstärke</b> des Geräts. Steht die auf null oder das Telefon auf lautlos, bleibt es still — das kann die App nicht überstimmen.</p>
+        </div>
+        <div class="field" id="output-field" hidden>
+          <label>Ausgabegerät</label>
+          <button type="button" class="secondary-btn" id="btn-pick-output">Gerät wählen</button>
+          <p class="field-hint" id="output-hint">Nur am Rechner verfügbar. Auf dem Telefon entscheidet das Betriebssystem, wohin der Ton geht.</p>
+        </div>
+        <button type="button" class="secondary-btn" id="btn-try-sound">Ausprobieren</button>
+        <div class="test-result" id="sound-status" hidden></div>
       </div>
 
       <div class="section">
@@ -313,6 +391,28 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- Bestätigung nach einem erfolgreichen Scan oder Abschluss -->
+<div class="burst" id="burst" hidden aria-hidden="true">
+  <div class="burst-stage">
+    <span class="burst-wave"></span>
+    <span class="burst-wave burst-wave-2"></span>
+    <svg class="burst-mark" viewBox="0 0 100 100">
+      <circle class="burst-disc" cx="50" cy="50" r="34"/>
+      <path class="burst-check" d="M32 51.5 L44.5 64 L69 37"/>
+    </svg>
+    <span class="spark" style="--a:-90deg"></span>
+    <span class="spark" style="--a:-45deg"></span>
+    <span class="spark" style="--a:0deg"></span>
+    <span class="spark" style="--a:45deg"></span>
+    <span class="spark" style="--a:90deg"></span>
+    <span class="spark" style="--a:135deg"></span>
+    <span class="spark" style="--a:180deg"></span>
+    <span class="spark" style="--a:225deg"></span>
+  </div>
+  <div class="burst-label" id="burst-label"></div>
+  <div class="burst-amount" id="burst-amount" hidden></div>
 </div>
 
 <div class="toast" id="toast" hidden></div>

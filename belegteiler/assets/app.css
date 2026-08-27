@@ -83,6 +83,7 @@ button { background: none; border: 0; cursor: pointer; }
   background: var(--bg);
 }
 body[data-view="home"]     #view-home,
+body[data-view="camera"]   #view-camera,
 body[data-view="scan"]     #view-scan,
 body[data-view="review"]   #view-review,
 body[data-view="summary"]  #view-summary,
@@ -274,6 +275,47 @@ body[data-view="settings"] #view-settings { display: flex; animation: viewIn .28
   line-height: 1.5;
 }
 
+/* ── Laufende Abrechnung ─────────────────────────────────── */
+
+.open-bill {
+  margin-top: 4px;
+  padding: 18px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--accent-line);
+  background: linear-gradient(160deg, var(--accent-dim), var(--surface));
+}
+.open-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+.open-label {
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .16em;
+  color: var(--accent-bright);
+  margin-bottom: 5px;
+}
+.open-meta { font-size: 14px; color: var(--muted); }
+.open-amount {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  white-space: nowrap;
+}
+.open-stores {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 15px;
+}
+.open-store {
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg-elev);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
 /* ── Sections ────────────────────────────────────────────── */
 
 .section { margin-top: 26px; }
@@ -329,6 +371,84 @@ body[data-view="settings"] #view-settings { display: flex; animation: viewIn .28
   margin-bottom: 10px;
 }
 .setup-card p { color: var(--muted); font-size: 14.5px; margin-bottom: 16px; }
+
+/* ── Kamera ──────────────────────────────────────────────── */
+
+#view-camera { background: #000; }
+
+.cam-stage { position: relative; flex: 1; overflow: hidden; }
+.cam-stage video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+/* Ecken als Anlegehilfe für den Bon */
+.cam-guide { position: absolute; inset: 12% 9%; pointer-events: none; }
+.cam-guide i {
+  position: absolute;
+  width: 34px; height: 34px;
+  border: 2.5px solid rgba(242, 203, 105, .9);
+}
+.cam-guide i:nth-child(1) { top: 0;    left: 0;  border-right: 0; border-bottom: 0; border-radius: 10px 0 0 0; }
+.cam-guide i:nth-child(2) { top: 0;    right: 0; border-left: 0;  border-bottom: 0; border-radius: 0 10px 0 0; }
+.cam-guide i:nth-child(3) { bottom: 0; left: 0;  border-right: 0; border-top: 0;    border-radius: 0 0 0 10px; }
+.cam-guide i:nth-child(4) { bottom: 0; right: 0; border-left: 0;  border-top: 0;    border-radius: 0 0 10px 0; }
+
+.cam-hint {
+  position: absolute;
+  left: 0; right: 0; bottom: 20px;
+  text-align: center;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, .82);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .8);
+  padding: 0 28px;
+}
+
+/* Feste Spalten statt space-between: der Auslöser bleibt mittig, auch
+   wenn es am Gerät kein Licht zum Zuschalten gibt. */
+.cam-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 20px 34px 10px;
+  background: #000;
+}
+.cam-bar #btn-cam-torch { justify-self: start; }
+.cam-bar #btn-cam-flip  { justify-self: end; }
+
+.cam-shutter {
+  width: 76px; height: 76px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, .9);
+  display: grid; place-items: center;
+  transition: transform .12s var(--ease);
+}
+.cam-shutter span {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  transition: transform .12s var(--ease);
+}
+.cam-shutter:active span { transform: scale(.86); }
+.cam-shutter[disabled] { opacity: .5; pointer-events: none; }
+
+.cam-side {
+  width: 50px; height: 50px;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .22);
+  color: rgba(255, 255, 255, .85);
+}
+.cam-side svg { width: 22px; height: 22px; }
+.cam-side.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+.cam-close {
+  padding: 6px 0 calc(var(--safe-b) + 16px);
+  background: #000;
+  color: rgba(255, 255, 255, .6);
+}
 
 /* ── Scan ────────────────────────────────────────────────── */
 
@@ -534,6 +654,7 @@ body.scan-failed .scan-status { display: none; }
 
 .share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .share-grid .wide { grid-column: 1 / -1; }
+.share-grid .ghost-btn { padding: 10px; font-size: 14px; }
 
 /* ── Paper summary ───────────────────────────────────────── */
 
@@ -578,6 +699,38 @@ body.scan-failed .scan-status { display: none; }
 }
 .p-cat::after { content: ""; flex: 1; height: 1px; background: var(--paper-line); }
 .p-cat:first-of-type { margin-top: 0; }
+
+/* Belegüberschrift: Laden groß, Datum und Uhrzeit daneben. */
+.p-cat.p-store {
+  font-family: var(--serif);
+  font-size: 17px; font-weight: 600;
+  text-transform: none; letter-spacing: 0;
+  color: var(--paper-ink);
+  margin: 24px 0 8px;
+  align-items: baseline;
+}
+.p-cat.p-store em {
+  font-family: var(--sans);
+  font-style: normal;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  color: #93907F;
+  white-space: nowrap;
+}
+/* Reihenfolge: Laden — Linie — Datum/Uhrzeit */
+.p-cat.p-store::after { order: 1; margin: 0 2px; }
+.p-cat.p-store em { order: 2; }
+
+.p-subtotal {
+  display: flex; justify-content: space-between;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  color: #93907F;
+  padding: 7px 2px 2px;
+  border-top: 1px dotted var(--paper-line);
+  margin-top: 6px;
+}
+.p-subtotal span:last-child { font-variant-numeric: tabular-nums; }
 
 .p-row {
   display: flex; align-items: baseline; gap: 10px;
@@ -697,6 +850,52 @@ body.scan-failed .scan-status { display: none; }
 
 .about { font-size: 13.5px; color: var(--faint); line-height: 1.6; margin-bottom: 16px; }
 
+.slider-row { display: flex; align-items: center; gap: 12px; }
+.slider-icon { width: 20px; height: 20px; flex: none; color: var(--muted); }
+.slider-value {
+  width: 52px; flex: none;
+  text-align: right;
+  font-size: 13.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+input[type="range"] {
+  flex: 1;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--surface-3);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 8px -2px rgba(217, 169, 60, .8);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  border: 2px solid var(--bg);
+}
+
+.test-result {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  line-height: 1.5;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--muted);
+}
+.test-result.ok   { border-color: var(--accent-line); background: var(--accent-dim); color: var(--accent-bright); }
+.test-result.fail { border-color: rgba(232,112,94,.35); background: rgba(232,112,94,.1); color: #F0B5AA; }
+
 .usage-card {
   padding: 16px 18px;
   border-radius: var(--r);
@@ -781,6 +980,103 @@ body[data-mode="proxy"]  [data-mode="direct"] { display: none; }
 
 .sheet-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 .sheet-actions .row-btns { width: 100%; }
+
+/* ── Bestätigung ─────────────────────────────────────────── */
+
+.burst {
+  position: fixed; inset: 0; z-index: 55;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px;
+  background: rgba(10, 9, 8, .92);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.burst-stage { position: relative; width: 132px; height: 132px; }
+
+/* Zwei Ringe laufen nach außen — das „Bezahlt“-Signal. */
+.burst-wave {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+}
+.burst.run .burst-wave   { animation: wave 1s var(--ease) forwards; }
+.burst.run .burst-wave-2 { animation: wave 1s var(--ease) .16s forwards; }
+@keyframes wave {
+  0%   { transform: scale(.55); opacity: .85; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+
+.burst-mark { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.burst-disc {
+  fill: var(--accent);
+  stroke: none;
+  transform-origin: 50% 50%;
+  transform: scale(0);
+}
+.burst.run .burst-disc { animation: disc .5s cubic-bezier(.2, 1.5, .5, 1) forwards; }
+@keyframes disc {
+  0%   { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+.burst-check {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+}
+.burst.run .burst-check { animation: draw .34s var(--ease) .26s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Goldene Funken nach außen */
+.spark {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 5px; height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  opacity: 0;
+}
+.burst.run .spark { animation: spark .72s var(--ease) .24s forwards; }
+@keyframes spark {
+  0%   { transform: rotate(var(--a)) translateX(24px) scale(.4); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(92px) scale(0);  opacity: 0; }
+}
+
+.burst-label {
+  font-family: var(--serif);
+  font-size: 20px;
+  opacity: 0;
+}
+.burst-amount {
+  font-family: var(--serif);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+  opacity: 0;
+}
+.burst.run .burst-label  { animation: riseIn .4s var(--ease) .34s forwards; }
+.burst.run .burst-amount { animation: riseIn .4s var(--ease) .44s forwards; }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Kurzes Aufploppen, z. B. beim Zuordnen einer Position */
+.pop { animation: pop .34s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
 
 /* ── Toast ───────────────────────────────────────────────── */
 

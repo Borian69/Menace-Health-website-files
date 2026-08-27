@@ -159,7 +159,23 @@ const CLARIFY_TOOL = {
 
 /* ── Aufruf ──────────────────────────────────────────────── */
 
-async function call({ settings, model, system, text, images, tool, signal }) {
+const sleep = (ms, signal) => new Promise((resolve, reject) => {
+  const timer = setTimeout(resolve, ms);
+  signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('abgebrochen', 'AbortError')); }, { once: true });
+});
+
+/* Ein überlastetes Modell und eine kurze Sperre sind vorübergehend —
+   dafür soll niemand den Beleg noch einmal fotografieren müssen. */
+const RETRY_STATUS = new Set([429, 502, 503, 504]);
+const MAX_WAIT_SECONDS = 25;
+
+/* Wenn das gewählte Modell klemmt — überlastet, nicht verfügbar oder
+   Gratis-Kontingent leer —, ist ein anderes Modell die Abhilfe, nicht
+   eine Fehlermeldung. Bei diesen Codes wird auf das Ausweichmodell
+   umgeschaltet, sofern eines hinterlegt ist. */
+const FALLBACK_STATUS = new Set([402, 404, 429, 502, 503, 504]);
+
+async function call({ settings, model, system, text, images, tool, signal, attempt = 1, allowFallback = true }) {
   const api = provider(settings.provider);
   const key = settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey;
 
@@ -187,8 +203,28 @@ async function call({ settings, model, system, text, images, tool, signal }) {
   }
 
   const payload = await response.json().catch(() => null);
+
   if (!response.ok) {
-    const message = api.error(response.status, payload)
+    const retryAfter = Number(response.headers.get('retry-after')) || 0;
+    const ownLimit = payload?.error?.metadata?.error_type === 'rate_limit_exceeded';
+
+    // Einmal nachfassen — aber nicht, wenn wirklich das eigene
+    // Kontingent erschöpft ist; da hilft Warten in Sekunden nicht.
+    if (attempt === 1 && RETRY_STATUS.has(response.status) && !ownLimit && retryAfter <= MAX_WAIT_SECONDS) {
+      await sleep(Math.max(1200, retryAfter * 1000), signal);
+      return call({ settings, model, system, text, images, tool, signal, attempt: 2, allowFallback });
+    }
+
+    // Zweite Rettungsleine: ein anderes Modell.
+    const fallback = (settings.fallbackModel || '').trim();
+    if (allowFallback && fallback && fallback !== model && FALLBACK_STATUS.has(response.status)) {
+      const result = await call({
+        settings, model: fallback, system, text, images, tool, signal, allowFallback: false,
+      });
+      return { ...result, switchedFrom: model };
+    }
+
+    const message = api.error(response.status, payload, { retryAfter })
       || (response.status >= 500
         ? 'Der Dienst ist gerade nicht erreichbar. Bitte in einem Moment nochmal versuchen.'
         : `Unerwartete Antwort (HTTP ${response.status}).`);
@@ -197,7 +233,27 @@ async function call({ settings, model, system, text, images, tool, signal }) {
     throw failure;
   }
 
+  // Beim Probeaufruf zählt nur, dass die Antwort ankam.
+  if (!tool) return { args: null, text: '', usage: { cents: 0 } };
   return api.parse(payload, tool);
+}
+
+/**
+ * Kurzer Probeaufruf: prüft Schlüssel, Modell und Verbindung, bevor der
+ * erste Beleg dafür herhalten muss. Reiner Text, kostet praktisch nichts.
+ */
+export async function testConnection(settings, signal) {
+  await call({
+    settings,
+    model: settings.model,
+    system: 'Antworte ausschließlich mit dem Wort OK.',
+    text: 'Bereit?',
+    images: [],
+    tool: null,
+    signal,
+    allowFallback: false,
+  });
+  return true;
 }
 
 /** Ohne Klär-Durchgang: eine brauchbare Suchanfrage geht auch so. */
@@ -231,6 +287,7 @@ export async function scanReceipt(parts, settings, signal) {
 
   let cents = result.usage.cents;
   let clarified = 0;
+  const switchedTo = result.switchedFrom ? settings.fallbackModel : '';
 
   if (settings.resolveUncertain) {
     try {
@@ -253,7 +310,7 @@ export async function scanReceipt(parts, settings, signal) {
   return {
     receipts,
     notes: result.args?.notes || '',
-    usage: { cents, clarified },
+    usage: { cents, clarified, switchedTo },
   };
 }
 
