@@ -37,6 +37,7 @@ export function addReceipt(bill, parsed) {
       price:      toCents(raw.total_price),
       category:   normaliseCategory(raw.category, name),
       uncertain:  Boolean(raw.uncertain),
+      query:      (raw.search_query || '').trim(),
       mine:       false,
     });
   }
@@ -60,6 +61,7 @@ export function createItem(overrides = {}) {
     price: 0,
     category: 'sonstiges',
     uncertain: false,
+    query: '',
     mine: false,
     ...overrides,
   };

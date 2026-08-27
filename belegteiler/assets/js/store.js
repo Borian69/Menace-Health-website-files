@@ -8,10 +8,14 @@ const USAGE_KEY    = 'belegteiler.usage.v1';
 const HISTORY_MAX  = 25;
 
 const DEFAULTS = {
-  mode:     'direct',
-  apiKey:   '',
-  proxyUrl: '',
-  model:    'claude-haiku-4-5',
+  provider:      'openrouter',
+  mode:          'direct',
+  apiKey:        '',            // Anthropic
+  openrouterKey: '',
+  proxyUrl:      '',
+  model:         'google/gemma-4-31b-it:free',
+  helperModel:   'google/gemma-4-31b-it:free',
+  resolveUncertain: true,
   fromName: '',
   toName:   '',
   payTo:    '',
@@ -37,7 +41,18 @@ function write(key, value) {
 }
 
 export function loadSettings() {
-  return { ...DEFAULTS, ...read(SETTINGS_KEY, {}) };
+  const stored = read(SETTINGS_KEY, {});
+
+  // Ältere Fassungen kannten nur Claude und hatten kein Feld "provider".
+  // Wer damals eingerichtet hat, soll weiterlaufen wie bisher.
+  if (!stored.provider && stored.model) {
+    stored.provider = String(stored.model).startsWith('claude-') ? 'anthropic' : 'openrouter';
+  }
+  if (stored.provider === 'anthropic' && !stored.helperModel) {
+    stored.helperModel = stored.model;
+  }
+
+  return { ...DEFAULTS, ...stored };
 }
 
 export function saveSettings(patch) {
@@ -48,9 +63,9 @@ export function saveSettings(patch) {
 
 /** Ist die Erkennung einsatzbereit? */
 export function isConfigured(settings = loadSettings()) {
-  return settings.mode === 'proxy'
-    ? Boolean(settings.proxyUrl.trim())
-    : Boolean(settings.apiKey.trim());
+  if (settings.mode === 'proxy') return Boolean(settings.proxyUrl.trim());
+  const key = settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey;
+  return Boolean((key || '').trim());
 }
 
 export const loadHistory = () => read(HISTORY_KEY, []);

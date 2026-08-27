@@ -632,7 +632,9 @@ body.scan-failed .scan-status { display: none; }
 /* ── Forms ───────────────────────────────────────────────── */
 
 .field { margin-bottom: 16px; }
-.field > label {
+/* :not(.switch) ist nötig — sonst überschreibt diese Regel das
+   display: flex des Schalters und der Kippschalter zerfällt. */
+.field > label:not(.switch) {
   display: block;
   font-size: 12.5px;
   font-weight: 600;
@@ -740,6 +742,43 @@ body[data-mode="proxy"]  [data-mode="direct"] { display: none; }
 
 .sheet-grip { width: 38px; height: 4px; border-radius: 999px; background: var(--surface-3); margin: 0 auto 18px; }
 .sheet h3 { font-family: var(--serif); font-size: 20px; margin-bottom: 18px; }
+.raw-line {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.raw-line span {
+  display: block;
+  font-size: 10.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: var(--faint);
+  margin-bottom: 6px;
+}
+.raw-line code {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 14px;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.lookup-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 11px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-dim);
+  color: var(--accent-bright);
+  font-size: 13.5px;
+  font-weight: 550;
+  text-decoration: none;
+}
+.lookup-btn svg { width: 15px; height: 15px; stroke-width: 2; }
+.lookup-btn:active { background: var(--surface-3); }
+
 .sheet-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 .sheet-actions .row-btns { width: 100%; }
 

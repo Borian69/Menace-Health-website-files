@@ -5,7 +5,8 @@ import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCen
 import { CATEGORIES } from './categories.js';
 import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage } from './store.js';
 import { prepareImage } from './image.js';
-import { scanReceipt } from './claude.js';
+import { scanReceipt } from './scan.js';
+import { PROVIDERS, provider } from './providers.js';
 import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
@@ -106,7 +107,9 @@ async function handleFiles(fileList) {
 
     $('#scan-preview').src = prepared[0].preview;
     $('#scan-step').textContent = 'Beleg wird gelesen …';
-    $('#scan-substep').textContent = 'Positionen, Preise und Kategorien werden erkannt.';
+    $('#scan-substep').textContent = settings.resolveUncertain
+      ? 'Positionen und Preise werden erkannt, unklare Zeilen danach nachgeschlagen.'
+      : 'Positionen, Preise und Kategorien werden erkannt.';
 
     const parts = prepared.flatMap((item) => item.parts);
     const parsed = await scanReceipt(parts, settings, signal);
@@ -229,6 +232,18 @@ function openItemSheet(id) {
   editing = item ? item.id : null;
 
   $('#sheet-title').textContent = item ? 'Position bearbeiten' : 'Position hinzufügen';
+
+  // Originalzeile zeigen, damit eine falsch gedeutete Position
+  // gegengeprüft werden kann.
+  const raw = item?.raw && item.raw !== item.name ? item.raw : '';
+  const query = item?.query || raw;
+  $('#item-raw').hidden = !raw;
+  $('#item-raw-text').textContent = raw;
+
+  const lookup = $('#item-lookup');
+  lookup.hidden = !query;
+  if (query) lookup.href = `https://duckduckgo.com/?q=${encodeURIComponent(query)}`;
+
   $('#item-name').value  = item ? item.name : '';
   $('#item-qty').value   = item ? String(item.quantity).replace('.', ',') : '1';
   $('#item-price').value = item ? euroPlain(item.price) : '';
@@ -351,10 +366,15 @@ async function copySummary() {
 /* ── Einstellungen ───────────────────────────────────────── */
 
 function openSettings() {
+  $('#set-provider').value = settings.provider;
+  applyProvider();
+
   $('#set-mode').value  = settings.mode;
-  $('#set-key').value   = settings.apiKey;
+  $('#set-key').value   = currentKey();
   $('#set-proxy').value = settings.proxyUrl;
   $('#set-model').value = settings.model;
+  $('#set-helper').value = settings.helperModel;
+  $('#set-resolve').checked = settings.resolveUncertain;
   $('#set-from').value  = settings.fromName;
   $('#set-to').value    = settings.toName;
   $('#set-pay').value   = settings.payTo;
@@ -395,18 +415,68 @@ function applyMode() {
     : 'Schnellster Weg. Der Key bleibt auf diesem Gerät — nutze ihn nur auf einem Handy, das nur Du benutzt.';
 }
 
+const currentKey = () => (settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey);
+
+/** Beschriftungen und Modell-Listen auf den gewählten Anbieter umstellen. */
+function applyProvider() {
+  const api = provider($('#set-provider').value);
+
+  $('#key-label').textContent = api.keyLabel;
+  $('#key-hint').textContent  = api.keyHint;
+  $('#set-key').placeholder   = api.keyPlaceholder;
+  $('#provider-hint').textContent = api.id === 'openrouter'
+    ? 'Ein Zugang, viele Modelle — darunter kostenlose. Abgerechnet wird, was das gewählte Modell kostet.'
+    : 'Direkt bei Anthropic. Kein kostenloses Kontingent, dafür sehr zuverlässig bei schwierigen Bons.';
+
+  for (const [select, chosen] of [['#set-model', settings.model], ['#set-helper', settings.helperModel]]) {
+    const node = $(select);
+    node.replaceChildren();
+    for (const entry of api.models) {
+      node.append(el('option', { value: entry.id, text: entry.note ? `${entry.label} — ${entry.note}` : entry.label }));
+    }
+    // Ein von Hand eingetragenes Modell aus früheren Einstellungen behalten.
+    if (chosen && !api.models.some((m) => m.id === chosen)) {
+      node.append(el('option', { value: chosen, text: `${chosen} (eigene Angabe)` }));
+    }
+    node.value = chosen && [...node.options].some((o) => o.value === chosen) ? chosen : api.models[0].id;
+  }
+
+  $('#helper-field').hidden = !$('#set-resolve').checked;
+}
+
 function readSettingsForm() {
+  const chosenProvider = $('#set-provider').value;
+  const key = $('#set-key').value.trim();
+
   settings = saveSettings({
+    provider: chosenProvider,
     mode:     $('#set-mode').value,
-    apiKey:   $('#set-key').value.trim(),
+    // Schlüssel je Anbieter getrennt halten, damit Umschalten nichts verliert.
+    apiKey:        chosenProvider === 'anthropic'  ? key : settings.apiKey,
+    openrouterKey: chosenProvider === 'openrouter' ? key : settings.openrouterKey,
     proxyUrl: $('#set-proxy').value.trim(),
-    model:    $('#set-model').value,
+    model:       $('#set-model').value,
+    helperModel: $('#set-helper').value,
+    resolveUncertain: $('#set-resolve').checked,
     fromName: $('#set-from').value,
     toName:   $('#set-to').value,
     payTo:    $('#set-pay').value,
     showMine: $('#set-show-mine').checked,
   });
   applyMode();
+  $('#helper-field').hidden = !settings.resolveUncertain;
+}
+
+/** Anbieterwechsel: Liste und Schlüsselfeld neu aufbauen. */
+function switchProvider() {
+  settings = saveSettings({ provider: $('#set-provider').value });
+  const api = provider(settings.provider);
+  if (!api.models.some((m) => m.id === settings.model)) {
+    settings = saveSettings({ model: api.models[0].id, helperModel: api.models[0].id });
+  }
+  applyProvider();
+  $('#set-key').value = currentKey();
+  readSettingsForm();
 }
 
 /* ── Verdrahtung ─────────────────────────────────────────── */
@@ -463,8 +533,12 @@ function wire() {
 
   // Einstellungen
   $('#btn-settings-back').addEventListener('click', () => { showView('home'); renderHome(); });
+  $('#set-provider').addEventListener('change', switchProvider);
   $('#settings-form').addEventListener('input', readSettingsForm);
-  $('#settings-form').addEventListener('change', readSettingsForm);
+  $('#settings-form').addEventListener('change', (event) => {
+    if (event.target.id === 'set-provider') return;   // switchProvider hat schon gespeichert
+    readSettingsForm();
+  });
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());
   $('#btn-reset-usage').addEventListener('click', () => { clearUsage(); renderUsage(); });
   $('#btn-reset').addEventListener('click', () => {
@@ -484,13 +558,23 @@ function fillCategorySelect() {
   for (const entry of CATEGORIES) select.append(el('option', { value: entry.id, text: entry.label }));
 }
 
+function fillProviderSelect() {
+  const select = $('#set-provider');
+  select.replaceChildren();
+  for (const api of Object.values(PROVIDERS)) select.append(el('option', { value: api.id, text: api.label }));
+}
+
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   navigator.serviceWorker.register('sw.js').catch(() => { /* offline-Betrieb ist optional */ });
 }
 
 fillCategorySelect();
+fillProviderSelect();
 wire();
+$('#set-provider').value = settings.provider;
+$('#set-resolve').checked = settings.resolveUncertain;
+applyProvider();
 $('#set-mode').value = settings.mode;
 applyMode();
 renderHome();
