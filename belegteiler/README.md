@@ -51,29 +51,36 @@ Danach startet sie wie eine normale App im Vollbild.
 
 ---
 
-## So läuft ein Einkauf ab
+## So läuft ein Einkaufstag ab
 
-1. **Icon antippen → „Beleg scannen“.** Die Kamera geht auf, Bon abfotografieren.
-   Es dürfen ruhig **mehrere Bons nebeneinander** liegen — sie werden einzeln
-   erkannt und in der Übersicht getrennt ausgewiesen.
-2. **Warten.** Das Bild wird zugeschnitten und gelesen. Lange Bons werden
-   automatisch in überlappende Abschnitte zerlegt, damit die Schrift scharf
-   bleibt.
-3. **Zuordnen.** Alle Positionen stehen nach Warengruppen sortiert da. Häkchen
-   setzen heißt „das ist meins“ — die Position fällt aus der Summe der Eltern
-   raus. Über *Alles meins* / *Alles für Eltern* kannst Du die Richtung
-   umdrehen, wenn nur ein paar Sachen für die Eltern sind.
-   Ein Tipp auf den Namen öffnet die Bearbeitung (Preis korrigieren, Kategorie
-   ändern, löschen). Über `+` unten fügst Du etwas hinzu, über `+` oben rechts
-   einen zweiten Beleg.
-4. **Prüfen.** Weicht die Summe der Positionen von der aufgedruckten Endsumme
-   ab, warnt die App. Schlecht lesbare Positionen bekommen einen gelben Punkt.
-5. **Übersicht erstellen → Als Bild teilen.** Das Bild landet direkt in
-   WhatsApp, Signal, Mail — wohin Du willst. Alternativ als Text kopieren oder
-   das Bild speichern.
+Belege sammeln sich über den Tag zu **einer** Abrechnung. Erst wenn Du sie
+abschließt, ist sie fertig — bis dahin kannst Du jederzeit weitere Bons anhängen,
+auch nachdem die App zwischendurch zu war.
 
-Jede fertige Abrechnung bleibt im Verlauf auf dem Startbildschirm und lässt sich
-später wieder öffnen.
+1. **Icon antippen → „Beleg scannen".** Die Kamera geht auf, Bon abfotografieren.
+   Es dürfen ruhig **mehrere Bons nebeneinander** liegen.
+2. **Warten.** Positionen, Preise und Warengruppen werden erkannt; unklare Zeilen
+   danach nachgeschlagen. Lange Bons werden automatisch in überlappende
+   Abschnitte zerlegt, damit die Schrift scharf bleibt.
+3. **Zuordnen.** Häkchen setzen heißt „das ist meins" — die Position fällt aus der
+   Summe der Eltern raus. Über *Alles meins* / *Alles für Eltern* drehst Du die
+   Richtung um. Ein Tipp auf den Namen öffnet die Bearbeitung; dort steht die
+   Originalzeile vom Bon und ein Knopf zum Nachschlagen des Produkts.
+4. **Zurück zum Start.** Auf dem Startbildschirm steht jetzt die laufende
+   Abrechnung: Zwischensumme, wie viele Belege, welche Läden und um wie viel Uhr.
+   Der nächste Scan hängt sich automatisch daran.
+5. **Abrechnung erstellen.** Ab zwei Belegen gliedert sich die Rechnung nach
+   Einkauf: Laden, Datum und Uhrzeit als Überschrift, darunter die Positionen und
+   eine Zwischensumme. Bei einem einzelnen Beleg bleibt die Gliederung nach
+   Warengruppen.
+6. **Als Bild teilen.** Landet direkt in WhatsApp, Signal, Mail. Alternativ als
+   Text kopieren oder das Bild speichern.
+7. **Abschließen.** Damit wandert die Abrechnung in den Verlauf und das Fach ist
+   frei für den nächsten Tag. Vorher passiert das nicht — Du kannst also erst
+   teilen und später noch etwas ergänzen.
+
+Weicht die Summe der Positionen von der aufgedruckten Endsumme ab, warnt die App.
+Schlecht lesbare Positionen bekommen einen Punkt.
 
 ---
 

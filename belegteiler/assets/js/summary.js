@@ -25,19 +25,37 @@ export function buildSummary(bill, settings) {
     .map((receipt) => ({
       store: receipt.store,
       date:  receipt.date,
+      time:  receipt.time || '',
       parents: bill.items
         .filter((item) => item.receiptId === receipt.id && !item.mine)
         .reduce((sum, item) => sum + item.price, 0),
-      shown: visible.filter((item) => item.receiptId === receipt.id).length,
+      items: visible.filter((item) => item.receiptId === receipt.id),
     }))
-    .filter((receipt) => receipt.shown > 0);
+    .filter((receipt) => receipt.items.length > 0)
+    .sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`));
 
-  // Bei zwei Läden passen beide in die Überschrift, ab drei übernimmt
-  // die Aufschlüsselung weiter unten die Aufzählung.
+  /* Bei einem Beleg ordnen Warengruppen die Liste am besten. Sobald
+     mehrere im Spiel sind, ist die entscheidende Frage „was habe ich wo
+     gekauft“ — dann gliedert die Rechnung nach Beleg, mit Ort und
+     Uhrzeit in der Überschrift. */
+  const byStore = perReceipt.length > 1;
+  const sections = byStore
+    ? perReceipt.map((receipt) => ({
+        label: receipt.store,
+        meta: [formatDate(receipt.date, { short: true }), receipt.time && `${receipt.time} Uhr`].filter(Boolean).join(' · '),
+        items: receipt.items,
+        sum: receipt.parents,
+      }))
+    : groupByCategory(visible).map((group) => ({ label: group.label, meta: '', items: group.items, sum: group.sum }));
+
+  /* Bei einem Beleg nennt die Überschrift den Laden. Bei mehreren
+     stehen die Läden ohnehin als Zwischenüberschriften — dann benennt
+     sie, was das Papier ist. */
   const stores = [...new Set(perReceipt.map((receipt) => receipt.store).filter(Boolean))];
-  const title = stores.length === 1 ? `Einkauf bei ${stores[0]}`
-    : stores.length === 2 ? `Einkauf bei ${stores[0]} und ${stores[1]}`
-    : 'Einkauf';
+  const oneDay = new Set(perReceipt.map((receipt) => receipt.date)).size <= 1;
+  const title = !byStore && stores.length === 1
+    ? `Einkauf bei ${stores[0]}`
+    : (oneDay ? 'Tagesabrechnung' : 'Abrechnung');
 
   return {
     receipts: perReceipt.length > 1 ? perReceipt : [],
@@ -50,7 +68,8 @@ export function buildSummary(bill, settings) {
     to:      trimOr(settings.toName, ''),
     payTo:   trimOr(settings.payTo, ''),
     showMine,
-    groups:  groupByCategory(visible),
+    byStore,
+    sections,
     parents: sums.parents,
     mine:    sums.mine,
     total:   sums.total,
@@ -78,33 +97,29 @@ export function renderPaper(node, summary) {
 
   node.append(el('div', { class: 'p-hr' }));
 
-  if (!summary.groups.length) {
+  if (!summary.sections.length) {
     node.append(el('p', { class: 'p-sub', text: 'Keine Positionen zum Abrechnen.' }));
   }
 
-  for (const group of summary.groups) {
-    node.append(el('div', { class: 'p-cat', text: group.label }));
-    for (const item of group.items) {
+  for (const section of summary.sections) {
+    node.append(el('div', { class: `p-cat${summary.byStore ? ' p-store' : ''}` },
+      el('span', { text: section.label }),
+      section.meta ? el('em', { text: section.meta }) : null,
+    ));
+    for (const item of section.items) {
       const quantity = quantityLabel(item.quantity, item.unit);
       node.append(el('div', { class: `p-row${item.mine ? ' p-mine' : ''}` },
         el('span', { class: 'p-name' }, item.name, quantity ? el('span', { class: 'p-qty', text: `  ${quantity}` }) : null),
         el('span', { class: 'p-amt', text: euro(item.price) }),
       ));
     }
+    if (summary.byStore) {
+      node.append(el('div', { class: 'p-subtotal' },
+        el('span', { text: 'Zwischensumme' }), el('span', { text: euro(section.sum) })));
+    }
   }
 
   node.append(el('div', { class: 'p-hr' }));
-
-  if (summary.receipts.length) {
-    node.append(el('div', { class: 'p-cat', text: `${summary.receipts.length} Belege` }));
-    for (const receipt of summary.receipts) {
-      node.append(el('div', { class: 'p-minor' },
-        el('span', { text: `${receipt.store} · ${formatDate(receipt.date, { short: true })}` }),
-        el('span', { text: euro(receipt.parents) }),
-      ));
-    }
-    node.append(el('div', { class: 'p-hr dashed' }));
-  }
 
   node.append(el('div', { class: 'p-total' },
     el('span', { class: 'p-total-label', text: summary.to ? `${summary.to} zahlt` : 'Bitte überweisen' }),
@@ -135,20 +150,16 @@ export function buildText(summary) {
   lines.push(`${summary.title} — ${formatDate(summary.date, { short: true })}`);
   lines.push('');
 
-  for (const group of summary.groups) {
-    lines.push(group.label.toUpperCase());
-    for (const item of group.items) {
+  for (const section of summary.sections) {
+    lines.push(section.meta ? `${section.label.toUpperCase()} — ${section.meta}` : section.label.toUpperCase());
+    for (const item of section.items) {
       const quantity = quantityLabel(item.quantity, item.unit);
       const mark = item.mine ? ' (meins)' : '';
       lines.push(`• ${item.name}${quantity ? ` (${quantity})` : ''}${mark} — ${euro(item.price)}`);
     }
+    if (summary.byStore) lines.push(`  Zwischensumme: ${euro(section.sum)}`);
     lines.push('');
   }
-
-  for (const receipt of summary.receipts) {
-    lines.push(`${receipt.store} (${formatDate(receipt.date, { short: true })}): ${euro(receipt.parents)}`);
-  }
-  if (summary.receipts.length) lines.push('');
 
   lines.push(summary.to ? `${summary.to} zahlt: ${euro(summary.parents)}` : `Bitte überweisen: ${euro(summary.parents)}`);
   if (summary.mine !== 0) {

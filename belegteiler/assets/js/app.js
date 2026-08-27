@@ -1,9 +1,9 @@
 /* Ablaufsteuerung der App: Ansichten, Kamera, Erkennung, Zuordnung,
    Übersicht und Verlauf. */
 
-import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCents } from './util.js';
+import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCents, todayISO } from './util.js';
 import { CATEGORIES } from './categories.js';
-import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage } from './store.js';
+import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage, loadOpenBill, saveOpenBill, clearOpenBill } from './store.js';
 import { prepareImage } from './image.js';
 import { scanReceipt, testConnection } from './scan.js';
 import { PROVIDERS, provider, detectProvider } from './providers.js';
@@ -14,12 +14,20 @@ import { renderSummaryImage } from './canvas.js';
 /* ── Zustand ─────────────────────────────────────────────── */
 
 let settings = loadSettings();
-let bill = null;
+let bill = loadOpenBill();   // die laufende Abrechnung, überlebt das Schließen der App
 let summary = null;
 let summaryBlob = null;
 let scanAbort = null;
-let editing = null;      // id der Position, die gerade im Sheet liegt
-let appendMode = false;  // true = Scan wird an die laufende Abrechnung angehängt
+let editing = null;          // id der Position, die gerade im Sheet liegt
+
+/* Jede Änderung sofort sichern. Eine laufende Abrechnung landet in
+   ihrem eigenen Fach, eine bereits abgeschlossene aktualisiert ihren
+   Eintrag im Verlauf. */
+function persist() {
+  if (!bill) return;
+  if (bill.done) pushHistory(structuredClone(bill));
+  else saveOpenBill(bill);
+}
 
 /* ── Ansichten & Rückmeldungen ───────────────────────────── */
 
@@ -41,6 +49,7 @@ function toast(message) {
 
 function renderHome() {
   $('#setup-card').hidden = isConfigured(settings);
+  renderOpenBill();
 
   const history = loadHistory();
   $('#history-section').hidden = history.length === 0;
@@ -65,9 +74,40 @@ function renderHome() {
   }
 }
 
+/** Die laufende Abrechnung als Karte über dem Verlauf. */
+function renderOpenBill() {
+  const card = $('#open-bill');
+  const running = bill && !bill.done ? bill : null;
+  card.hidden = !running || running.items.length === 0;
+  if (card.hidden) {
+    $('#hero-hint').textContent = 'Kamera öffnen und den Kassenbon abfotografieren. Mehrere Bons dürfen nebeneinander liegen.';
+    return;
+  }
+
+  const sums = totals(running);
+  const date = billDate(running);
+  const isToday = date === todayISO();
+
+  $('#open-label').textContent = isToday ? 'Heute' : formatDate(date);
+  $('#open-meta').textContent =
+    `${running.receipts.length} ${running.receipts.length === 1 ? 'Beleg' : 'Belege'} · `
+    + `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`;
+  $('#open-amount').textContent = euro(sums.parents);
+
+  const stores = $('#open-stores');
+  stores.replaceChildren();
+  for (const receipt of running.receipts) {
+    stores.append(el('span', {
+      class: 'open-store',
+      text: receipt.time ? `${receipt.store} · ${receipt.time}` : receipt.store,
+    }));
+  }
+
+  $('#hero-hint').textContent = 'Nächsten Beleg fotografieren — er wird an die laufende Abrechnung angehängt.';
+}
+
 function openFromHistory(entry) {
-  bill = structuredClone(entry);
-  appendMode = false;
+  bill = { ...structuredClone(entry), done: true };
   renderReview();
   showView('review');
 }
@@ -115,9 +155,9 @@ async function handleFiles(fileList) {
     const parsed = await scanReceipt(parts, settings, signal);
     if (signal.aborted) return;
 
-    if (!appendMode || !bill) bill = createBill();
+    if (!bill || bill.done) bill = createBill();
     const added = addScan(bill, parsed);
-    appendMode = false;
+    persist();
     recordUsage(parsed.usage);
 
     renderReview();
@@ -125,6 +165,7 @@ async function handleFiles(fileList) {
 
     if (parsed.notes) toast(parsed.notes);
     else if (added.length > 1) toast(`${added.length} Belege erkannt.`);
+    else if (bill.receipts.length > 1) toast(`${bill.receipts.length} Belege in dieser Abrechnung.`);
   } catch (error) {
     if (error.name === 'AbortError' || signal.aborted) return;
     showScanError(error);
@@ -146,7 +187,11 @@ function renderReview() {
 
   $('#review-store').textContent = storeLabel(bill);
   const sums = totals(bill);
-  $('#review-meta').textContent = `${formatDate(billDate(bill), { short: true })} · ${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`;
+  $('#review-meta').textContent = [
+    formatDate(billDate(bill), { short: true }),
+    bill.receipts.length > 1 ? `${bill.receipts.length} Belege` : null,
+    `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`,
+  ].filter(Boolean).join(' · ');
 
   const list = $('#category-list');
   list.replaceChildren();
@@ -169,7 +214,13 @@ function renderReview() {
 }
 
 function itemRow(item) {
+  // Bei mehreren Belegen muss erkennbar bleiben, wo die Position herkommt.
+  const source = bill.receipts.length > 1
+    ? (bill.receipts.find((receipt) => receipt.id === item.receiptId)?.store || '')
+    : '';
+
   const details = [
+    source,
     quantityLabel(item.quantity, item.unit),
     item.unitPrice && item.quantity !== 1 ? `à ${euro(item.unitPrice)}` : '',
   ].filter(Boolean).join(' · ');
@@ -199,6 +250,7 @@ function renderTally() {
   $('#tally-mine').textContent = euro(sums.mine);
   $('#tally-total').textContent = euro(sums.total);
   $('#btn-to-summary').disabled = sums.count === 0;
+  $('#btn-to-summary').textContent = bill.receipts.length > 1 ? 'Abrechnung erstellen' : 'Übersicht erstellen';
 
   const printed = printedTotal(bill);
   const warning = $('#sum-warning');
@@ -217,11 +269,13 @@ function toggleMine(id) {
   const item = bill.items.find((entry) => entry.id === id);
   if (!item) return;
   item.mine = !item.mine;
+  persist();
   renderReview();
 }
 
 function setAllMine(value) {
   for (const item of bill.items) item.mine = value;
+  persist();
   renderReview();
 }
 
@@ -276,12 +330,14 @@ function saveItemSheet() {
   if (existing) Object.assign(existing, patch, { uncertain: false });
   else bill.items.push(createItem({ ...patch, receiptId: bill.receipts[0]?.id ?? null }));
 
+  persist();
   closeItemSheet();
   renderReview();
 }
 
 function deleteItem() {
   bill.items = bill.items.filter((entry) => entry.id !== editing);
+  persist();
   closeItemSheet();
   renderReview();
 }
@@ -292,9 +348,22 @@ function openSummary() {
   summary = buildSummary(bill, settings);
   summaryBlob = null;
   renderPaper($('#paper'), summary);
-  pushHistory(structuredClone(bill));
-  renderHome();
+  $('#btn-finish').hidden = Boolean(bill.done);
   showView('summary');
+}
+
+/** Abrechnung abschließen: ab in den Verlauf, das Fach wird frei. */
+function finishBill() {
+  if (!bill || bill.done) return;
+  bill.done = true;
+  bill.finishedAt = Date.now();
+  pushHistory(structuredClone(bill));
+  clearOpenBill();
+  bill = null;
+  summary = null;
+  renderHome();
+  showView('home');
+  toast('Abrechnung abgeschlossen.');
 }
 
 async function summaryImage() {
@@ -548,8 +617,10 @@ function adoptKey() {
 
 function wire() {
   // Home
-  $('#btn-capture').addEventListener('click', () => { appendMode = false; requestPhoto($('#file-camera')); });
-  $('#btn-pick').addEventListener('click',    () => { appendMode = false; requestPhoto($('#file-gallery')); });
+  $('#btn-capture').addEventListener('click', () => requestPhoto($('#file-camera')));
+  $('#btn-pick').addEventListener('click',    () => requestPhoto($('#file-gallery')));
+  $('#btn-open-review').addEventListener('click', () => { renderReview(); showView('review'); });
+  $('#btn-open-finish').addEventListener('click', openSummary);
   $('#btn-settings').addEventListener('click', openSettings);
   $('#btn-setup').addEventListener('click', openSettings);
   $('#btn-clear-history').addEventListener('click', () => {
@@ -566,17 +637,17 @@ function wire() {
   $('#btn-scan-retry').addEventListener('click', () => requestPhoto($('#file-camera')));
   $('#btn-scan-back').addEventListener('click', () => { scanAbort?.abort(); showView(bill ? 'review' : 'home'); });
   $('#btn-scan-manual').addEventListener('click', () => {
-    if (!appendMode || !bill) bill = createBill();
+    if (!bill || bill.done) bill = createBill();
     if (!bill.receipts.length) addReceipt(bill, { store: 'Einkauf', items: [], receipt_total: null });
-    appendMode = false;
+    persist();
     renderReview();
     showView('review');
     openItemSheet(null);
   });
 
   // Review
-  $('#btn-review-back').addEventListener('click', () => { showView('home'); renderHome(); });
-  $('#btn-add-receipt').addEventListener('click', () => { appendMode = true; requestPhoto($('#file-camera')); });
+  $('#btn-review-back').addEventListener('click', () => { persist(); showView('home'); renderHome(); });
+  $('#btn-add-receipt').addEventListener('click', () => requestPhoto($('#file-camera')));
   $('#btn-all-mine').addEventListener('click', () => setAllMine(true));
   $('#btn-all-parents').addEventListener('click', () => setAllMine(false));
   $('#btn-add-item').addEventListener('click', () => openItemSheet(null));
@@ -591,8 +662,9 @@ function wire() {
   });
 
   // Übersicht
-  $('#btn-summary-back').addEventListener('click', () => showView('review'));
+  $('#btn-summary-back').addEventListener('click', () => { renderReview(); showView('review'); });
   $('#btn-share').addEventListener('click', shareSummary);
+  $('#btn-finish').addEventListener('click', finishBill);
   $('#btn-copy').addEventListener('click', copySummary);
   $('#btn-download').addEventListener('click', downloadSummary);
 
