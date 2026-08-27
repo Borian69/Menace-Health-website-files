@@ -2,7 +2,7 @@
    Aufruf:  node tools/make-icons.mjs
 
    Gezeichnet wird ein Kassenbon mit gezacktem unteren Rand und einem
-   grünen Haken — dieselbe Bildsprache wie in der App. Kantenglättung
+   goldenen Haken — dieselbe Bildsprache wie in der App. Kantenglättung
    entsteht durch dreifaches Überabtasten. */
 
 import { deflateSync } from 'node:zlib';
@@ -12,10 +12,10 @@ import { fileURLToPath } from 'node:url';
 
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'icons');
 
-const BG      = [0x0e, 0x12, 0x11];
+const BG      = [0x12, 0x11, 0x10];
 const PAPER   = [0xfb, 0xfa, 0xf6];
-const RULE    = [0xb8, 0xc2, 0xbd];
-const GREEN   = [0x0b, 0xbe, 0x6e];
+const RULE    = [0xc2, 0xba, 0xa4];
+const GOLD    = [0xd9, 0xa9, 0x3c];
 const SS      = 3;   // Überabtastung
 
 /* ── Geometrie-Helfer (alles in Einheitskoordinaten 0…1) ── */
@@ -67,7 +67,7 @@ function sample(x, y, { rounded, inset }) {
 
   const box = { x0: 0.20, y0: 0.06, x1: 0.78, y1: 0.86 };
 
-  // Grüner Haken, überlappt den Bon unten rechts
+  // Goldener Haken, überlappt den Bon unten rechts
   const stroke = 0.075;
   const check = Math.min(
     distanceToSegment(px, py, 0.55, 0.70, 0.68, 0.83),
@@ -75,7 +75,7 @@ function sample(x, y, { rounded, inset }) {
   );
   const halo = check <= stroke / 2 + 0.038;
 
-  if (check <= stroke / 2) return GREEN;
+  if (check <= stroke / 2) return GOLD;
 
   if (insideReceipt(px, py, box)) {
     if (halo) return BG;   // Freistellung, damit der Haken sich abhebt

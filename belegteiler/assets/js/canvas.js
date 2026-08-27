@@ -4,7 +4,7 @@
    Gearbeitet wird in zwei Durchgängen: einmal nur messen, um die
    Bildhöhe zu bestimmen, danach richtig zeichnen. */
 
-import { euro, quantityLabel } from './util.js';
+import { euro, formatDate, quantityLabel } from './util.js';
 
 const W = 1080;
 const PAD = 76;
@@ -14,11 +14,11 @@ const SERIF = '"Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times
 const SANS  = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
 const INK        = '#14181A';
-const MUTED      = '#6E7A76';
-const FAINT      = '#93A09B';
-const LINE       = '#E2E0D6';
-const GREEN      = '#068450';
-const GREEN_DEEP = '#05663F';
+const MUTED      = '#75736A';
+const FAINT      = '#A39B84';
+const LINE       = '#E4E0D2';
+const GOLD       = '#8A6614';
+const GOLD_DEEP  = '#7A5A12';
 const PAPER      = '#FBFAF6';
 
 function roundRect(ctx, x, y, width, height, radius) {
@@ -90,8 +90,8 @@ function paint(ctx, summary, dry) {
   // Akzentleiste am oberen Rand
   draw(() => {
     const gradient = ctx.createLinearGradient(0, 0, W, 0);
-    gradient.addColorStop(0, '#0BBE6E');
-    gradient.addColorStop(1, '#05A35D');
+    gradient.addColorStop(0, '#E7C05A');
+    gradient.addColorStop(1, '#B0821F');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, W, 12);
   });
@@ -103,17 +103,18 @@ function paint(ctx, summary, dry) {
 
   const eyebrow = (summary.to ? `Einkauf für ${summary.to}` : 'Einkaufsabrechnung').toUpperCase();
   ctx.font = `700 21px ${SANS}`;
-  draw(() => { ctx.fillStyle = GREEN; tracked(ctx, eyebrow, PAD, y, 4.4); });
+  draw(() => { ctx.fillStyle = GOLD; tracked(ctx, eyebrow, PAD, y, 4.4); });
   y += 40;
 
   ctx.font = `54px ${SERIF}`;
-  draw(() => { ctx.fillStyle = INK; ctx.fillText(ellipsise(ctx, `Einkauf bei ${summary.store}`, CONTENT), PAD, y + 42); });
+  draw(() => { ctx.fillStyle = INK; ctx.fillText(ellipsise(ctx, summary.title, CONTENT), PAD, y + 42); });
   y += 42 + 26;
 
   const subtitle = [
     [summary.weekday, summary.dateLabel].filter(Boolean).join(', '),
+    summary.receipts.length ? `${summary.receipts.length} Belege` : '',
     `${summary.countShown} ${summary.countShown === 1 ? 'Position' : 'Positionen'}`,
-  ].join('  ·  ');
+  ].filter(Boolean).join('  ·  ');
   ctx.font = `26px ${SANS}`;
   draw(() => { ctx.fillStyle = MUTED; ctx.fillText(subtitle, PAD, y + 20); });
   y += 20 + 44;
@@ -149,18 +150,18 @@ function paint(ctx, summary, dry) {
       const name = ellipsise(ctx, item.name, Math.max(60, nameWidth));
 
       draw(() => {
-        ctx.fillStyle = item.mine ? '#A5AFAB' : INK;
+        ctx.fillStyle = item.mine ? '#ADA898' : INK;
         ctx.font = `30px ${SERIF}`;
         ctx.fillText(name, PAD, y + 24);
         const drawnName = ctx.measureText(name).width;
 
         if (quantity) {
           ctx.font = `23px ${SANS}`;
-          ctx.fillStyle = item.mine ? '#B7BFBB' : FAINT;
+          ctx.fillStyle = item.mine ? '#BDB8A8' : FAINT;
           ctx.fillText(`  ${quantity}`, PAD + drawnName, y + 24);
         }
 
-        ctx.fillStyle = item.mine ? '#A5AFAB' : INK;
+        ctx.fillStyle = item.mine ? '#ADA898' : INK;
         ctx.textAlign = 'right';
         ctx.fillText(amount, W - PAD, y + 24);
         if (item.mine) {
@@ -177,22 +178,48 @@ function paint(ctx, summary, dry) {
   draw(() => { ctx.fillStyle = LINE; ctx.fillRect(PAD, y, CONTENT, 1); });
   y += 40;
 
+  // Aufschlüsselung, wenn dem Ganzen mehrere Bons zugrunde liegen
+  if (summary.receipts.length) {
+    ctx.font = `700 19px ${SANS}`;
+    const headline = `${summary.receipts.length} BELEGE`;
+    const headWidth = trackedWidth(ctx, headline, 3.6);
+    draw(() => {
+      ctx.fillStyle = FAINT;
+      tracked(ctx, headline, PAD, y + 14, 3.6);
+      ctx.fillRect(PAD + headWidth + 18, y + 8, CONTENT - headWidth - 18, 1);
+    });
+    y += 14 + 22;
+
+    for (const receipt of summary.receipts) {
+      draw(() => {
+        ctx.font = `24px ${SANS}`;
+        ctx.fillStyle = MUTED;
+        ctx.fillText(`${receipt.store} · ${formatDate(receipt.date, { short: true })}`, PAD + 4, y + 18);
+        ctx.textAlign = 'right';
+        ctx.fillText(euro(receipt.parents), W - PAD - 4, y + 18);
+        ctx.textAlign = 'left';
+      });
+      y += 36;
+    }
+    y += 22;
+  }
+
   // Betrag — Beschriftung links, Summe rechts, beides auf einer Achse
   const boxHeight = 124;
   draw(() => {
     roundRect(ctx, PAD, y, CONTENT, boxHeight, 16);
-    ctx.fillStyle = '#F0F4F1';
+    ctx.fillStyle = '#F8F3E6';
     ctx.fill();
-    ctx.strokeStyle = '#DDE6E0';
+    ctx.strokeStyle = '#EBE1C8';
     ctx.lineWidth = 1;
     ctx.stroke();
 
     ctx.font = `700 21px ${SANS}`;
-    ctx.fillStyle = '#55635E';
+    ctx.fillStyle = '#6B6250';
     tracked(ctx, (summary.to ? `${summary.to} zahlt` : 'Bitte überweisen').toUpperCase(), PAD + 32, y + 70, 2.6);
 
     ctx.font = `700 60px ${SERIF}`;
-    ctx.fillStyle = GREEN_DEEP;
+    ctx.fillStyle = GOLD_DEEP;
     ctx.textAlign = 'right';
     ctx.fillText(euro(summary.parents), W - PAD - 32, y + 84);
     ctx.textAlign = 'left';
@@ -225,7 +252,7 @@ function paint(ctx, summary, dry) {
       ctx.save();
       ctx.setLineDash([7, 6]);
       roundRect(ctx, PAD, y, CONTENT, payHeight, 14);
-      ctx.strokeStyle = '#C9D3CD';
+      ctx.strokeStyle = '#D6CBAE';
       ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.restore();
@@ -244,7 +271,7 @@ function paint(ctx, summary, dry) {
   y += 14;
   draw(() => {
     ctx.font = `20px ${SANS}`;
-    ctx.fillStyle = '#A9B3AF';
+    ctx.fillStyle = '#B3AC98';
     ctx.textAlign = 'center';
     const footer = (summary.from ? `Zusammengestellt von ${summary.from}` : 'Belegteiler').toUpperCase();
     tracked(ctx, footer, W / 2, y + 16, 3);

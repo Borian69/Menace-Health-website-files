@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Belegteiler</title>
 <meta name="description" content="Kassenbon fotografieren, Positionen automatisch erkennen, aufteilen und als schöne Übersicht verschicken.">
-<meta name="theme-color" content="#0A0C0B">
+<meta name="theme-color" content="#0A0908">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
@@ -40,7 +40,7 @@
         </svg>
         <span class="capture-label">Beleg scannen</span>
       </button>
-      <p class="hero-hint" id="hero-hint">Kamera öffnen und den Kassenbon abfotografieren.</p>
+      <p class="hero-hint" id="hero-hint">Kamera öffnen und den Kassenbon abfotografieren.<br>Mehrere Bons dürfen nebeneinander liegen.</p>
       <button class="ghost-btn" id="btn-pick">Bild aus der Galerie wählen</button>
     </div>
 
@@ -207,10 +207,16 @@
         <div class="field">
           <label for="set-model">Modell</label>
           <select id="set-model" name="model">
-            <option value="claude-opus-5">Claude Opus 5 — beste Erkennung</option>
-            <option value="claude-sonnet-5">Claude Sonnet 5 — günstiger</option>
             <option value="claude-haiku-4-5">Claude Haiku 4.5 — am günstigsten</option>
+            <option value="claude-sonnet-5">Claude Sonnet 5 — genauer</option>
+            <option value="claude-opus-5">Claude Opus 5 — beste Erkennung</option>
           </select>
+          <p class="field-hint">Werden Positionen oft falsch gelesen, ein Modell höher gehen. Die App warnt ohnehin, wenn die Summe der Positionen nicht zur aufgedruckten Endsumme passt.</p>
+        </div>
+        <div class="usage-card" id="usage-card" hidden>
+          <div class="usage-figure" id="usage-amount">0 Cent</div>
+          <div class="usage-note" id="usage-note"></div>
+          <button type="button" class="link-btn" id="btn-reset-usage">Zurücksetzen</button>
         </div>
       </div>
 

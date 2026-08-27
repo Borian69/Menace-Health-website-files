@@ -19,7 +19,13 @@ const SYSTEM_PROMPT = `Du liest Kassenbons aus dem deutschsprachigen Einzelhande
 Arbeitsweise
 - Gib das Ergebnis ausschließlich über das Werkzeug "beleg_erfassen" zurück. Schreibe keinen Fließtext.
 - Erfasse jede gekaufte Position genau einmal, in der Reihenfolge des Belegs.
-- Bekommst du mehrere Bilder, sind das aufeinanderfolgende, sich leicht überlappende Abschnitte EINES Belegs, von oben nach unten. Positionen im Überlappungsbereich tauchen auf zwei Bildern auf – erfasse sie trotzdem nur einmal.
+- Bekommst du mehrere Bilder, sind das aufeinanderfolgende, sich leicht überlappende Abschnitte EINES FOTOS, von oben nach unten. Positionen im Überlappungsbereich tauchen auf zwei Bildern auf – erfasse sie trotzdem nur einmal.
+
+Mehrere Bons auf einem Foto
+- Auf dem Foto können mehrere getrennte Kassenbons liegen, nebeneinander oder untereinander. Lege für jeden einzelnen Bon einen eigenen Eintrag in "receipts" an, mit seinem eigenen Händler, Datum und seiner eigenen Endsumme.
+- Woran du einen neuen Bon erkennst: eigener Kopf mit Händlername und Anschrift, eigene Endsumme, sichtbarer Rand oder Papierkante, andere Papierbreite oder Schrifttype.
+- Ein einzelner, sehr langer Bon, der über mehrere Bildabschnitte läuft, ist EIN Eintrag – nicht mehrere. Im Zweifel lieber einen Bon zu wenig trennen als einen zu viel.
+- Liegt nur ein Bon auf dem Foto, enthält "receipts" genau einen Eintrag.
 
 Bezeichnungen
 - Schreibe die abgekürzten Kassentexte in gut lesbares Deutsch um: "JA! H-MILCH 3,5%" wird zu "Ja! H-Milch 3,5 %", "RSPBRY 125G" zu "Himbeeren 125 g".
@@ -58,21 +64,30 @@ const ITEM_SCHEMA = {
   additionalProperties: false,
 };
 
+const RECEIPT_SCHEMA = {
+  type: 'object',
+  properties: {
+    store:         { type: ['string', 'null'], description: 'Name des Händlers.' },
+    date:          { type: ['string', 'null'], description: 'Einkaufsdatum als JJJJ-MM-TT.' },
+    time:          { type: ['string', 'null'], description: 'Uhrzeit als HH:MM.' },
+    receipt_total: { type: ['number', 'null'], description: 'Gedruckte Endsumme in Euro.' },
+    items:         { type: 'array', items: ITEM_SCHEMA, description: 'Alle Positionen dieses Belegs.' },
+  },
+  required: ['store', 'date', 'time', 'receipt_total', 'items'],
+  additionalProperties: false,
+};
+
 const TOOL = {
   name: 'beleg_erfassen',
-  description: 'Übergibt den vollständig erfassten Kassenbon.',
+  description: 'Übergibt alle auf dem Foto erfassten Kassenbons.',
   input_schema: {
     type: 'object',
     properties: {
-      store:         { type: ['string', 'null'], description: 'Name des Händlers.' },
-      date:          { type: ['string', 'null'], description: 'Einkaufsdatum als JJJJ-MM-TT.' },
-      time:          { type: ['string', 'null'], description: 'Uhrzeit als HH:MM.' },
-      currency:      { type: 'string', description: 'Währungscode, in der Regel "EUR".' },
-      receipt_total: { type: ['number', 'null'], description: 'Gedruckte Endsumme in Euro.' },
-      items:         { type: 'array', items: ITEM_SCHEMA, description: 'Alle Positionen des Belegs.' },
-      notes:         { type: ['string', 'null'], description: 'Kurzer Hinweis für den Nutzer, sonst null.' },
+      currency: { type: 'string', description: 'Währungscode, in der Regel "EUR".' },
+      receipts: { type: 'array', items: RECEIPT_SCHEMA, description: 'Ein Eintrag je eigenständigem Kassenbon auf dem Foto.' },
+      notes:    { type: ['string', 'null'], description: 'Kurzer Hinweis für den Nutzer, sonst null.' },
     },
-    required: ['store', 'date', 'time', 'currency', 'receipt_total', 'items', 'notes'],
+    required: ['currency', 'receipts', 'notes'],
     additionalProperties: false,
   },
 };
@@ -82,8 +97,8 @@ function buildBody({ parts, model, withFallbacks }) {
     {
       type: 'text',
       text: parts.length > 1
-        ? `Hier ist ein Kassenbon in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten (von oben nach unten). Erfasse ihn vollständig.`
-        : 'Hier ist ein Kassenbon. Erfasse ihn vollständig.',
+        ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten (von oben nach unten). Erfasse jeden Kassenbon darauf vollständig.`
+        : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
     },
     ...parts.map((data) => ({
       type: 'image',
@@ -188,8 +203,37 @@ export async function scanReceipt(parts, settings, signal) {
 
   // Tool-Eingaben immer als JSON behandeln, nie per Textvergleich auswerten.
   const parsed = typeof toolCall.input === 'string' ? JSON.parse(toolCall.input) : toolCall.input;
-  if (!parsed?.items?.length) {
+  const receipts = (parsed?.receipts || []).filter((receipt) => receipt?.items?.length);
+  if (!receipts.length) {
     throw new Error('Es konnten keine Positionen gelesen werden. Vielleicht hilft ein schärferes Foto bei mehr Licht.');
   }
-  return parsed;
+
+  return {
+    receipts,
+    notes: parsed.notes || '',
+    usage: usageCost(message.usage, message.model || settings.model),
+  };
+}
+
+/* ── Kosten einer Anfrage ────────────────────────────────── */
+
+// US-Dollar je Million Token (Eingabe/Ausgabe), Stand der Preisliste.
+const PRICES = {
+  'claude-opus-5':    [5, 25],
+  'claude-sonnet-5':  [2, 10],
+  'claude-haiku-4-5': [1, 5],
+};
+const USD_TO_EUR = 0.92;   // grobe Umrechnung, nur zur Anzeige
+
+export const modelPrice = (model) => PRICES[model] || PRICES['claude-sonnet-5'];
+
+/** @returns {{inputTokens:number, outputTokens:number, cents:number}} */
+function usageCost(usage, model) {
+  const inputTokens = (usage?.input_tokens || 0)
+    + (usage?.cache_read_input_tokens || 0)
+    + (usage?.cache_creation_input_tokens || 0);
+  const outputTokens = usage?.output_tokens || 0;
+  const [inPrice, outPrice] = modelPrice(model);
+  const dollars = (inputTokens * inPrice + outputTokens * outPrice) / 1_000_000;
+  return { inputTokens, outputTokens, cents: dollars * USD_TO_EUR * 100 };
 }

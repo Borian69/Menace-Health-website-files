@@ -4,13 +4,14 @@
 
 const SETTINGS_KEY = 'belegteiler.settings.v1';
 const HISTORY_KEY  = 'belegteiler.history.v1';
+const USAGE_KEY    = 'belegteiler.usage.v1';
 const HISTORY_MAX  = 25;
 
 const DEFAULTS = {
   mode:     'direct',
   apiKey:   '',
   proxyUrl: '',
-  model:    'claude-opus-5',
+  model:    'claude-haiku-4-5',
   fromName: '',
   toName:   '',
   payTo:    '',
@@ -62,9 +63,25 @@ export function pushHistory(entry) {
 
 export const clearHistory = () => write(HISTORY_KEY, []);
 
+/* ── Verbrauch ───────────────────────────────────────────── */
+
+export const loadUsage = () => read(USAGE_KEY, { scans: 0, cents: 0, since: Date.now() });
+
+/** Kosten einer Erkennung mitschreiben, damit sichtbar ist, was anfällt. */
+export function addUsage({ cents }) {
+  const usage = loadUsage();
+  usage.scans += 1;
+  usage.cents += cents || 0;
+  write(USAGE_KEY, usage);
+  return usage;
+}
+
+export const clearUsage = () => write(USAGE_KEY, { scans: 0, cents: 0, since: Date.now() });
+
 export function clearEverything() {
   try {
     localStorage.removeItem(SETTINGS_KEY);
     localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(USAGE_KEY);
   } catch { /* Privatmodus o. Ä. — dann gab es ohnehin nichts zu löschen. */ }
 }

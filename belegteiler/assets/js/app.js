@@ -3,10 +3,10 @@
 
 import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCents } from './util.js';
 import { CATEGORIES } from './categories.js';
-import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything } from './store.js';
+import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage } from './store.js';
 import { prepareImage } from './image.js';
 import { scanReceipt } from './claude.js';
-import { createBill, addScan, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
+import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
 
@@ -113,12 +113,15 @@ async function handleFiles(fileList) {
     if (signal.aborted) return;
 
     if (!appendMode || !bill) bill = createBill();
-    const receipt = addScan(bill, parsed);
+    const added = addScan(bill, parsed);
     appendMode = false;
+    recordUsage(parsed.usage);
 
-    if (receipt.notes) toast(receipt.notes);
     renderReview();
     showView('review');
+
+    if (parsed.notes) toast(parsed.notes);
+    else if (added.length > 1) toast(`${added.length} Belege erkannt.`);
   } catch (error) {
     if (error.name === 'AbortError' || signal.aborted) return;
     showScanError(error);
@@ -290,7 +293,7 @@ async function shareSummary() {
     const file = new File([blob], fileName(summary), { type: 'image/png' });
     const payload = {
       files: [file],
-      title: `Einkauf bei ${summary.store}`,
+      title: summary.title,
       text: buildText(summary),
     };
 
@@ -357,7 +360,31 @@ function openSettings() {
   $('#set-pay').value   = settings.payTo;
   $('#set-show-mine').checked = settings.showMine;
   applyMode();
+  renderUsage();
   showView('settings');
+}
+
+function recordUsage(usage) {
+  if (!usage) return;
+  addUsage(usage);
+  renderUsage();
+}
+
+function renderUsage() {
+  const usage = loadUsage();
+  const card = $('#usage-card');
+  card.hidden = usage.scans === 0;
+  if (!usage.scans) return;
+
+  const cents = usage.cents;
+  $('#usage-amount').textContent = cents < 100
+    ? `${cents.toFixed(cents < 10 ? 1 : 0).replace('.', ',')} Cent`
+    : euro(Math.round(cents));
+
+  const average = cents / usage.scans;
+  $('#usage-note').textContent =
+    `für ${usage.scans} ${usage.scans === 1 ? 'Erkennung' : 'Erkennungen'} seit ${formatDate(new Date(usage.since).toISOString().slice(0, 10), { short: true })}`
+    + ` · im Schnitt ${average.toFixed(1).replace('.', ',')} Cent pro Beleg`;
 }
 
 function applyMode() {
@@ -405,7 +432,7 @@ function wire() {
   $('#btn-scan-back').addEventListener('click', () => { scanAbort?.abort(); showView(bill ? 'review' : 'home'); });
   $('#btn-scan-manual').addEventListener('click', () => {
     if (!appendMode || !bill) bill = createBill();
-    if (!bill.receipts.length) addScan(bill, { store: 'Einkauf', items: [], receipt_total: null });
+    if (!bill.receipts.length) addReceipt(bill, { store: 'Einkauf', items: [], receipt_total: null });
     appendMode = false;
     renderReview();
     showView('review');
@@ -439,6 +466,7 @@ function wire() {
   $('#settings-form').addEventListener('input', readSettingsForm);
   $('#settings-form').addEventListener('change', readSettingsForm);
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());
+  $('#btn-reset-usage').addEventListener('click', () => { clearUsage(); renderUsage(); });
   $('#btn-reset').addEventListener('click', () => {
     if (!confirm('Einstellungen und alle Abrechnungen von diesem Gerät löschen?')) return;
     clearEverything();

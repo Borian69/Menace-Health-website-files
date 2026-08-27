@@ -19,7 +19,29 @@ export function buildSummary(bill, settings) {
   const sums = totals(bill);
   const date = billDate(bill);
 
+  // Liegen mehrere Bons zugrunde, wird unten aufgeschlüsselt, welcher
+  // Beleg welchen Anteil ausmacht.
+  const perReceipt = bill.receipts
+    .map((receipt) => ({
+      store: receipt.store,
+      date:  receipt.date,
+      parents: bill.items
+        .filter((item) => item.receiptId === receipt.id && !item.mine)
+        .reduce((sum, item) => sum + item.price, 0),
+      shown: visible.filter((item) => item.receiptId === receipt.id).length,
+    }))
+    .filter((receipt) => receipt.shown > 0);
+
+  // Bei zwei Läden passen beide in die Überschrift, ab drei übernimmt
+  // die Aufschlüsselung weiter unten die Aufzählung.
+  const stores = [...new Set(perReceipt.map((receipt) => receipt.store).filter(Boolean))];
+  const title = stores.length === 1 ? `Einkauf bei ${stores[0]}`
+    : stores.length === 2 ? `Einkauf bei ${stores[0]} und ${stores[1]}`
+    : 'Einkauf';
+
   return {
+    receipts: perReceipt.length > 1 ? perReceipt : [],
+    title,
     store:   storeLabel(bill),
     date,
     weekday: weekday(date),
@@ -45,7 +67,7 @@ export function renderPaper(node, summary) {
   node.replaceChildren();
 
   node.append(el('div', { class: 'p-eyebrow', text: summary.to ? `Einkauf für ${summary.to}` : 'Einkaufsabrechnung' }));
-  node.append(el('h2', { class: 'p-title', text: `Einkauf bei ${summary.store}` }));
+  node.append(el('h2', { class: 'p-title', text: summary.title }));
   node.append(el('p', {
     class: 'p-sub',
     text: [
@@ -73,6 +95,17 @@ export function renderPaper(node, summary) {
 
   node.append(el('div', { class: 'p-hr' }));
 
+  if (summary.receipts.length) {
+    node.append(el('div', { class: 'p-cat', text: `${summary.receipts.length} Belege` }));
+    for (const receipt of summary.receipts) {
+      node.append(el('div', { class: 'p-minor' },
+        el('span', { text: `${receipt.store} · ${formatDate(receipt.date, { short: true })}` }),
+        el('span', { text: euro(receipt.parents) }),
+      ));
+    }
+    node.append(el('div', { class: 'p-hr dashed' }));
+  }
+
   node.append(el('div', { class: 'p-total' },
     el('span', { class: 'p-total-label', text: summary.to ? `${summary.to} zahlt` : 'Bitte überweisen' }),
     el('span', { class: 'p-total-amt', text: euro(summary.parents) }),
@@ -99,7 +132,7 @@ export function renderPaper(node, summary) {
 
 export function buildText(summary) {
   const lines = [];
-  lines.push(`Einkauf bei ${summary.store} — ${formatDate(summary.date, { short: true })}`);
+  lines.push(`${summary.title} — ${formatDate(summary.date, { short: true })}`);
   lines.push('');
 
   for (const group of summary.groups) {
@@ -111,6 +144,11 @@ export function buildText(summary) {
     }
     lines.push('');
   }
+
+  for (const receipt of summary.receipts) {
+    lines.push(`${receipt.store} (${formatDate(receipt.date, { short: true })}): ${euro(receipt.parents)}`);
+  }
+  if (summary.receipts.length) lines.push('');
 
   lines.push(summary.to ? `${summary.to} zahlt: ${euro(summary.parents)}` : `Bitte überweisen: ${euro(summary.parents)}`);
   if (summary.mine !== 0) {

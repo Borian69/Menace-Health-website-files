@@ -11,8 +11,8 @@ export function createBill() {
   return { id: uid(), createdAt: Date.now(), receipts: [], items: [] };
 }
 
-/** Ergebnis einer Erkennung in die Abrechnung übernehmen. */
-export function addScan(bill, parsed) {
+/** Einen einzelnen erkannten Beleg übernehmen. */
+export function addReceipt(bill, parsed) {
   const receipt = {
     id:    uid(),
     store: (parsed.store || '').trim() || 'Einkauf',
@@ -21,12 +21,10 @@ export function addScan(bill, parsed) {
     total: parsed.receipt_total === null || parsed.receipt_total === undefined
       ? null
       : toCents(parsed.receipt_total),
-    notes: (parsed.notes || '').trim(),
   };
   bill.receipts.push(receipt);
 
   for (const raw of parsed.items || []) {
-    const price = toCents(raw.total_price);
     const name = (raw.name || '').trim() || (raw.raw_text || '').trim() || 'Position';
     bill.items.push({
       id:         uid(),
@@ -36,13 +34,18 @@ export function addScan(bill, parsed) {
       quantity:   Number.isFinite(raw.quantity) && raw.quantity > 0 ? raw.quantity : 1,
       unit:       (raw.unit || 'Stk').trim() || 'Stk',
       unitPrice:  raw.unit_price === null || raw.unit_price === undefined ? null : toCents(raw.unit_price),
-      price,
+      price:      toCents(raw.total_price),
       category:   normaliseCategory(raw.category, name),
       uncertain:  Boolean(raw.uncertain),
       mine:       false,
     });
   }
   return receipt;
+}
+
+/** Ergebnis einer Erkennung übernehmen — ein Foto kann mehrere Bons zeigen. */
+export function addScan(bill, parsed) {
+  return (parsed.receipts || []).map((receipt) => addReceipt(bill, receipt));
 }
 
 export function createItem(overrides = {}) {

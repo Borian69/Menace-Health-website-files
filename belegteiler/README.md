@@ -48,6 +48,8 @@ Danach startet sie wie eine normale App im Vollbild.
 ## So läuft ein Einkauf ab
 
 1. **Icon antippen → „Beleg scannen“.** Die Kamera geht auf, Bon abfotografieren.
+   Es dürfen ruhig **mehrere Bons nebeneinander** liegen — sie werden einzeln
+   erkannt und in der Übersicht getrennt ausgewiesen.
 2. **Warten.** Das Bild wird zugeschnitten und gelesen. Lange Bons werden
    automatisch in überlappende Abschnitte zerlegt, damit die Schrift scharf
    bleibt.
@@ -77,12 +79,12 @@ später wieder öffnen.
 | Aufwand | Key einfügen, fertig | zusätzlich einen Endpunkt deployen |
 | Wofür | Dein eigenes Handy | wenn die Seite öffentlich erreichbar ist |
 
-**Zum Direktmodus offen gesagt:** Der Key liegt im Browser-Speicher und wird von
-dort an die Claude-API geschickt. Wer Zugriff auf das entsperrte Handy hat, kommt
-an ihn heran. Für ein privates Werkzeug auf dem eigenen Telefon ist das der
-dokumentierte, vorgesehene Weg (`anthropic-dangerous-direct-browser-access`) — auf
-einem geteilten Gerät solltest Du stattdessen den Proxy nehmen. Ein Key lässt sich
-in der Console jederzeit widerrufen und neu erstellen.
+**Zum Direktmodus:** Der Key liegt im Browser-Speicher und wird von dort an die
+Claude-API geschickt — der dafür dokumentierte, vorgesehene Weg
+(`anthropic-dangerous-direct-browser-access`). Auf dem eigenen Telefon ist das in
+Ordnung; auf einem geteilten Gerät oder wenn die Seite öffentlich erreichbar ist,
+lieber den Proxy nehmen. Ein Key lässt sich in der Console jederzeit widerrufen und
+neu erstellen.
 
 **Proxy einrichten:** `server/scan.js` ist ein fertiger Handler nach Web-Standard
 und läuft unverändert auf Cloudflare Workers, Deno Deploy, Vercel Edge und
@@ -98,20 +100,39 @@ Endpunkts eintragen.
 
 ---
 
-## Was das ungefähr kostet
+## Was das kostet
 
-Pro Beleg wird ein Bild (bei langen Bons zwei bis drei Abschnitte) übertragen und
+Pro Foto wird ein Bild (bei langen Bons zwei bis drei Abschnitte) übertragen und
 eine Liste zurückgegeben. Grob gerechnet:
 
-| Modell | pro Beleg |
-|---|---|
-| Claude Opus 5 — beste Erkennung | ca. 5–8 Cent |
-| Claude Sonnet 5 | ca. 2–3 Cent |
-| Claude Haiku 4.5 | ca. 1–2 Cent |
+| Modell | pro Beleg | bei einem Einkauf pro Woche |
+|---|---|---|
+| Claude Haiku 4.5 — Voreinstellung | ca. 1 Cent | ca. 0,50 € im Jahr |
+| Claude Sonnet 5 | ca. 3 Cent | ca. 1,50 € im Jahr |
+| Claude Opus 5 | ca. 7 Cent | ca. 3,60 € im Jahr |
 
-Voreingestellt ist Opus 5, weil bei verknitterten Thermobons jeder falsch gelesene
-Preis am Ende in der falschen Überweisung landet. Umstellen kannst Du es in den
-Einstellungen jederzeit.
+Die App rechnet mit: unter *Einstellungen → Erkennung* steht, was seit dem ersten
+Scan tatsächlich zusammengekommen ist und wie viel ein Beleg im Schnitt kostet.
+Grundlage sind die von der API zurückgemeldeten Token, umgerechnet mit einem festen
+Kurs — deshalb „ca.“.
+
+Voreingestellt ist das günstigste Modell. Werden Positionen häufiger falsch
+gelesen, in den Einstellungen ein Modell höher gehen; die Warnung beim Abgleich
+mit der aufgedruckten Endsumme zeigt zuverlässig an, wenn etwas nicht stimmt.
+
+### Und ganz ohne Kosten?
+
+Kurz: geht nicht sauber.
+
+- **Anthropic hat keine kostenlose Stufe.** Der günstigste Weg ist der oben —
+  praktisch bedeutet das: einmal das Mindestguthaben aufladen und jahrelang Ruhe.
+- **Kostenlose Stufen anderer Anbieter** (etwa Google Gemini) gibt es, aber die
+  Inhalte werden dort laut Anbieter zur Produktverbesserung ausgewertet, es gelten
+  Tageslimits, und der Aufruf direkt aus dem Browser ist nicht vorgesehen.
+- **Texterkennung direkt auf dem Handy** (Tesseract o. Ä.) kostet nichts und
+  bräuchte kein Konto, liest aber abgekürzte Bon-Zeilen und verknitterte
+  Thermobelege deutlich schlechter. Bei einer App, deren Ergebnis eine
+  Überweisungssumme ist, wiegt das schwerer als ein paar Cent.
 
 ---
 
