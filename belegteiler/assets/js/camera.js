@@ -30,8 +30,10 @@ export async function start(video, { preferred = 'environment' } = {}) {
         // "ideal" statt "exact": Geräte ohne zweite Kamera sollen nicht
         // scheitern, sondern nehmen, was da ist.
         facingMode: { ideal: facing },
-        width:  { ideal: 2560 },
-        height: { ideal: 1440 },
+        // Hoch ansetzen: Kassenschrift ist fein, und der Browser gibt
+        // sonst gern eine bequeme kleine Auflösung zurück.
+        width:  { ideal: 4096 },
+        height: { ideal: 2160 },
       },
       audio: false,
     });
@@ -50,7 +52,55 @@ export async function start(video, { preferred = 'environment' } = {}) {
   video.setAttribute('playsinline', '');
   video.muted = true;
   await video.play().catch(() => {});
+  await maximise();
   return track;
+}
+
+/**
+ * Holt aus der Kamera, was sie hergibt: höchste Auflösung und
+ * fortlaufender Autofokus. Ohne das liefert der Browser gern eine
+ * bequeme kleine Auflösung mit festem Fokus — und Kassenbons werden
+ * unlesbar, weil genau die feine Schrift verlorengeht.
+ */
+async function maximise() {
+  const caps = track?.getCapabilities?.();
+  if (!caps) return;
+
+  const wanted = {};
+  if (caps.width?.max)  wanted.width  = { ideal: caps.width.max };
+  if (caps.height?.max) wanted.height = { ideal: caps.height.max };
+
+  const advanced = [];
+  if (caps.focusMode?.includes('continuous')) advanced.push({ focusMode: 'continuous' });
+  if (caps.exposureMode?.includes('continuous')) advanced.push({ exposureMode: 'continuous' });
+  if (advanced.length) wanted.advanced = advanced;
+
+  try {
+    await track.applyConstraints(wanted);
+  } catch { /* Gerät kann es nicht — dann eben mit dem, was läuft */ }
+}
+
+/**
+ * Auf einen Punkt scharfstellen. x und y sind Anteile 0…1 im Bild.
+ * @returns {boolean} ob das Gerät das kann
+ */
+export async function focusAt(x, y) {
+  const caps = track?.getCapabilities?.();
+  if (!caps?.focusMode?.includes('single-shot')) return false;
+  try {
+    const advanced = [{ focusMode: 'single-shot' }];
+    if (caps.pointsOfInterest) advanced[0].pointsOfInterest = [{ x, y }];
+    await track.applyConstraints({ advanced });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Reicht die aktuelle Auflösung für einen Kassenbon? */
+export function resolution() {
+  const settings = track?.getSettings?.() || {};
+  return { width: settings.width || 0, height: settings.height || 0 };
 }
 
 export async function stop() {
@@ -90,10 +140,21 @@ export async function setTorch(on) {
 export async function shoot(video) {
   if (!track) throw new Error('Die Kamera läuft nicht.');
 
-  // Volles Sensorbild, wo der Browser es hergibt.
+  // Volles Sensorbild, wo der Browser es hergibt — das ist der
+  // entscheidende Unterschied zum Videobild, das für feine Kassenschrift
+  // meist zu grob ist.
   if (window.ImageCapture) {
     try {
-      const blob = await new window.ImageCapture(track).takePhoto();
+      const capture = new window.ImageCapture(track);
+      let options;
+      try {
+        const photo = await capture.getPhotoCapabilities();
+        if (photo?.imageWidth?.max) {
+          options = { imageWidth: photo.imageWidth.max, imageHeight: photo.imageHeight?.max };
+        }
+      } catch { /* ohne Angabe nimmt der Browser seine Vorgabe */ }
+
+      const blob = await capture.takePhoto(options);
       if (blob?.size > 0) return new File([blob], 'beleg.jpg', { type: blob.type || 'image/jpeg' });
     } catch { /* fällt unten auf das Videobild zurück */ }
   }

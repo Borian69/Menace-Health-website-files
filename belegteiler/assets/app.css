@@ -450,9 +450,40 @@ body[data-view="settings"] #view-settings { display: flex; animation: viewIn .28
   color: rgba(255, 255, 255, .6);
 }
 
+/* Punkt, auf den scharfgestellt wird */
+.cam-focus {
+  position: absolute;
+  width: 70px; height: 70px;
+  margin: -35px 0 0 -35px;
+  border: 2px solid var(--accent-bright);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+}
+.cam-focus.run { animation: focusRing .8s var(--ease); }
+@keyframes focusRing {
+  0%   { transform: scale(1.5); opacity: 0; }
+  25%  { transform: scale(1);   opacity: 1; }
+  100% { transform: scale(.92); opacity: 0; }
+}
+
+/* Aufblitzen beim Auslösen */
+.cam-flash {
+  position: absolute; inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+.cam-flash.run { animation: camFlash .34s ease-out; }
+@keyframes camFlash {
+  0%   { opacity: .85; }
+  100% { opacity: 0; }
+}
+
 /* ── Scan ────────────────────────────────────────────────── */
 
 .scan-stage {
+  position: relative;          /* Bezug für die Ablage weiter unten */
   flex: 1;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -470,6 +501,64 @@ body[data-view="settings"] #view-settings { display: flex; animation: viewIn .28
   box-shadow: 0 30px 70px -30px rgba(0,0,0,.9);
 }
 .scan-frame img { width: 100%; height: 100%; object-fit: cover; opacity: .62; }
+
+/* Das Foto wird nach der Aufnahme herausgezogen. Als eigene Klasse,
+   damit sich die Animation bei jeder neuen Aufnahme neu auslösen lässt —
+   ein Element spielt dieselbe Animation sonst nur ein einziges Mal. */
+.scan-frame.pull { animation: pullOut .55s cubic-bezier(.18, .9, .3, 1.05); }
+@keyframes pullOut {
+  0%   { transform: translateY(140px) scale(.62) rotate(-4deg); opacity: 0; }
+  60%  { opacity: 1; }
+  100% { transform: none; opacity: 1; }
+}
+
+/* … und wandert am Ende in die Ablage. */
+body.filing .scan-frame {
+  animation: fileAway .62s cubic-bezier(.5, -0.1, .55, 1) forwards;
+}
+@keyframes fileAway {
+  0%   { transform: none; opacity: 1; }
+  35%  { transform: translate(calc(var(--dx) * .3), calc(var(--dy) * -.12)) scale(1.04) rotate(3deg); }
+  100% { transform: translate(var(--dx), var(--dy)) scale(.08) rotate(9deg); opacity: .15; }
+}
+body.filing .scan-beam,
+body.filing .scan-corners,
+body.filing .scan-status { opacity: 0; transition: opacity .25s; }
+
+/* ── Ablage ──────────────────────────────────────────────── */
+
+.folder {
+  position: absolute;
+  bottom: calc(var(--safe-b) + 26px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76px;
+  display: flex; flex-direction: column; align-items: center;
+  opacity: 0;
+  transition: opacity .3s;
+}
+/* Die Ablage steht schon während der Erkennung bereit — sie soll nicht
+   erst auftauchen, wenn der Beleg bereits unterwegs zu ihr ist. */
+body[data-view="scan"] .folder { opacity: 1; }
+body.scan-failed .folder { opacity: 0; }
+.folder svg { width: 62px; height: 52px; stroke: none; }
+.folder-back  { fill: var(--accent-deep); }
+.folder-front { fill: var(--accent); }
+.folder.bump svg { animation: folderBump .5s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes folderBump {
+  0%   { transform: scale(1) translateY(0); }
+  35%  { transform: scale(1.18) translateY(-5px); }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.folder-count {
+  margin-top: 7px;
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--accent-bright);
+  font-variant-numeric: tabular-nums;
+}
+.folder.bump .folder-count { animation: pop .4s cubic-bezier(.2, 1.6, .4, 1); }
 
 .scan-beam {
   position: absolute; left: 0; right: 0; height: 42%;

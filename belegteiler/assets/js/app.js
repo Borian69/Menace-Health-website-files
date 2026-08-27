@@ -155,6 +155,11 @@ async function openCamera() {
   torch.hidden = !camera.hasTorch();
   torch.classList.remove('on');
   $('#btn-cam-shoot').disabled = false;
+
+  const { width, height } = camera.resolution();
+  $('#cam-hint').textContent = Math.max(width, height) < 1600
+    ? `Achtung: Die Kamera liefert nur ${width}×${height}. Für Kassenschrift ist das knapp — näher rangehen.`
+    : 'Bon ganz ins Bild, von oben fotografieren. Antippen stellt scharf.';
 }
 
 async function closeCamera(view = 'home') {
@@ -167,8 +172,13 @@ async function shootPhoto() {
   const button = $('#btn-cam-shoot');
   button.disabled = true;
   try {
+    // Erst scharfstellen, dann auslösen — sonst landet gern das Bild
+    // vor dem Fokus auf dem Weg zur Erkennung.
+    if (await camera.focusAt(0.5, 0.5)) await new Promise((r) => setTimeout(r, 420));
+
     const file = await camera.shoot($('#cam-video'));
-    cue.tick();
+    flash();
+    cue.shutter();
     await camera.stop();
     handleFiles([file]);
   } catch (error) {
@@ -177,17 +187,83 @@ async function shootPhoto() {
   }
 }
 
+/** Kurzes Aufblitzen wie beim Auslösen einer Kamera. */
+function flash() {
+  const node = $('#cam-flash');
+  node.classList.remove('run');
+  void node.offsetWidth;
+  node.classList.add('run');
+}
+
+/** Antippen der Vorschau stellt auf diesen Punkt scharf. */
+async function focusTap(event) {
+  const stage = $('#cam-stage');
+  const box = stage.getBoundingClientRect();
+  const x = (event.clientX - box.left) / box.width;
+  const y = (event.clientY - box.top) / box.height;
+
+  const ring = $('#cam-focus');
+  ring.style.left = `${event.clientX - box.left}px`;
+  ring.style.top = `${event.clientY - box.top}px`;
+  ring.classList.remove('run');
+  void ring.offsetWidth;
+  ring.classList.add('run');
+
+  await camera.focusAt(x, y);
+}
+
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Das aufgenommene Bild wandert sichtbar zu den anderen in die Ablage.
+ * Die Strecke wird gemessen und nicht geraten, damit die Bewegung auf
+ * jedem Bildschirm genau im Ordner endet.
+ * @returns {Promise<void>} erfüllt, wenn das Bild abgelegt ist
+ */
+function fileIntoFolder() {
+  const frame = $('#scan-frame');
+  const folder = $('#scan-folder');
+  // Der Zähler springt erst hoch, wenn der Beleg ankommt.
+  const arrive = () => {
+    $('#folder-count').textContent = String(bill.receipts.length);
+    pop(folder, 'bump');
+  };
+
+  if (reduceMotion()) {
+    document.body.classList.add('filing');
+    arrive();
+    cue.filed();
+    return new Promise((resolve) => setTimeout(resolve, 260));
+  }
+
+  const from = frame.getBoundingClientRect();
+  const to = folder.getBoundingClientRect();
+  frame.style.setProperty('--dx', `${(to.left + to.width / 2) - (from.left + from.width / 2)}px`);
+  // Zielpunkt ist das Ordnerblatt, nicht die Mitte samt Zähler darunter.
+  frame.style.setProperty('--dy', `${(to.top + 26) - (from.top + from.height / 2)}px`);
+
+  document.body.classList.add('filing');
+  setTimeout(() => cue.filed(), 260);
+  setTimeout(arrive, 470);
+
+  return new Promise((resolve) => setTimeout(resolve, 720));
+}
+
 async function handleFiles(fileList) {
   const files = [...fileList].filter((file) => file.type.startsWith('image/'));
   if (!files.length) return;
 
-  document.body.classList.remove('scan-failed');
+  document.body.classList.remove('scan-failed', 'filing');
+  $('#scan-folder').classList.remove('bump');
+  // Stand der Ablage vor diesem Beleg — er zählt gleich sichtbar hoch.
+  $('#folder-count').textContent = String(bill && !bill.done ? bill.receipts.length : 0);
   $('#scan-error').hidden = true;
   $('#scan-step').textContent = 'Beleg wird vorbereitet …';
   $('#scan-substep').textContent = files.length > 1
     ? `${files.length} Aufnahmen werden zusammengeführt.`
     : 'Das Bild wird für die Erkennung geschärft.';
   showView('scan');
+  pop($('#scan-frame'), 'pull');      // das Bild wird hervorgezogen
 
   scanAbort?.abort();
   scanAbort = new AbortController();
@@ -213,7 +289,10 @@ async function handleFiles(fileList) {
     persist();
     recordUsage(parsed.usage);
 
+    // Erst wandert der Beleg zu den anderen in die Ablage, dann kommt
+    // der Aufschlag mit dem Betrag — Anlauf und Auflösung nacheinander.
     const sums = totals(bill);
+    await fileIntoFolder();
     await celebrate({
       label: added.length > 1 ? `${added.length} Belege erfasst` : `${added[0]?.store || 'Beleg'} erfasst`,
       amount: euro(sums.parents),
@@ -716,6 +795,7 @@ function wire() {
 
   // Kamera-Ansicht
   $('#btn-cam-shoot').addEventListener('click', shootPhoto);
+  $('#cam-stage').addEventListener('click', focusTap);
   $('#btn-cam-close').addEventListener('click', () => closeCamera('home'));
   $('#btn-cam-flip').addEventListener('click', async () => {
     try {

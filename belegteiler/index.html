@@ -77,10 +77,12 @@
 
 <!-- ══════════════════ KAMERA ══════════════════ -->
 <section class="view" id="view-camera">
-  <div class="cam-stage">
+  <div class="cam-stage" id="cam-stage">
     <video id="cam-video" playsinline muted autoplay></video>
     <div class="cam-guide" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-    <p class="cam-hint" id="cam-hint">Bon ganz ins Bild, von oben fotografieren.</p>
+    <span class="cam-focus" id="cam-focus" aria-hidden="true"></span>
+    <span class="cam-flash" id="cam-flash" aria-hidden="true"></span>
+    <p class="cam-hint" id="cam-hint">Bon ganz ins Bild, von oben fotografieren. Antippen stellt scharf.</p>
   </div>
   <div class="cam-bar">
     <button class="cam-side" id="btn-cam-torch" aria-label="Licht" hidden>
@@ -97,7 +99,7 @@
 <!-- ══════════════════ SCAN ══════════════════ -->
 <section class="view" id="view-scan">
   <div class="scan-stage">
-    <div class="scan-frame">
+    <div class="scan-frame" id="scan-frame">
       <img id="scan-preview" alt="">
       <div class="scan-beam" aria-hidden="true"></div>
       <div class="scan-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
@@ -106,6 +108,15 @@
       <div class="spinner" id="scan-spinner" aria-hidden="true"></div>
       <p id="scan-step">Beleg wird gelesen …</p>
       <p class="scan-sub" id="scan-substep">Positionen, Preise und Kategorien werden erkannt.</p>
+    </div>
+
+    <!-- Ablage, in die der fertige Beleg wandert -->
+    <div class="folder" id="scan-folder" aria-hidden="true">
+      <svg viewBox="0 0 48 40">
+        <path class="folder-back" d="M3 9a3 3 0 0 1 3-3h11l4 5h18a3 3 0 0 1 3 3v20a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V9Z"/>
+        <path class="folder-front" d="M3 17h42v17a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V17Z"/>
+      </svg>
+      <span class="folder-count" id="folder-count">0</span>
     </div>
     <div class="scan-error" id="scan-error" hidden>
       <h3 id="scan-error-title">Das hat nicht geklappt</h3>
