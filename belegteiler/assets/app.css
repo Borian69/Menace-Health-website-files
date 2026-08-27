@@ -697,6 +697,19 @@ body.scan-failed .scan-status { display: none; }
 
 .about { font-size: 13.5px; color: var(--faint); line-height: 1.6; margin-bottom: 16px; }
 
+.test-result {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13.5px;
+  line-height: 1.5;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--muted);
+}
+.test-result.ok   { border-color: var(--accent-line); background: var(--accent-dim); color: var(--accent-bright); }
+.test-result.fail { border-color: rgba(232,112,94,.35); background: rgba(232,112,94,.1); color: #F0B5AA; }
+
 .usage-card {
   padding: 16px 18px;
   border-radius: var(--r);

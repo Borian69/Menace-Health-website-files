@@ -5,8 +5,8 @@ import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCen
 import { CATEGORIES } from './categories.js';
 import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage } from './store.js';
 import { prepareImage } from './image.js';
-import { scanReceipt } from './scan.js';
-import { PROVIDERS, provider } from './providers.js';
+import { scanReceipt, testConnection } from './scan.js';
+import { PROVIDERS, provider, detectProvider } from './providers.js';
 import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
@@ -380,6 +380,7 @@ function openSettings() {
   $('#set-pay').value   = settings.payTo;
   $('#set-show-mine').checked = settings.showMine;
   applyMode();
+  hideTestResult();
   renderUsage();
   showView('settings');
 }
@@ -438,10 +439,50 @@ function applyProvider() {
     if (chosen && !api.models.some((m) => m.id === chosen)) {
       node.append(el('option', { value: chosen, text: `${chosen} (eigene Angabe)` }));
     }
-    node.value = chosen && [...node.options].some((o) => o.value === chosen) ? chosen : api.models[0].id;
+    node.value = chosen && [...node.options].some((o) => o.value === chosen) ? chosen : api.defaultModel;
   }
 
   $('#helper-field').hidden = !$('#set-resolve').checked;
+}
+
+function hideTestResult() {
+  $('#test-result').hidden = true;
+  $('#test-result').className = 'test-result';
+}
+
+let testAbort = null;
+async function runConnectionTest() {
+  const button = $('#btn-test');
+  const result = $('#test-result');
+
+  if (!isConfigured(settings)) {
+    result.hidden = false;
+    result.className = 'test-result fail';
+    result.textContent = 'Erst einen API-Key eintragen.';
+    return;
+  }
+
+  testAbort?.abort();
+  testAbort = new AbortController();
+
+  button.disabled = true;
+  button.textContent = 'Wird geprüft …';
+  result.hidden = false;
+  result.className = 'test-result';
+  result.textContent = `Frage ${$('#set-model').selectedOptions[0]?.textContent || settings.model} an …`;
+
+  try {
+    await testConnection(settings, testAbort.signal);
+    result.className = 'test-result ok';
+    result.textContent = 'Alles bereit — Schlüssel und Modell antworten. Du kannst scannen.';
+  } catch (error) {
+    if (error.name === 'AbortError') return;
+    result.className = 'test-result fail';
+    result.textContent = error.message || 'Der Test ist fehlgeschlagen.';
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Verbindung testen';
+  }
 }
 
 function readSettingsForm() {
@@ -472,11 +513,35 @@ function switchProvider() {
   settings = saveSettings({ provider: $('#set-provider').value });
   const api = provider(settings.provider);
   if (!api.models.some((m) => m.id === settings.model)) {
-    settings = saveSettings({ model: api.models[0].id, helperModel: api.models[0].id });
+    settings = saveSettings({ model: api.defaultModel, helperModel: api.defaultModel });
   }
   applyProvider();
   $('#set-key').value = currentKey();
+  hideTestResult();
   readSettingsForm();
+}
+
+/* Am Präfix des Schlüssels lässt sich der Anbieter eindeutig ablesen.
+   Wer einen OpenRouter-Key einfügt, meint OpenRouter — dann stellt die
+   App Anbieter und Modell selbst um, statt es zu verlangen. */
+function adoptKey() {
+  const key = $('#set-key').value.trim();
+  const detected = detectProvider(key);
+  if (!detected || detected === settings.provider) return false;
+
+  const api = provider(detected);
+  settings = saveSettings({
+    provider: detected,
+    [detected === 'anthropic' ? 'apiKey' : 'openrouterKey']: key,
+    model: api.defaultModel,
+    helperModel: api.defaultModel,
+  });
+
+  $('#set-provider').value = detected;
+  applyProvider();
+  hideTestResult();
+  toast(`Auf ${api.label} umgestellt.`);
+  return true;
 }
 
 /* ── Verdrahtung ─────────────────────────────────────────── */
@@ -534,9 +599,17 @@ function wire() {
   // Einstellungen
   $('#btn-settings-back').addEventListener('click', () => { showView('home'); renderHome(); });
   $('#set-provider').addEventListener('change', switchProvider);
-  $('#settings-form').addEventListener('input', readSettingsForm);
+  $('#btn-test').addEventListener('click', runConnectionTest);
+  $('#settings-form').addEventListener('input', (event) => {
+    // Erkennt der Schlüssel seinen Anbieter selbst, ist das Formular
+    // danach schon gespeichert — sonst normal übernehmen.
+    if (event.target.id === 'set-key' && adoptKey()) return;
+    if (event.target.id === 'set-key') hideTestResult();
+    readSettingsForm();
+  });
   $('#settings-form').addEventListener('change', (event) => {
     if (event.target.id === 'set-provider') return;   // switchProvider hat schon gespeichert
+    if (event.target.id === 'set-model') hideTestResult();
     readSettingsForm();
   });
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());

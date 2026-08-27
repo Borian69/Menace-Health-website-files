@@ -30,6 +30,7 @@ const anthropic = {
   keyHint: 'Key auf console.anthropic.com erstellen. Guthaben nötig, eine kostenlose Stufe gibt es dort nicht.',
   needsJsonFallback: false,
 
+  defaultModel: 'claude-sonnet-5',
   models: [
     { id: 'claude-haiku-4-5', label: 'Claude Haiku 4.5 · ~1 Cent', note: 'nur einfache Bons' },
     { id: 'claude-sonnet-5',  label: 'Claude Sonnet 5 · ~3 Cent' },
@@ -54,7 +55,7 @@ const anthropic = {
       model,
       max_tokens: maxTokens,
       system,
-      tools: [{ name: tool.name, description: tool.description, input_schema: tool.schema }],
+      ...(tool ? { tools: [{ name: tool.name, description: tool.description, input_schema: tool.schema }] } : {}),
       messages: [{ role: 'user', content }],
     };
   },
@@ -99,11 +100,12 @@ const openrouter = {
   // Alle hier gelisteten Modelle können Bilder lesen und Funktionen
   // aufrufen. Centangaben sind Schätzungen für einen üblichen Bon;
   // abgerechnet wird, was OpenRouter je Anfrage zurückmeldet.
+  defaultModel: 'google/gemma-4-31b-it:free',
   models: [
-    { id: 'openrouter/free',                          label: 'Gratis · automatische Auswahl', note: 'OpenRouter wählt ein freies Modell' },
     { id: 'google/gemma-4-31b-it:free',               label: 'Gemma 4 31B · gratis' },
     { id: 'google/gemma-4-26b-a4b-it:free',           label: 'Gemma 4 26B · gratis' },
     { id: 'minimax/minimax-m3:free',                  label: 'MiniMax M3 · gratis' },
+    { id: 'openrouter/free',                          label: 'Gratis · automatische Auswahl', note: 'Modell wechselt, Ergebnis schwankt' },
     { id: 'qwen/qwen3.7-flash',                       label: 'Qwen3.7 Flash · ~0,03 Cent' },
     { id: 'mistralai/mistral-small-3.2-24b-instruct', label: 'Mistral Small 3.2 · ~0,05 Cent' },
     { id: 'openai/gpt-5-nano',                        label: 'GPT-5 nano · ~0,06 Cent' },
@@ -132,10 +134,12 @@ const openrouter = {
         { role: 'system', content: system },
         { role: 'user', content },
       ],
-      tools: [{ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.schema } }],
       // Nicht erzwungen: nicht jedes Modell auf OpenRouter beherrscht
       // tool_choice. Kommt kein Funktionsaufruf, greift der JSON-Notweg.
-      tool_choice: 'auto',
+      ...(tool ? {
+        tools: [{ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.schema } }],
+        tool_choice: 'auto',
+      } : {}),
     };
   },
 
@@ -166,6 +170,14 @@ const openrouter = {
 export const PROVIDERS = { anthropic, openrouter };
 
 export const provider = (id) => PROVIDERS[id] || PROVIDERS.openrouter;
+
+/** Erkennt am Präfix, zu welchem Anbieter ein Schlüssel gehört. */
+export function detectProvider(key) {
+  const value = (key || '').trim();
+  if (/^sk-or-/i.test(value)) return 'openrouter';
+  if (/^sk-ant-/i.test(value)) return 'anthropic';
+  return null;
+}
 
 const asObject = (value) => (typeof value === 'string' ? JSON.parse(value) : value);
 

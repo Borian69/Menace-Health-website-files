@@ -197,7 +197,26 @@ async function call({ settings, model, system, text, images, tool, signal }) {
     throw failure;
   }
 
+  // Beim Probeaufruf zählt nur, dass die Antwort ankam.
+  if (!tool) return { args: null, text: '', usage: { cents: 0 } };
   return api.parse(payload, tool);
+}
+
+/**
+ * Kurzer Probeaufruf: prüft Schlüssel, Modell und Verbindung, bevor der
+ * erste Beleg dafür herhalten muss. Reiner Text, kostet praktisch nichts.
+ */
+export async function testConnection(settings, signal) {
+  await call({
+    settings,
+    model: settings.model,
+    system: 'Antworte ausschließlich mit dem Wort OK.',
+    text: 'Bereit?',
+    images: [],
+    tool: null,
+    signal,
+  });
+  return true;
 }
 
 /** Ohne Klär-Durchgang: eine brauchbare Suchanfrage geht auch so. */
