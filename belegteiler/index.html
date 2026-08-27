@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Belegteiler</title>
+<meta name="description" content="Kassenbon fotografieren, Positionen automatisch erkennen, aufteilen und als schöne Übersicht verschicken.">
+<meta name="theme-color" content="#0A0908">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Belegteiler">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body data-view="home">
+
+<!-- ══════════════════ HOME ══════════════════ -->
+<section class="view" id="view-home">
+  <header class="topbar">
+    <div class="wordmark">
+      <span class="wordmark-main">Belegteiler</span>
+      <span class="wordmark-sub">Einkauf abrechnen</span>
+    </div>
+    <button class="icon-btn" id="btn-settings" aria-label="Einstellungen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 13a7.6 7.6 0 0 0 .1-1 7.6 7.6 0 0 0-.1-1l2-1.5-2-3.4-2.3.9a7.5 7.5 0 0 0-1.7-1l-.4-2.5h-4l-.4 2.5c-.6.2-1.2.6-1.7 1l-2.3-1-2 3.5L4.6 11a7.6 7.6 0 0 0 0 2l-2 1.5 2 3.4 2.3-.9c.5.4 1.1.8 1.7 1l.4 2.5h4l.4-2.5c.6-.2 1.2-.6 1.7-1l2.3.9 2-3.4-2-1.5Z"/></svg>
+    </button>
+  </header>
+
+  <div class="scroll">
+    <div class="hero">
+      <div class="hero-glow" aria-hidden="true"></div>
+      <button class="capture" id="btn-capture">
+        <span class="capture-ring" aria-hidden="true"></span>
+        <svg class="capture-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2c.5 0 1-.3 1.3-.7l.7-1.1c.3-.4.8-.7 1.3-.7h2c.5 0 1 .3 1.3.7l.7 1.1c.3.4.8.7 1.3.7h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-8Z"/>
+          <circle cx="12" cy="12.5" r="3.6"/>
+        </svg>
+        <span class="capture-label">Beleg scannen</span>
+      </button>
+      <p class="hero-hint" id="hero-hint">Kamera öffnen und den Kassenbon abfotografieren.<br>Mehrere Bons dürfen nebeneinander liegen.</p>
+      <button class="ghost-btn" id="btn-pick">Bild aus der Galerie wählen</button>
+    </div>
+
+    <div class="section" id="history-section" hidden>
+      <div class="section-head">
+        <h2>Letzte Abrechnungen</h2>
+        <button class="link-btn" id="btn-clear-history">Leeren</button>
+      </div>
+      <ul class="history" id="history-list"></ul>
+    </div>
+
+    <div class="setup-card" id="setup-card" hidden>
+      <div class="setup-badge">Einrichtung</div>
+      <p>Damit Belege automatisch gelesen werden können, fehlt noch der Zugang zur Erkennung.</p>
+      <button class="primary-btn" id="btn-setup">Jetzt einrichten</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ SCAN ══════════════════ -->
+<section class="view" id="view-scan">
+  <div class="scan-stage">
+    <div class="scan-frame">
+      <img id="scan-preview" alt="">
+      <div class="scan-beam" aria-hidden="true"></div>
+      <div class="scan-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="scan-status">
+      <div class="spinner" id="scan-spinner" aria-hidden="true"></div>
+      <p id="scan-step">Beleg wird gelesen …</p>
+      <p class="scan-sub" id="scan-substep">Positionen, Preise und Kategorien werden erkannt.</p>
+    </div>
+    <div class="scan-error" id="scan-error" hidden>
+      <h3 id="scan-error-title">Das hat nicht geklappt</h3>
+      <p id="scan-error-msg"></p>
+      <div class="row-btns">
+        <button class="secondary-btn" id="btn-scan-retry">Nochmal versuchen</button>
+        <button class="ghost-btn" id="btn-scan-manual">Manuell erfassen</button>
+      </div>
+      <button class="link-btn" id="btn-scan-back">Abbrechen</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ REVIEW ══════════════════ -->
+<section class="view" id="view-review">
+  <header class="topbar">
+    <button class="icon-btn" id="btn-review-back" aria-label="Zurück">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </button>
+    <div class="topbar-title">
+      <span id="review-store">Beleg</span>
+      <span class="topbar-sub" id="review-meta"></span>
+    </div>
+    <button class="icon-btn" id="btn-add-receipt" aria-label="Weiteren Beleg hinzufügen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </header>
+
+  <div class="scroll" id="review-scroll">
+    <div class="assign-bar">
+      <div class="assign-hint">Häkchen setzen heißt <b>„das ist meins“</b> — die Position wird von der Summe der Eltern abgezogen. Ein Tipp auf den Namen öffnet die Bearbeitung.</div>
+      <div class="assign-actions">
+        <button class="chip-btn" id="btn-all-parents">Alles für Eltern</button>
+        <button class="chip-btn" id="btn-all-mine">Alles meins</button>
+      </div>
+    </div>
+
+    <div class="warn-card" id="sum-warning" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 9v5M12 17.5v.5"/><path d="M10.3 3.9 2.6 17.4A2 2 0 0 0 4.3 20.4h15.4a2 2 0 0 0 1.7-3l-7.7-13.5a2 2 0 0 0-3.4 0Z"/></svg>
+      <div><b>Summe weicht ab.</b> <span id="sum-warning-text"></span></div>
+    </div>
+
+    <div id="category-list"></div>
+
+    <button class="add-item-btn" id="btn-add-item">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      Position hinzufügen
+    </button>
+
+    <div class="spacer"></div>
+  </div>
+
+  <div class="tally">
+    <div class="tally-rows">
+      <div class="tally-row">
+        <span>Deine Eltern zahlen</span>
+        <strong id="tally-parents">0,00 €</strong>
+      </div>
+      <div class="tally-row muted">
+        <span>Davon meins</span>
+        <span id="tally-mine">0,00 €</span>
+      </div>
+      <div class="tally-row muted">
+        <span>Beleg gesamt</span>
+        <span id="tally-total">0,00 €</span>
+      </div>
+    </div>
+    <button class="primary-btn" id="btn-to-summary">Übersicht erstellen</button>
+  </div>
+</section>
+
+<!-- ══════════════════ SUMMARY ══════════════════ -->
+<section class="view" id="view-summary">
+  <header class="topbar">
+    <button class="icon-btn" id="btn-summary-back" aria-label="Zurück">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </button>
+    <div class="topbar-title"><span>Übersicht</span><span class="topbar-sub">Bereit zum Verschicken</span></div>
+    <span class="icon-btn-placeholder"></span>
+  </header>
+
+  <div class="scroll">
+    <div class="paper-wrap">
+      <article class="paper" id="paper"></article>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="tally">
+    <div class="share-grid">
+      <button class="primary-btn wide" id="btn-share">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M12 3 8 7M12 3l4 4"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></svg>
+        Als Bild teilen
+      </button>
+      <button class="secondary-btn" id="btn-copy">Text kopieren</button>
+      <button class="secondary-btn" id="btn-download">Bild speichern</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════ SETTINGS ══════════════════ -->
+<section class="view" id="view-settings">
+  <header class="topbar">
+    <button class="icon-btn" id="btn-settings-back" aria-label="Zurück">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5 8 12l7 7"/></svg>
+    </button>
+    <div class="topbar-title"><span>Einstellungen</span></div>
+    <span class="icon-btn-placeholder"></span>
+  </header>
+
+  <div class="scroll">
+    <form id="settings-form" autocomplete="off">
+      <div class="section">
+        <div class="section-head"><h2>Erkennung</h2></div>
+        <div class="field">
+          <label for="set-mode">Verbindung</label>
+          <select id="set-mode" name="mode">
+            <option value="direct">Direkt mit eigenem API-Key</option>
+            <option value="proxy">Über eigenen Server (Proxy)</option>
+          </select>
+          <p class="field-hint" id="mode-hint"></p>
+        </div>
+        <div class="field" data-mode="direct">
+          <label for="set-key">Anthropic API-Key</label>
+          <input type="password" id="set-key" name="apiKey" placeholder="sk-ant-…" spellcheck="false">
+          <p class="field-hint">Wird nur auf diesem Gerät gespeichert und direkt an die Claude-API geschickt. Key auf <b>console.anthropic.com</b> erstellen.</p>
+        </div>
+        <div class="field" data-mode="proxy">
+          <label for="set-proxy">Proxy-URL</label>
+          <input type="url" id="set-proxy" name="proxyUrl" placeholder="https://…/api/scan" spellcheck="false">
+          <p class="field-hint">Endpunkt, der den API-Key serverseitig hält. Siehe <b>api/scan.js</b> im Projekt.</p>
+        </div>
+        <div class="field">
+          <label for="set-model">Modell</label>
+          <select id="set-model" name="model">
+            <option value="claude-haiku-4-5">Claude Haiku 4.5 — am günstigsten</option>
+            <option value="claude-sonnet-5">Claude Sonnet 5 — genauer</option>
+            <option value="claude-opus-5">Claude Opus 5 — beste Erkennung</option>
+          </select>
+          <p class="field-hint">Werden Positionen oft falsch gelesen, ein Modell höher gehen. Die App warnt ohnehin, wenn die Summe der Positionen nicht zur aufgedruckten Endsumme passt.</p>
+        </div>
+        <div class="usage-card" id="usage-card" hidden>
+          <div class="usage-figure" id="usage-amount">0 Cent</div>
+          <div class="usage-note" id="usage-note"></div>
+          <button type="button" class="link-btn" id="btn-reset-usage">Zurücksetzen</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>Übersicht</h2></div>
+        <div class="field">
+          <label for="set-from">Dein Name</label>
+          <input type="text" id="set-from" name="fromName" placeholder="z. B. Florian">
+        </div>
+        <div class="field">
+          <label for="set-to">Für wen</label>
+          <input type="text" id="set-to" name="toName" placeholder="z. B. Mama &amp; Papa">
+        </div>
+        <div class="field">
+          <label for="set-pay">Zahlungshinweis</label>
+          <input type="text" id="set-pay" name="payTo" placeholder="IBAN, PayPal oder „bar“">
+          <p class="field-hint">Steht unten auf der Übersicht, damit klar ist, wohin überwiesen wird.</p>
+        </div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-show-mine" name="showMine">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Eigene Positionen mit anzeigen<small>Sonst tauchen nur die Positionen der Eltern auf.</small></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>App</h2></div>
+        <p class="about">Belegteiler speichert alles nur lokal auf diesem Gerät. Belegfotos werden ausschließlich für die Erkennung übertragen und nicht gespeichert.</p>
+        <button type="button" class="secondary-btn" id="btn-reset">Alle Daten löschen</button>
+      </div>
+      <div class="spacer"></div>
+    </form>
+  </div>
+</section>
+
+<!-- ══════════════════ ITEM EDITOR ══════════════════ -->
+<div class="sheet-backdrop" id="sheet-backdrop" hidden>
+  <div class="sheet" id="item-sheet" role="dialog" aria-modal="true" aria-label="Position bearbeiten">
+    <div class="sheet-grip" aria-hidden="true"></div>
+    <h3 id="sheet-title">Position bearbeiten</h3>
+    <div class="field">
+      <label for="item-name">Bezeichnung</label>
+      <input type="text" id="item-name" autocomplete="off">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="item-qty">Menge</label>
+        <input type="text" id="item-qty" inputmode="decimal" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="item-price">Preis gesamt</label>
+        <input type="text" id="item-price" inputmode="decimal" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label for="item-cat">Kategorie</label>
+      <select id="item-cat"></select>
+    </div>
+    <div class="field">
+      <label class="switch">
+        <input type="checkbox" id="item-mine">
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-label">Das ist meins<small>Wird von der Summe der Eltern abgezogen.</small></span>
+      </label>
+    </div>
+    <div class="sheet-actions">
+      <button class="ghost-btn danger" id="btn-item-delete">Löschen</button>
+      <div class="row-btns">
+        <button class="secondary-btn" id="btn-item-cancel">Abbrechen</button>
+        <button class="primary-btn" id="btn-item-save">Speichern</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
+<input type="file" id="file-gallery" accept="image/*" multiple hidden>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>
