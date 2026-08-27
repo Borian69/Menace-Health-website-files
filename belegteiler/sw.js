@@ -3,7 +3,7 @@
 
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
-const CACHE = 'belegteiler-v11';
+const CACHE = 'belegteiler-v12';
 
 const SHELL = [
   './',
@@ -21,7 +21,6 @@ const SHELL = [
   'assets/js/canvas.js',
   'assets/js/categories.js',
   'assets/js/feedback.js',
-  'assets/js/camera.js',
   'assets/js/wav.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',

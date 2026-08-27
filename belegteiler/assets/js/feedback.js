@@ -239,15 +239,6 @@ export const cue = {
     buzz([0, 560, 14, 40, 14, 40, 34]);
   },
 
-  /** Auslösen der Kamera — trockener Verschlussklang. */
-  shutter() {
-    play('shutter', [
-      { freq: 2400, gain: 0.14, duration: 0.045, partial: 1.5 },
-      { freq: 1500, at: 0.05, gain: 0.10, duration: 0.06, partial: 1.5 },
-    ]);
-    buzz(16);
-  },
-
   /** Beleg wandert in die Ablage. */
   filed() {
     play('filed', [

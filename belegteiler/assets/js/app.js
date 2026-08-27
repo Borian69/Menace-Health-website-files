@@ -11,7 +11,6 @@ import { createBill, addScan, addReceipt, createItem, totals, printedTotal, grou
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
 import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus, canPickOutput, pickOutput } from './feedback.js';
-import * as camera from './camera.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
 
@@ -116,6 +115,9 @@ function openFromHistory(entry) {
 
 /* ── Kamera & Erkennung ──────────────────────────────────── */
 
+/* Aufgenommen wird mit der Kamera-App des Handys. Die kann alles, was
+   für einen Kassenbon zählt — Autofokus, Belichtung, volle Auflösung —
+   und macht es besser als eine nachgebaute Vorschau im Browser. */
 function requestPhoto(input) {
   unlock();                       // echte Geste — hier darf der Ton aufgehen
   if (!isConfigured(settings)) {
@@ -127,90 +129,7 @@ function requestPhoto(input) {
   input.click();
 }
 
-/* Die App-eigene Kamera. `capture="environment"` am Datei-Feld ist für
-   den Browser nur ein Vorschlag — viele Android-Browser nehmen trotzdem
-   die Frontkamera. Über getUserMedia lässt sich die Rückkamera
-   verbindlich anfordern. Klappt das nicht, bleibt das Datei-Feld. */
-async function openCamera() {
-  unlock();
-  if (!isConfigured(settings)) {
-    toast('Erst die Erkennung einrichten.');
-    openSettings();
-    return;
-  }
-  if (!camera.supported()) { requestPhoto($('#file-camera')); return; }
-
-  showView('camera');
-  try {
-    await camera.start($('#cam-video'));
-  } catch (error) {
-    await camera.stop();
-    showView('home');
-    toast(error.message);
-    requestPhoto($('#file-camera'));   // Notweg über die System-Kamera
-    return;
-  }
-
-  const torch = $('#btn-cam-torch');
-  torch.hidden = !camera.hasTorch();
-  torch.classList.remove('on');
-  $('#btn-cam-shoot').disabled = false;
-
-  const { width, height } = camera.resolution();
-  $('#cam-hint').textContent = Math.max(width, height) < 1600
-    ? `Achtung: Die Kamera liefert nur ${width}×${height}. Für Kassenschrift ist das knapp — näher rangehen.`
-    : 'Bon ganz ins Bild, von oben fotografieren. Antippen stellt scharf.';
-}
-
-async function closeCamera(view = 'home') {
-  await camera.stop();
-  showView(view);
-  if (view === 'home') renderHome();
-}
-
-async function shootPhoto() {
-  const button = $('#btn-cam-shoot');
-  button.disabled = true;
-  try {
-    // Erst scharfstellen, dann auslösen — sonst landet gern das Bild
-    // vor dem Fokus auf dem Weg zur Erkennung.
-    if (await camera.focusAt(0.5, 0.5)) await new Promise((r) => setTimeout(r, 420));
-
-    const file = await camera.shoot($('#cam-video'));
-    flash();
-    cue.shutter();
-    await camera.stop();
-    handleFiles([file]);
-  } catch (error) {
-    button.disabled = false;
-    toast(error.message || 'Die Aufnahme hat nicht geklappt.');
-  }
-}
-
-/** Kurzes Aufblitzen wie beim Auslösen einer Kamera. */
-function flash() {
-  const node = $('#cam-flash');
-  node.classList.remove('run');
-  void node.offsetWidth;
-  node.classList.add('run');
-}
-
-/** Antippen der Vorschau stellt auf diesen Punkt scharf. */
-async function focusTap(event) {
-  const stage = $('#cam-stage');
-  const box = stage.getBoundingClientRect();
-  const x = (event.clientX - box.left) / box.width;
-  const y = (event.clientY - box.top) / box.height;
-
-  const ring = $('#cam-focus');
-  ring.style.left = `${event.clientX - box.left}px`;
-  ring.style.top = `${event.clientY - box.top}px`;
-  ring.classList.remove('run');
-  void ring.offsetWidth;
-  ring.classList.add('run');
-
-  await camera.focusAt(x, y);
-}
+const openCamera = () => requestPhoto($('#file-camera'));
 
 const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -793,26 +712,6 @@ function wire() {
   $('#btn-capture').addEventListener('click', openCamera);
   $('#btn-pick').addEventListener('click',    () => requestPhoto($('#file-gallery')));
 
-  // Kamera-Ansicht
-  $('#btn-cam-shoot').addEventListener('click', shootPhoto);
-  $('#cam-stage').addEventListener('click', focusTap);
-  $('#btn-cam-close').addEventListener('click', () => closeCamera('home'));
-  $('#btn-cam-flip').addEventListener('click', async () => {
-    try {
-      await camera.flip($('#cam-video'));
-      $('#btn-cam-torch').hidden = !camera.hasTorch();
-      $('#btn-cam-torch').classList.remove('on');
-      $('#cam-hint').textContent = camera.facingNow() === 'environment'
-        ? 'Bon ganz ins Bild, von oben fotografieren.'
-        : 'Frontkamera — für Belege ist die Rückkamera schärfer.';
-    } catch (error) {
-      toast(error.message);
-    }
-  });
-  $('#btn-cam-torch').addEventListener('click', async () => {
-    const on = !$('#btn-cam-torch').classList.contains('on');
-    if (await camera.setTorch(on)) $('#btn-cam-torch').classList.toggle('on', on);
-  });
   $('#btn-open-review').addEventListener('click', () => { renderReview(); showView('review'); });
   $('#btn-open-finish').addEventListener('click', openSummary);
   $('#btn-settings').addEventListener('click', openSettings);
