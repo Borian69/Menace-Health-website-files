@@ -172,10 +172,14 @@ async function handleFiles(fileList) {
   }
 }
 
+// Statuscodes, bei denen ein anderes Modell die naheliegende Abhilfe ist.
+const MODEL_TROUBLE = new Set([402, 404, 429, 502, 503, 504]);
+
 function showScanError(error) {
   document.body.classList.add('scan-failed');
   $('#scan-error').hidden = false;
   $('#scan-error-msg').textContent = error.message || 'Unbekannter Fehler.';
+  $('#btn-scan-model').hidden = !MODEL_TROUBLE.has(error.status);
 }
 
 /* ── Review ──────────────────────────────────────────────── */
@@ -635,6 +639,7 @@ function wire() {
 
   // Scan
   $('#btn-scan-retry').addEventListener('click', () => requestPhoto($('#file-camera')));
+  $('#btn-scan-model').addEventListener('click', openSettings);
   $('#btn-scan-back').addEventListener('click', () => { scanAbort?.abort(); showView(bill ? 'review' : 'home'); });
   $('#btn-scan-manual').addEventListener('click', () => {
     if (!bill || bill.done) bill = createBill();

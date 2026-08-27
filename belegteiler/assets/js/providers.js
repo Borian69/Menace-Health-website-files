@@ -76,12 +76,16 @@ const anthropic = {
     return { args, text, usage: { cents: dollars * USD_TO_EUR * 100 } };
   },
 
-  error(status, payload) {
-    const detail = payload?.error?.message || '';
+  error(status, payload, { retryAfter } = {}) {
+    const detail = (payload?.error?.message || '').trim();
+    const quote = detail ? ` Anthropic meldet: „${detail}“` : '';
     if (status === 401) return 'Der Anthropic-Key wurde nicht akzeptiert. Bitte in den Einstellungen prüfen.';
-    if (status === 403) return 'Dieser Key darf das gewählte Modell nicht nutzen.';
-    if (status === 404) return 'Das gewählte Modell ist für diesen Zugang nicht verfügbar.';
-    if (status === 429) return 'Zu viele Anfragen oder Guthaben aufgebraucht. Kurz warten und erneut versuchen.';
+    if (status === 403) return `Dieser Key darf das gewählte Modell nicht nutzen.${quote}`;
+    if (status === 404) return `Das gewählte Modell ist für diesen Zugang nicht verfügbar.${quote}`;
+    if (status === 429) {
+      const wait = retryAfter ? ` Erneut möglich in etwa ${retryAfter} Sekunden.` : '';
+      return `Zu viele Anfragen oder Guthaben aufgebraucht.${wait}${quote}`;
+    }
     return detail;
   },
 };
@@ -154,13 +158,30 @@ const openrouter = {
     return { args, text, usage: { cents: dollars * USD_TO_EUR * 100 } };
   },
 
-  error(status, payload) {
-    const detail = payload?.error?.message || '';
+  error(status, payload, { retryAfter } = {}) {
+    const detail = (payload?.error?.message || '').trim();
+    const meta = payload?.error?.metadata || {};
+    const quote = detail ? ` OpenRouter meldet: „${detail}“` : '';
+
     if (status === 401) return 'Der OpenRouter-Key wurde nicht akzeptiert. Bitte in den Einstellungen prüfen.';
-    if (status === 402) return 'Das Guthaben bei OpenRouter reicht nicht. Ein Modell mit „gratis“ im Namen kommt ohne aus.';
-    if (status === 403) return `OpenRouter hat die Anfrage abgelehnt. ${detail}`.trim();
-    if (status === 404) return 'Dieses Modell gibt es bei OpenRouter nicht (mehr). Bitte in den Einstellungen ein anderes wählen.';
-    if (status === 429) return 'Grenze erreicht: Gratis-Modelle erlauben 20 Anfragen pro Minute und 50 pro Tag. Später erneut versuchen oder ein bezahltes Modell wählen.';
+    if (status === 402) return `Das Guthaben bei OpenRouter reicht für dieses Modell nicht. Ein Modell mit „gratis“ im Namen kommt ohne aus.${quote}`;
+    if (status === 404) return `Dieses Modell gibt es bei OpenRouter nicht (mehr). Bitte in den Einstellungen ein anderes wählen.${quote}`;
+
+    if (status === 429) {
+      // 429 heißt bei OpenRouter zweierlei: entweder das eigene
+      // Kontingent ist erschöpft, oder der Anbieter hinter dem Modell
+      // ist gerade überlastet. Nur der erste Fall liegt am Nutzer.
+      const own = meta.error_type === 'rate_limit_exceeded';
+      const wait = retryAfter ? ` Erneut möglich in etwa ${retryAfter} Sekunden.` : '';
+      return own
+        ? `Dein Kontingent ist erschöpft. Gratis-Modelle erlauben 20 Anfragen pro Minute und 50 pro Tag.${wait}${quote}`
+        : `Das Modell ist gerade überlastet — das liegt nicht an Dir. Ein anderes Modell aus der Liste hilft meist sofort.${wait}${quote}`;
+    }
+
+    if (status === 502 || status === 503) {
+      return `Der Anbieter hinter diesem Modell antwortet gerade nicht. Ein anderes Modell aus der Liste hilft meist sofort.${quote}`;
+    }
+    if (status === 403) return `OpenRouter hat die Anfrage abgelehnt.${quote}`;
     return detail;
   },
 };

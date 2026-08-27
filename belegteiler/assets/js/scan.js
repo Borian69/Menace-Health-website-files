@@ -159,7 +159,17 @@ const CLARIFY_TOOL = {
 
 /* ── Aufruf ──────────────────────────────────────────────── */
 
-async function call({ settings, model, system, text, images, tool, signal }) {
+const sleep = (ms, signal) => new Promise((resolve, reject) => {
+  const timer = setTimeout(resolve, ms);
+  signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('abgebrochen', 'AbortError')); }, { once: true });
+});
+
+/* Ein überlastetes Modell und eine kurze Sperre sind vorübergehend —
+   dafür soll niemand den Beleg noch einmal fotografieren müssen. */
+const RETRY_STATUS = new Set([429, 502, 503, 504]);
+const MAX_WAIT_SECONDS = 25;
+
+async function call({ settings, model, system, text, images, tool, signal, attempt = 1 }) {
   const api = provider(settings.provider);
   const key = settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey;
 
@@ -187,8 +197,19 @@ async function call({ settings, model, system, text, images, tool, signal }) {
   }
 
   const payload = await response.json().catch(() => null);
+
   if (!response.ok) {
-    const message = api.error(response.status, payload)
+    const retryAfter = Number(response.headers.get('retry-after')) || 0;
+    const ownLimit = payload?.error?.metadata?.error_type === 'rate_limit_exceeded';
+
+    // Einmal nachfassen — aber nicht, wenn wirklich das eigene
+    // Kontingent erschöpft ist; da hilft Warten in Sekunden nicht.
+    if (attempt === 1 && RETRY_STATUS.has(response.status) && !ownLimit && retryAfter <= MAX_WAIT_SECONDS) {
+      await sleep(Math.max(1200, retryAfter * 1000), signal);
+      return call({ settings, model, system, text, images, tool, signal, attempt: 2 });
+    }
+
+    const message = api.error(response.status, payload, { retryAfter })
       || (response.status >= 500
         ? 'Der Dienst ist gerade nicht erreichbar. Bitte in einem Moment nochmal versuchen.'
         : `Unerwartete Antwort (HTTP ${response.status}).`);
