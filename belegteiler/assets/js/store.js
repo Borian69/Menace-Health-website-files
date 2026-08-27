@@ -11,7 +11,7 @@ const DEFAULTS = {
   mode:     'direct',
   apiKey:   '',
   proxyUrl: '',
-  model:    'claude-haiku-4-5',
+  model:    'claude-sonnet-5',
   fromName: '',
   toName:   '',
   payTo:    '',

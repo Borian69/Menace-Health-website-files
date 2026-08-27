@@ -207,11 +207,11 @@
         <div class="field">
           <label for="set-model">Modell</label>
           <select id="set-model" name="model">
-            <option value="claude-haiku-4-5">Claude Haiku 4.5 — am günstigsten</option>
-            <option value="claude-sonnet-5">Claude Sonnet 5 — genauer</option>
-            <option value="claude-opus-5">Claude Opus 5 — beste Erkennung</option>
+            <option value="claude-haiku-4-5">Haiku 4.5 · ~1 Cent — nur für einfache Bons</option>
+            <option value="claude-sonnet-5">Sonnet 5 · ~3 Cent — empfohlen</option>
+            <option value="claude-opus-5">Opus 5 · ~7 Cent — schwierige Bons</option>
           </select>
-          <p class="field-hint">Werden Positionen oft falsch gelesen, ein Modell höher gehen. Die App warnt ohnehin, wenn die Summe der Positionen nicht zur aufgedruckten Endsumme passt.</p>
+          <p class="field-hint">Das billigste Modell tippt abgekürzte Kassentexte oft nur ab, statt das Produkt zu erkennen. Bei kryptischen Namen oder abweichender Summe ein Modell höher gehen — der Unterschied macht im Jahr etwa einen Euro aus.</p>
         </div>
         <div class="usage-card" id="usage-card" hidden>
           <div class="usage-figure" id="usage-amount">0 Cent</div>
@@ -259,6 +259,10 @@
   <div class="sheet" id="item-sheet" role="dialog" aria-modal="true" aria-label="Position bearbeiten">
     <div class="sheet-grip" aria-hidden="true"></div>
     <h3 id="sheet-title">Position bearbeiten</h3>
+    <div class="raw-line" id="item-raw" hidden>
+      <span>So steht es auf dem Beleg</span>
+      <code id="item-raw-text"></code>
+    </div>
     <div class="field">
       <label for="item-name">Bezeichnung</label>
       <input type="text" id="item-name" autocomplete="off">

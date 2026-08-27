@@ -229,6 +229,13 @@ function openItemSheet(id) {
   editing = item ? item.id : null;
 
   $('#sheet-title').textContent = item ? 'Position bearbeiten' : 'Position hinzufügen';
+
+  // Originalzeile zeigen, damit eine falsch gedeutete Position
+  // gegengeprüft werden kann.
+  const raw = item?.raw && item.raw !== item.name ? item.raw : '';
+  $('#item-raw').hidden = !raw;
+  $('#item-raw-text').textContent = raw;
+
   $('#item-name').value  = item ? item.name : '';
   $('#item-qty').value   = item ? String(item.quantity).replace('.', ',') : '1';
   $('#item-price').value = item ? euroPlain(item.price) : '';

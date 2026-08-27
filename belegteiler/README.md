@@ -107,18 +107,24 @@ eine Liste zurückgegeben. Grob gerechnet:
 
 | Modell | pro Beleg | bei einem Einkauf pro Woche |
 |---|---|---|
-| Claude Haiku 4.5 — Voreinstellung | ca. 1 Cent | ca. 0,50 € im Jahr |
-| Claude Sonnet 5 | ca. 3 Cent | ca. 1,50 € im Jahr |
+| Claude Haiku 4.5 | ca. 1 Cent | ca. 0,50 € im Jahr |
+| Claude Sonnet 5 — Voreinstellung | ca. 3 Cent | ca. 1,50 € im Jahr |
 | Claude Opus 5 | ca. 7 Cent | ca. 3,60 € im Jahr |
+
+Zwischen dem billigsten und dem empfohlenen Modell liegt im Jahr etwa ein Euro.
+Haiku 4.5 tippt abgekürzte Kassentexte in der Praxis häufig nur ab
+(„BIES VANILLA 12“), statt das Produkt dahinter zu erkennen — was jede Position
+zur Handarbeit macht. Deshalb ist Sonnet 5 voreingestellt.
 
 Die App rechnet mit: unter *Einstellungen → Erkennung* steht, was seit dem ersten
 Scan tatsächlich zusammengekommen ist und wie viel ein Beleg im Schnitt kostet.
 Grundlage sind die von der API zurückgemeldeten Token, umgerechnet mit einem festen
 Kurs — deshalb „ca.“.
 
-Voreingestellt ist das günstigste Modell. Werden Positionen häufiger falsch
-gelesen, in den Einstellungen ein Modell höher gehen; die Warnung beim Abgleich
-mit der aufgedruckten Endsumme zeigt zuverlässig an, wenn etwas nicht stimmt.
+Werden Positionen trotzdem falsch gelesen, in den Einstellungen ein Modell höher
+gehen. Die Warnung beim Abgleich mit der aufgedruckten Endsumme zeigt zuverlässig
+an, wenn etwas fehlt, und in der Bearbeitung einer Position steht die Originalzeile
+vom Bon — daran lässt sich jede Deutung nachprüfen.
 
 ### Und ganz ohne Kosten?
 

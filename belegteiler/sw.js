@@ -3,7 +3,7 @@
 
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
-const CACHE = 'belegteiler-v2';
+const CACHE = 'belegteiler-v3';
 
 const SHELL = [
   './',

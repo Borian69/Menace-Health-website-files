@@ -56,6 +56,8 @@ export function guessCategory(name = '') {
 }
 
 export function normaliseCategory(id, name) {
-  if (id && BY_ID.has(id)) return id;
+  // "sonstiges" gilt als „nicht zugeordnet“ — dann greift noch die
+  // Stichwortsuche, bevor die Position im Sammelbecken landet.
+  if (id && BY_ID.has(id) && id !== 'sonstiges') return id;
   return guessCategory(name);
 }

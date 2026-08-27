@@ -27,10 +27,23 @@ Mehrere Bons auf einem Foto
 - Ein einzelner, sehr langer Bon, der über mehrere Bildabschnitte läuft, ist EIN Eintrag – nicht mehrere. Im Zweifel lieber einen Bon zu wenig trennen als einen zu viel.
 - Liegt nur ein Bon auf dem Foto, enthält "receipts" genau einen Eintrag.
 
-Bezeichnungen
-- Schreibe die abgekürzten Kassentexte in gut lesbares Deutsch um: "JA! H-MILCH 3,5%" wird zu "Ja! H-Milch 3,5 %", "RSPBRY 125G" zu "Himbeeren 125 g".
-- Marke und Menge behalten, wenn sie auf dem Beleg stehen. Erfinde nichts dazu: Ist der Text nicht zu entziffern, übernimm ihn so gut es geht und setze "uncertain" auf true.
-- "raw_text" enthält immer die Originalzeile so, wie sie gedruckt ist.
+Bezeichnungen — der wichtigste Teil deiner Arbeit
+- Auf dem Bon stehen keine Produktnamen, sondern verstümmelte Kassentexte mit fester Zeichenbegrenzung. Gib NICHT diesen Text zurück. Finde heraus, welches Produkt dahintersteckt, und benenne dieses.
+- Zieh dafür alles heran, was du hast: den Händler und sein Sortiment, die Eigenmarken dieses Händlers, das übliche Abkürzungsmuster seines Kassensystems, die Höhe des Preises, die Mehrwertsteuerkennung (ermäßigt = meist Lebensmittel) und die Nachbarzeilen.
+- Zahlen am Zeilenende sind fast immer Größe, Menge oder eine Artikelnummer — kein Teil des Namens. "XYZ VANILLA 12" heißt nicht, dass das Produkt "12" heißt; die 12 ist Größe oder Artikelnummer und gehört nur dann in den Namen, wenn sie erkennbar eine Menge ist (ml, g, Stück).
+- Zerlegte oder zusammengezogene Markennamen wieder zusammensetzen: Kassen trennen und kürzen Marken oft mitten im Wort.
+- So sieht ein guter Name aus: Marke + was es ist + Menge, so dass jemand, der nicht dabei war, das Produkt im Regal wiedererkennt.
+  "JA! H-MILCH 3,5%" → "Ja! H-Milch 3,5 %"
+  "ZWIEB.ROT 500G" → "Rote Zwiebeln, 500 g"
+  "PROKUD ZAHNC COMPL" → "Prokudent Zahncreme Complete"
+  "DOMOL WC AKTIV" → "domol WC-Reiniger Aktiv"
+- Unsicherheit ist erlaubt und erwünscht: Nimm die wahrscheinlichste Deutung und setze "uncertain" auf true. Ein plausibler Name mit Warnmarkierung hilft dem Nutzer mehr als abgetippter Kassensalat. Nur wenn die Zeile wirklich unlesbar ist, übernimm den Rohtext und setze "uncertain".
+- "raw_text" enthält immer die Originalzeile, wie sie gedruckt ist — daran prüft der Nutzer deine Deutung nach.
+
+Warengruppen
+- Ordne jede Position einer Warengruppe zu. "sonstiges" ist die letzte Wahl, nicht die bequeme.
+- Der Händler ist der stärkste Hinweis: Bei Drogerien (Rossmann, dm, Müller) gehören die meisten Positionen zu "drogerie" oder "haushalt", bei Bäckereien zu "brot", bei Getränkemärkten zu "getraenke" und "pfand".
+- Auch wenn du beim Namen unsicher bist, ist die Warengruppe meist trotzdem erkennbar — ordne sie dann nach bestem Wissen zu.
 
 Preise
 - "total_price" ist der Betrag, der auf dem Beleg für diese Zeile in die Summe eingeht, in Euro als Zahl (1.99).
@@ -43,22 +56,27 @@ Nicht übernehmen
 - Zwischensummen, "SUMME", "zu zahlen", Mehrwertsteuertabellen (A/B, MwSt, Netto), Zahlungszeilen (EC-Cash, Gegeben, Rückgeld, Kartennummer), Punktestände, TSE-/Signaturdaten, Werbetexte.
 
 Kopfdaten
-- "store" ist der Händlername (z. B. "REWE", "EDEKA", "ALDI SÜD", "dm").
+- "store" ist der Händlername (z. B. "REWE", "EDEKA", "ALDI SÜD", "dm", "ROSSMANN").
 - "date" im Format JJJJ-MM-TT, "time" als HH:MM. Nicht erkennbar: null.
 - "receipt_total" ist die gedruckte Endsumme, die bezahlt wurde.
-- Fällt dir etwas auf, das der Nutzer prüfen sollte (unscharfer Bereich, abgeschnittener Beleg), schreib es kurz in "notes".`;
+
+Abgleich zum Schluss — bevor du antwortest
+- Addiere die Beträge, die du erfasst hast, und vergleiche die Summe mit der gedruckten Endsumme des Bons.
+- Weichen sie ab, geh den Bon noch einmal durch. Die häufigsten Ursachen: eine übersprungene Zeile, ein übersehener Pfand- oder Rabattposten, eine falsch gelesene Ziffer (0/8, 1/7, 3/9, 5/6), oder eine Position, die über zwei Zeilen läuft. Korrigiere, was du findest.
+- Bleibt danach eine Differenz, schreib sie in "notes" mit dem Betrag und dem Bereich des Bons, an dem es hakt — der Nutzer ergänzt das dann von Hand.
+- Sonstige Auffälligkeiten (unscharfer Bereich, abgeschnittener Beleg) gehören ebenfalls in "notes".`;
 
 const ITEM_SCHEMA = {
   type: 'object',
   properties: {
-    name:        { type: 'string',  description: 'Gut lesbare deutsche Bezeichnung der Position.' },
+    name:        { type: 'string',  description: 'Das identifizierte Produkt als Marke + Art + Menge, nicht der Kassentext.' },
     raw_text:    { type: 'string',  description: 'Die Originalzeile, wie sie auf dem Beleg gedruckt ist.' },
     quantity:    { type: 'number',  description: 'Menge. Einzelartikel: 1. Gewichtsware: das Gewicht.' },
     unit:        { type: 'string',  description: 'Einheit der Menge, z. B. "Stk", "kg", "l".' },
     unit_price:  { type: ['number', 'null'], description: 'Preis je Einheit in Euro, sonst null.' },
     total_price: { type: 'number',  description: 'Zeilenbetrag in Euro. Negativ bei Rabatt oder Leergut.' },
     category:    { type: 'string', enum: categoryIds, description: 'Warengruppe der Position.' },
-    uncertain:   { type: 'boolean', description: 'true, wenn Bezeichnung oder Preis schlecht lesbar waren.' },
+    uncertain:   { type: 'boolean', description: 'true, wenn die Deutung des Produkts oder der Preis unsicher ist.' },
   },
   required: ['name', 'raw_text', 'quantity', 'unit', 'unit_price', 'total_price', 'category', 'uncertain'],
   additionalProperties: false,
