@@ -238,6 +238,11 @@
             <span class="switch-label">Unklare Positionen nachschlagen<small>Zweiter, sehr billiger Durchgang ohne Bild: bestimmt das Produkt hinter unklaren Kassenzeilen und erzeugt eine Suchanfrage zum Nachschlagen.</small></span>
           </label>
         </div>
+        <div class="field">
+          <label for="set-fallback">Ausweichmodell</label>
+          <select id="set-fallback" name="fallbackModel"></select>
+          <p class="field-hint">Springt ein, wenn das gewählte Modell überlastet ist oder sein Gratis-Kontingent leer. Braucht Guthaben — dafür scheitert kein Scan mehr an einem vollen Gratis-Modell. „Keins“ schaltet das ab.</p>
+        </div>
         <div class="field" id="helper-field">
           <label for="set-helper">Modell fürs Nachschlagen</label>
           <select id="set-helper" name="helperModel"></select>
@@ -275,6 +280,25 @@
             <span class="switch-label">Eigene Positionen mit anzeigen<small>Sonst tauchen nur die Positionen der Eltern auf.</small></span>
           </label>
         </div>
+      </div>
+
+      <div class="section">
+        <div class="section-head"><h2>Rückmeldung</h2></div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-sounds" name="sounds">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Töne<small>Kurze Bestätigung beim Erfassen und Abschließen, wie beim Bezahlen am Handy.</small></span>
+          </label>
+        </div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-haptics" name="haptics">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Vibration<small>Sanftes Klopfen beim Zuordnen. Nicht jedes Gerät kann das.</small></span>
+          </label>
+        </div>
+        <button type="button" class="secondary-btn" id="btn-try-sound">Ausprobieren</button>
       </div>
 
       <div class="section">
@@ -333,6 +357,28 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- Bestätigung nach einem erfolgreichen Scan oder Abschluss -->
+<div class="burst" id="burst" hidden aria-hidden="true">
+  <div class="burst-stage">
+    <span class="burst-wave"></span>
+    <span class="burst-wave burst-wave-2"></span>
+    <svg class="burst-mark" viewBox="0 0 100 100">
+      <circle class="burst-disc" cx="50" cy="50" r="34"/>
+      <path class="burst-check" d="M32 51.5 L44.5 64 L69 37"/>
+    </svg>
+    <span class="spark" style="--a:-90deg"></span>
+    <span class="spark" style="--a:-45deg"></span>
+    <span class="spark" style="--a:0deg"></span>
+    <span class="spark" style="--a:45deg"></span>
+    <span class="spark" style="--a:90deg"></span>
+    <span class="spark" style="--a:135deg"></span>
+    <span class="spark" style="--a:180deg"></span>
+    <span class="spark" style="--a:225deg"></span>
+  </div>
+  <div class="burst-label" id="burst-label"></div>
+  <div class="burst-amount" id="burst-amount" hidden></div>
 </div>
 
 <div class="toast" id="toast" hidden></div>

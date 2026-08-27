@@ -164,6 +164,33 @@ lesen verknitterte Thermobons schlechter — wenn Positionen kryptisch bleiben o
 die Summe nicht passt, lohnt sich der Schritt zu einem der Cent-Bruchteil-Modelle
 weiter unten in der Liste deutlich mehr, als er kostet.
 
+### Ausweichmodell
+
+Gratis-Modelle laufen auf knapper Kapazität und melden regelmäßig „überlastet“,
+auch beim ersten Scan des Tages — das hat mit der eigenen Nutzung nichts zu tun.
+Zwei Sicherungen greifen deshalb:
+
+1. Bei vorübergehenden Fehlern wartet die App die vom Anbieter genannte Zeit ab
+   (höchstens 25 Sekunden) und fragt still ein zweites Mal.
+2. Hilft das nicht, wechselt sie auf das **Ausweichmodell** aus den Einstellungen.
+   Voreingestellt ist Gemini 2.5 Flash Lite — das braucht Guthaben, kostet aber
+   nur einen Bruchteil eines Cents und ist immer erreichbar. Ein Hinweis sagt
+   hinterher, dass gewechselt wurde. Auf „Keins“ gestellt, zeigt die App
+   stattdessen den Fehler.
+
+## Rückmeldung
+
+Erkannter Beleg und abgeschlossene Abrechnung werden bestätigt wie eine Zahlung
+am Handy: ein Ring läuft nach außen, ein Haken zeichnet sich, zwei helle
+Glockentöne, ein kurzer Impuls in der Hand. Beträge zählen hoch statt zu
+springen, Häkchen ploppen beim Antippen.
+
+Die Töne werden im Browser erzeugt, nicht als Datei geladen — die App bleibt
+dadurch ohne Zusatzgewicht und funktioniert offline. Ton und Vibration lassen
+sich einzeln abschalten (*Einstellungen → Rückmeldung*, mit Hörprobe). Wer im
+System „Bewegung reduzieren“ eingestellt hat, bekommt die Bestätigung ohne
+Animation.
+
 ## Datenschutz
 
 Einstellungen und Verlauf liegen ausschließlich im `localStorage` dieses Geräts.

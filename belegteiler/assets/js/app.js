@@ -10,6 +10,7 @@ import { PROVIDERS, provider, detectProvider } from './providers.js';
 import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
+import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate } from './feedback.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
 
@@ -92,7 +93,7 @@ function renderOpenBill() {
   $('#open-meta').textContent =
     `${running.receipts.length} ${running.receipts.length === 1 ? 'Beleg' : 'Belege'} · `
     + `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`;
-  $('#open-amount').textContent = euro(sums.parents);
+  countTo($('#open-amount'), sums.parents, euro);
 
   const stores = $('#open-stores');
   stores.replaceChildren();
@@ -160,11 +161,17 @@ async function handleFiles(fileList) {
     persist();
     recordUsage(parsed.usage);
 
+    const sums = totals(bill);
+    await celebrate({
+      label: added.length > 1 ? `${added.length} Belege erfasst` : `${added[0]?.store || 'Beleg'} erfasst`,
+      amount: euro(sums.parents),
+    });
+
     renderReview();
     showView('review');
 
-    if (parsed.notes) toast(parsed.notes);
-    else if (added.length > 1) toast(`${added.length} Belege erkannt.`);
+    if (parsed.usage?.switchedTo) toast(`Ausgewichen auf ${modelLabel(parsed.usage.switchedTo)} — das gewählte Modell war nicht verfügbar.`);
+    else if (parsed.notes) toast(parsed.notes);
     else if (bill.receipts.length > 1) toast(`${bill.receipts.length} Belege in dieser Abrechnung.`);
   } catch (error) {
     if (error.name === 'AbortError' || signal.aborted) return;
@@ -172,10 +179,17 @@ async function handleFiles(fileList) {
   }
 }
 
+/** Lesbarer Name eines Modells, sonst die nackte Kennung. */
+function modelLabel(id) {
+  const entry = provider(settings.provider).models.find((model) => model.id === id);
+  return entry ? entry.label.split(' · ')[0] : id;
+}
+
 // Statuscodes, bei denen ein anderes Modell die naheliegende Abhilfe ist.
 const MODEL_TROUBLE = new Set([402, 404, 429, 502, 503, 504]);
 
 function showScanError(error) {
+  cue.error();
   document.body.classList.add('scan-failed');
   $('#scan-error').hidden = false;
   $('#scan-error-msg').textContent = error.message || 'Unbekannter Fehler.';
@@ -229,7 +243,10 @@ function itemRow(item) {
     item.unitPrice && item.quantity !== 1 ? `à ${euro(item.unitPrice)}` : '',
   ].filter(Boolean).join(' · ');
 
-  return el('div', { class: `item${item.mine ? ' is-mine' : ''}${item.price < 0 ? ' is-negative' : ''}` },
+  return el('div', {
+    class: `item${item.mine ? ' is-mine' : ''}${item.price < 0 ? ' is-negative' : ''}`,
+    'data-item': item.id,
+  },
     el('button', {
       class: 'item-mark',
       html: CHECK_ICON,
@@ -250,7 +267,7 @@ function itemRow(item) {
 
 function renderTally() {
   const sums = totals(bill);
-  $('#tally-parents').textContent = euro(sums.parents);
+  countTo($('#tally-parents'), sums.parents, euro);
   $('#tally-mine').textContent = euro(sums.mine);
   $('#tally-total').textContent = euro(sums.total);
   $('#btn-to-summary').disabled = sums.count === 0;
@@ -273,8 +290,10 @@ function toggleMine(id) {
   const item = bill.items.find((entry) => entry.id === id);
   if (!item) return;
   item.mine = !item.mine;
+  cue.tick();
   persist();
   renderReview();
+  pop(document.querySelector(`[data-item="${id}"] .item-mark`));
 }
 
 function setAllMine(value) {
@@ -361,13 +380,14 @@ function finishBill() {
   if (!bill || bill.done) return;
   bill.done = true;
   bill.finishedAt = Date.now();
+  const final = summary ? summary.parents : totals(bill).parents;
   pushHistory(structuredClone(bill));
   clearOpenBill();
   bill = null;
   summary = null;
   renderHome();
   showView('home');
-  toast('Abrechnung abgeschlossen.');
+  celebrate({ label: 'Abrechnung abgeschlossen', amount: euro(final), tone: 'done' });
 }
 
 async function summaryImage() {
@@ -447,7 +467,10 @@ function openSettings() {
   $('#set-proxy').value = settings.proxyUrl;
   $('#set-model').value = settings.model;
   $('#set-helper').value = settings.helperModel;
+  $('#set-fallback').value = settings.fallbackModel;
   $('#set-resolve').checked = settings.resolveUncertain;
+  $('#set-sounds').checked = settings.sounds !== false;
+  $('#set-haptics').checked = settings.haptics !== false;
   $('#set-from').value  = settings.fromName;
   $('#set-to').value    = settings.toName;
   $('#set-pay').value   = settings.payTo;
@@ -502,9 +525,14 @@ function applyProvider() {
     ? 'Ein Zugang, viele Modelle — darunter kostenlose. Abgerechnet wird, was das gewählte Modell kostet.'
     : 'Direkt bei Anthropic. Kein kostenloses Kontingent, dafür sehr zuverlässig bei schwierigen Bons.';
 
-  for (const [select, chosen] of [['#set-model', settings.model], ['#set-helper', settings.helperModel]]) {
+  for (const [select, chosen] of [
+    ['#set-model', settings.model],
+    ['#set-helper', settings.helperModel],
+    ['#set-fallback', settings.fallbackModel],
+  ]) {
     const node = $(select);
     node.replaceChildren();
+    if (select === '#set-fallback') node.append(el('option', { value: '', text: 'Keins — Fehler stattdessen anzeigen' }));
     for (const entry of api.models) {
       node.append(el('option', { value: entry.id, text: entry.note ? `${entry.label} — ${entry.note}` : entry.label }));
     }
@@ -512,7 +540,9 @@ function applyProvider() {
     if (chosen && !api.models.some((m) => m.id === chosen)) {
       node.append(el('option', { value: chosen, text: `${chosen} (eigene Angabe)` }));
     }
-    node.value = chosen && [...node.options].some((o) => o.value === chosen) ? chosen : api.defaultModel;
+    node.value = [...node.options].some((o) => o.value === chosen)
+      ? chosen
+      : (select === '#set-fallback' ? '' : api.defaultModel);
   }
 
   $('#helper-field').hidden = !$('#set-resolve').checked;
@@ -571,13 +601,17 @@ function readSettingsForm() {
     proxyUrl: $('#set-proxy').value.trim(),
     model:       $('#set-model').value,
     helperModel: $('#set-helper').value,
+    fallbackModel: $('#set-fallback').value,
     resolveUncertain: $('#set-resolve').checked,
+    sounds:  $('#set-sounds').checked,
+    haptics: $('#set-haptics').checked,
     fromName: $('#set-from').value,
     toName:   $('#set-to').value,
     payTo:    $('#set-pay').value,
     showMine: $('#set-show-mine').checked,
   });
   applyMode();
+  configureFeedback(settings);
   $('#helper-field').hidden = !settings.resolveUncertain;
 }
 
@@ -690,12 +724,20 @@ function wire() {
     readSettingsForm();
   });
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());
+  $('#btn-try-sound').addEventListener('click', () => {
+    unlock();
+    celebrate({ label: 'So klingt es', amount: euro(1799) });
+  });
   $('#btn-reset-usage').addEventListener('click', () => { clearUsage(); renderUsage(); });
   $('#btn-reset').addEventListener('click', () => {
     if (!confirm('Einstellungen und alle Abrechnungen von diesem Gerät löschen?')) return;
     clearEverything();
     location.reload();
   });
+
+  // Browser lassen Ton erst nach einer echten Geste zu.
+  document.addEventListener('pointerdown', unlock, { once: true });
+  document.addEventListener('touchstart', unlock, { once: true });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && !$('#sheet-backdrop').hidden) closeItemSheet();
@@ -719,6 +761,7 @@ function registerServiceWorker() {
   navigator.serviceWorker.register('sw.js').catch(() => { /* offline-Betrieb ist optional */ });
 }
 
+configureFeedback(settings);
 fillCategorySelect();
 fillProviderSelect();
 wire();

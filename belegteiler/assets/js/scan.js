@@ -169,7 +169,13 @@ const sleep = (ms, signal) => new Promise((resolve, reject) => {
 const RETRY_STATUS = new Set([429, 502, 503, 504]);
 const MAX_WAIT_SECONDS = 25;
 
-async function call({ settings, model, system, text, images, tool, signal, attempt = 1 }) {
+/* Wenn das gewählte Modell klemmt — überlastet, nicht verfügbar oder
+   Gratis-Kontingent leer —, ist ein anderes Modell die Abhilfe, nicht
+   eine Fehlermeldung. Bei diesen Codes wird auf das Ausweichmodell
+   umgeschaltet, sofern eines hinterlegt ist. */
+const FALLBACK_STATUS = new Set([402, 404, 429, 502, 503, 504]);
+
+async function call({ settings, model, system, text, images, tool, signal, attempt = 1, allowFallback = true }) {
   const api = provider(settings.provider);
   const key = settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey;
 
@@ -206,7 +212,16 @@ async function call({ settings, model, system, text, images, tool, signal, attem
     // Kontingent erschöpft ist; da hilft Warten in Sekunden nicht.
     if (attempt === 1 && RETRY_STATUS.has(response.status) && !ownLimit && retryAfter <= MAX_WAIT_SECONDS) {
       await sleep(Math.max(1200, retryAfter * 1000), signal);
-      return call({ settings, model, system, text, images, tool, signal, attempt: 2 });
+      return call({ settings, model, system, text, images, tool, signal, attempt: 2, allowFallback });
+    }
+
+    // Zweite Rettungsleine: ein anderes Modell.
+    const fallback = (settings.fallbackModel || '').trim();
+    if (allowFallback && fallback && fallback !== model && FALLBACK_STATUS.has(response.status)) {
+      const result = await call({
+        settings, model: fallback, system, text, images, tool, signal, allowFallback: false,
+      });
+      return { ...result, switchedFrom: model };
     }
 
     const message = api.error(response.status, payload, { retryAfter })
@@ -236,6 +251,7 @@ export async function testConnection(settings, signal) {
     images: [],
     tool: null,
     signal,
+    allowFallback: false,
   });
   return true;
 }
@@ -271,6 +287,7 @@ export async function scanReceipt(parts, settings, signal) {
 
   let cents = result.usage.cents;
   let clarified = 0;
+  const switchedTo = result.switchedFrom ? settings.fallbackModel : '';
 
   if (settings.resolveUncertain) {
     try {
@@ -293,7 +310,7 @@ export async function scanReceipt(parts, settings, signal) {
   return {
     receipts,
     notes: result.args?.notes || '',
-    usage: { cents, clarified },
+    usage: { cents, clarified, switchedTo },
   };
 }
 

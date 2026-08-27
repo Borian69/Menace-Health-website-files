@@ -16,11 +16,14 @@ const DEFAULTS = {
   proxyUrl:      '',
   model:         'google/gemma-4-31b-it:free',
   helperModel:   'google/gemma-4-31b-it:free',
+  fallbackModel: 'google/gemini-2.5-flash-lite',
   resolveUncertain: true,
   fromName: '',
   toName:   '',
   payTo:    '',
   showMine: false,
+  sounds:   true,
+  haptics:  true,
 };
 
 function read(key, fallback) {

@@ -869,6 +869,103 @@ body[data-mode="proxy"]  [data-mode="direct"] { display: none; }
 .sheet-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
 .sheet-actions .row-btns { width: 100%; }
 
+/* ── Bestätigung ─────────────────────────────────────────── */
+
+.burst {
+  position: fixed; inset: 0; z-index: 55;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 18px;
+  background: rgba(10, 9, 8, .92);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+.burst-stage { position: relative; width: 132px; height: 132px; }
+
+/* Zwei Ringe laufen nach außen — das „Bezahlt“-Signal. */
+.burst-wave {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  opacity: 0;
+}
+.burst.run .burst-wave   { animation: wave 1s var(--ease) forwards; }
+.burst.run .burst-wave-2 { animation: wave 1s var(--ease) .16s forwards; }
+@keyframes wave {
+  0%   { transform: scale(.55); opacity: .85; }
+  100% { transform: scale(1.85); opacity: 0; }
+}
+
+.burst-mark { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.burst-disc {
+  fill: var(--accent);
+  stroke: none;
+  transform-origin: 50% 50%;
+  transform: scale(0);
+}
+.burst.run .burst-disc { animation: disc .5s cubic-bezier(.2, 1.5, .5, 1) forwards; }
+@keyframes disc {
+  0%   { transform: scale(0); }
+  100% { transform: scale(1); }
+}
+
+.burst-check {
+  fill: none;
+  stroke: var(--accent-ink);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+}
+.burst.run .burst-check { animation: draw .34s var(--ease) .26s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Goldene Funken nach außen */
+.spark {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 5px; height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 50%;
+  background: var(--accent-bright);
+  opacity: 0;
+}
+.burst.run .spark { animation: spark .72s var(--ease) .24s forwards; }
+@keyframes spark {
+  0%   { transform: rotate(var(--a)) translateX(24px) scale(.4); opacity: 1; }
+  100% { transform: rotate(var(--a)) translateX(92px) scale(0);  opacity: 0; }
+}
+
+.burst-label {
+  font-family: var(--serif);
+  font-size: 20px;
+  opacity: 0;
+}
+.burst-amount {
+  font-family: var(--serif);
+  font-size: 34px;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-bright);
+  opacity: 0;
+}
+.burst.run .burst-label  { animation: riseIn .4s var(--ease) .34s forwards; }
+.burst.run .burst-amount { animation: riseIn .4s var(--ease) .44s forwards; }
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(9px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Kurzes Aufploppen, z. B. beim Zuordnen einer Position */
+.pop { animation: pop .34s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
 /* ── Toast ───────────────────────────────────────────────── */
 
 .toast {
