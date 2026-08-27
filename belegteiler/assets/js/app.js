@@ -10,7 +10,7 @@ import { PROVIDERS, provider, detectProvider } from './providers.js';
 import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
-import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus } from './feedback.js';
+import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus, canPickOutput, pickOutput } from './feedback.js';
 import * as camera from './camera.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
@@ -523,6 +523,9 @@ function openSettings() {
   $('#set-resolve').checked = settings.resolveUncertain;
   $('#set-sounds').checked = settings.sounds !== false;
   $('#set-haptics').checked = settings.haptics !== false;
+  $('#set-volume').value = Math.round((settings.volume ?? 0.7) * 100);
+  $('#volume-value').textContent = `${$('#set-volume').value} %`;
+  $('#output-field').hidden = !canPickOutput();
   $('#set-from').value  = settings.fromName;
   $('#set-to').value    = settings.toName;
   $('#set-pay').value   = settings.payTo;
@@ -657,6 +660,7 @@ function readSettingsForm() {
     resolveUncertain: $('#set-resolve').checked,
     sounds:  $('#set-sounds').checked,
     haptics: $('#set-haptics').checked,
+    volume:  Number($('#set-volume').value) / 100,
     fromName: $('#set-from').value,
     toName:   $('#set-to').value,
     payTo:    $('#set-pay').value,
@@ -796,6 +800,18 @@ function wire() {
     readSettingsForm();
   });
   $('#settings-form').addEventListener('submit', (event) => event.preventDefault());
+  $('#set-volume').addEventListener('input', () => {
+    $('#volume-value').textContent = `${$('#set-volume').value} %`;
+  });
+  $('#btn-pick-output').addEventListener('click', async () => {
+    unlock();
+    const node = $('#output-hint');
+    try {
+      node.textContent = `Ausgabe: ${await pickOutput()}`;
+    } catch (error) {
+      node.textContent = error.message;
+    }
+  });
   $('#btn-try-sound').addEventListener('click', async () => {
     unlock();
     await celebrate({ label: 'So klingt es', amount: euro(1799) });

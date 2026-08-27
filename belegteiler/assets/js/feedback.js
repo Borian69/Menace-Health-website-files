@@ -8,16 +8,24 @@
    Ton und Vibration brauchen eine echte Nutzergeste, bevor der Browser
    sie zulässt. `unlock()` wird deshalb beim ersten Tippen aufgerufen. */
 
+import { renderTone } from './wav.js';
+
 const reduceMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 let audio = null;
-let enabled = { sounds: true, haptics: true };
+let master = null;                 // Lautstärkeregler für den Web-Audio-Weg
+let element = null;                // Ersatzweg über ein <audio>-Element
+let sinkId = '';                   // gewähltes Ausgabegerät, wo der Browser das kann
+let lastPath = '';                 // welcher Weg zuletzt geklungen hat
+let enabled = { sounds: true, haptics: true, volume: 0.7 };
 
 export function configure(settings) {
   enabled = {
     sounds:  settings.sounds !== false,
     haptics: settings.haptics !== false,
+    volume:  typeof settings.volume === 'number' ? settings.volume : 0.7,
   };
+  if (master) master.gain.value = enabled.volume;
 }
 
 let lastFault = '';
@@ -32,11 +40,76 @@ export function unlock() {
   if (!Ctor) { lastFault = 'Dieser Browser kann keine Töne erzeugen (kein Web Audio).'; return; }
   try {
     audio = new Ctor();
+    master = audio.createGain();
+    master.gain.value = enabled.volume;
+    master.connect(audio.destination);
     audio.resume?.().catch(() => {});
+    if (sinkId && audio.setSinkId) audio.setSinkId(sinkId).catch(() => {});
   } catch (error) {
     audio = null;
+    master = null;
     lastFault = `Der Tonkanal ließ sich nicht öffnen (${error.name || 'Fehler'}).`;
   }
+}
+
+/* ── Ersatzweg ohne Web Audio ────────────────────────────── */
+
+const wavCache = new Map();
+
+/** Spielt einen vorberechneten Ton über ein gewöhnliches Audio-Element. */
+function playViaElement(key, notes) {
+  if (!wavCache.has(key)) wavCache.set(key, renderTone(notes));
+  try {
+    element = new Audio(wavCache.get(key));
+    element.volume = Math.max(0, Math.min(1, enabled.volume));
+    if (sinkId && element.setSinkId) element.setSinkId(sinkId).catch(() => {});
+    const played = element.play();
+    played?.catch(() => {});
+    lastPath = 'Audio-Element';
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Ist der Web-Audio-Weg gerade wirklich benutzbar? */
+const webAudioReady = () => Boolean(audio && master && audio.state === 'running');
+
+/**
+ * Spielt ein Signal: bevorzugt über Web Audio, sonst über das
+ * Audio-Element. Beide Wege klingen gleich.
+ */
+function play(key, notes) {
+  if (!enabled.sounds) return;
+  if (audio?.state === 'suspended') audio.resume().catch(() => {});
+
+  if (webAudioReady()) {
+    lastPath = 'Web Audio';
+    for (const note of notes) bell(note.freq, note);
+    return;
+  }
+  playViaElement(key, notes);
+}
+
+/* ── Ausgabegerät ────────────────────────────────────────── */
+
+export const canPickOutput = () =>
+  Boolean(navigator.mediaDevices?.selectAudioOutput || HTMLMediaElement.prototype.setSinkId);
+
+/**
+ * Öffnet die Geräteauswahl des Browsers. Fragt dabei selbst nach der
+ * nötigen Berechtigung. Auf Telefonen gibt es das nicht — dort folgt der
+ * Ton immer der Medienlautstärke.
+ * @returns {Promise<string>} Name des gewählten Geräts
+ */
+export async function pickOutput() {
+  if (!navigator.mediaDevices?.selectAudioOutput) {
+    throw new Error('Dieser Browser lässt keine Geräteauswahl zu. Der Ton folgt der Medienlautstärke des Geräts.');
+  }
+  const device = await navigator.mediaDevices.selectAudioOutput();
+  sinkId = device.deviceId;
+  if (audio?.setSinkId) await audio.setSinkId(sinkId).catch(() => {});
+  return device.label || 'Ausgewähltes Gerät';
 }
 
 /**
@@ -52,7 +125,8 @@ export function audioStatus() {
   if (audio.state === 'closed') return { ok: false, text: 'Der Tonkanal wurde geschlossen. Seite neu laden.' };
   return {
     ok: true,
-    text: 'Ton wurde abgespielt. Kommt trotzdem nichts an, liegt es am Gerät: Lautlos-Schalter, Medienlautstärke oder — bei Brave — der Fingerprinting-Schutz.',
+    text: `Ton wurde abgespielt (über ${lastPath || 'Web Audio'}). Kommt trotzdem nichts an, liegt es am Gerät: `
+      + 'Lautlos-Schalter oder Medienlautstärke. Web Audio und das Audio-Element hängen beide daran.',
   };
 }
 
@@ -77,7 +151,7 @@ function bell(freq, { at = 0, duration = 0.4, gain = 0.18, partial = 2.7 } = {})
     amp.gain.exponentialRampToValueAtTime(level, start + 0.008);
     amp.gain.exponentialRampToValueAtTime(0.0001, start + decay);
 
-    osc.connect(amp).connect(audio.destination);
+    osc.connect(amp).connect(master || audio.destination);
     osc.start(start);
     osc.stop(start + decay + 0.05);
   }
@@ -95,7 +169,7 @@ function click(freq = 1050, gain = 0.07) {
   osc.frequency.exponentialRampToValueAtTime(freq * 0.6, start + 0.05);
   amp.gain.setValueAtTime(gain, start);
   amp.gain.exponentialRampToValueAtTime(0.0001, start + 0.06);
-  osc.connect(amp).connect(audio.destination);
+  osc.connect(amp).connect(master || audio.destination);
   osc.start(start);
   osc.stop(start + 0.09);
 }
@@ -109,36 +183,37 @@ const buzz = (pattern) => {
 export const cue = {
   /** Position an- oder abgewählt. */
   tick() {
-    if (enabled.sounds) click(1180, 0.05);
+    if (enabled.sounds && webAudioReady()) { lastPath = 'Web Audio'; click(1180, 0.05); }
+    else play('tick', [{ freq: 1180, gain: 0.16, duration: 0.09, partial: 2 }]);
     buzz(8);
   },
 
   /** Beleg erkannt — die Zwei-Ton-Bestätigung wie beim Bezahlen. */
   success() {
-    if (enabled.sounds) {
-      bell(1318.5);                      // E6
-      bell(1975.5, { at: 0.085, gain: 0.15 });  // B6
-    }
+    play('success', [
+      { freq: 1318.5, gain: 0.18 },                      // E6
+      { freq: 1975.5, at: 0.085, gain: 0.15 },           // B6
+    ]);
     buzz([12, 45, 22]);
   },
 
   /** Abrechnung abgeschlossen — aufsteigender Dreiklang. */
   done() {
-    if (enabled.sounds) {
-      bell(1046.5, { gain: 0.14 });                          // C6
-      bell(1318.5, { at: 0.09,  gain: 0.15 });               // E6
-      bell(1568.0, { at: 0.18,  gain: 0.16, duration: 0.7 }); // G6
-      bell(2093.0, { at: 0.30,  gain: 0.09, duration: 0.9 }); // C7 als Schimmer
-    }
+    play('done', [
+      { freq: 1046.5, gain: 0.14 },                             // C6
+      { freq: 1318.5, at: 0.09, gain: 0.15 },                   // E6
+      { freq: 1568.0, at: 0.18, gain: 0.16, duration: 0.7 },    // G6
+      { freq: 2093.0, at: 0.30, gain: 0.09, duration: 0.9 },    // C7 als Schimmer
+    ]);
     buzz([14, 40, 14, 40, 30]);
   },
 
   /** Etwas ist schiefgegangen. */
   error() {
-    if (enabled.sounds) {
-      bell(392, { gain: 0.12, duration: 0.28, partial: 2 });
-      bell(294, { at: 0.11, gain: 0.11, duration: 0.42, partial: 2 });
-    }
+    play('error', [
+      { freq: 392, gain: 0.12, duration: 0.28, partial: 2 },
+      { freq: 294, at: 0.11, gain: 0.11, duration: 0.42, partial: 2 },
+    ]);
     buzz([40, 60, 40]);
   },
 };

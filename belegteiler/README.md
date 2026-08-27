@@ -208,11 +208,23 @@ sich einzeln abschalten (*Einstellungen → Rückmeldung*). Wer im System „Bew
 reduzieren“ eingestellt hat, bekommt die Bestätigung ohne Animation.
 
 Die **Hörprobe** dort sagt hinterher, was tatsächlich passiert ist: ob der
-Tonkanal offen war, ob der Browser ihn angehalten hat, oder ob abgespielt wurde
-und es folglich am Gerät liegt. Web Audio hängt an der **Medienlautstärke** —
-steht das Telefon auf lautlos oder ist der Medienregler unten, bleibt es still,
-ohne dass die App das merken kann. Brave kann Web Audio zusätzlich über den
-Fingerprinting-Schutz dämpfen.
+Tonkanal offen war, ob der Browser ihn angehalten hat, oder ob abgespielt wurde —
+und über welchen der beiden Wege.
+
+**Zwei Wege, gleicher Klang.** Der schöne Weg ist Web Audio. Manche Browser
+dämpfen oder blockieren das aber (Brave zählt es zum Fingerprinting-Schutz), und
+dann bleibt still, was klingen sollte. Deshalb gibt es einen zweiten Weg:
+dieselben Glockentöne werden als Zahlenreihe berechnet, in eine WAV-Datei
+verpackt und von einem gewöhnlichen `<audio>`-Element abgespielt. Die App nimmt
+automatisch, was gerade funktioniert.
+
+**Lautstärke** ist einstellbar. Sie wirkt auf beide Wege — aber beide hängen an
+der **Medienlautstärke** des Geräts. Steht das Telefon auf lautlos oder ist der
+Medienregler unten, bleibt es still, und keine App kann das überstimmen.
+
+**Ausgabegerät** lässt sich nur am Rechner wählen; der Knopf erscheint auch nur
+dort. Auf dem Telefon entscheidet das Betriebssystem, wohin der Ton geht — eine
+Berechtigung dafür gibt es im Browser nicht.
 
 ## Datenschutz
 

@@ -24,6 +24,7 @@ const DEFAULTS = {
   showMine: false,
   sounds:   true,
   haptics:  true,
+  volume:   0.7,
 };
 
 function read(key, fallback) {

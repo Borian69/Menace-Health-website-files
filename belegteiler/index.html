@@ -317,6 +317,20 @@
             <span class="switch-label">Vibration<small>Sanftes Klopfen beim Zuordnen. Nicht jedes Gerät kann das.</small></span>
           </label>
         </div>
+        <div class="field">
+          <label for="set-volume">Lautstärke</label>
+          <div class="slider-row">
+            <svg class="slider-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"/></svg>
+            <input type="range" id="set-volume" name="volume" min="0" max="100" step="5">
+            <span class="slider-value" id="volume-value">70 %</span>
+          </div>
+          <p class="field-hint">Der Ton läuft über die <b>Medienlautstärke</b> des Geräts. Steht die auf null oder das Telefon auf lautlos, bleibt es still — das kann die App nicht überstimmen.</p>
+        </div>
+        <div class="field" id="output-field" hidden>
+          <label>Ausgabegerät</label>
+          <button type="button" class="secondary-btn" id="btn-pick-output">Gerät wählen</button>
+          <p class="field-hint" id="output-hint">Nur am Rechner verfügbar. Auf dem Telefon entscheidet das Betriebssystem, wohin der Ton geht.</p>
+        </div>
         <button type="button" class="secondary-btn" id="btn-try-sound">Ausprobieren</button>
         <div class="test-result" id="sound-status" hidden></div>
       </div>
