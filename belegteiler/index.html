@@ -187,6 +187,11 @@
       <div class="section">
         <div class="section-head"><h2>Erkennung</h2></div>
         <div class="field">
+          <label for="set-provider">Anbieter</label>
+          <select id="set-provider" name="provider"></select>
+          <p class="field-hint" id="provider-hint"></p>
+        </div>
+        <div class="field">
           <label for="set-mode">Verbindung</label>
           <select id="set-mode" name="mode">
             <option value="direct">Direkt mit eigenem API-Key</option>
@@ -195,23 +200,31 @@
           <p class="field-hint" id="mode-hint"></p>
         </div>
         <div class="field" data-mode="direct">
-          <label for="set-key">Anthropic API-Key</label>
-          <input type="password" id="set-key" name="apiKey" placeholder="sk-ant-…" spellcheck="false">
-          <p class="field-hint">Wird nur auf diesem Gerät gespeichert und direkt an die Claude-API geschickt. Key auf <b>console.anthropic.com</b> erstellen.</p>
+          <label for="set-key" id="key-label">API-Key</label>
+          <input type="password" id="set-key" name="key" spellcheck="false" autocomplete="off">
+          <p class="field-hint" id="key-hint"></p>
         </div>
         <div class="field" data-mode="proxy">
           <label for="set-proxy">Proxy-URL</label>
           <input type="url" id="set-proxy" name="proxyUrl" placeholder="https://…/api/scan" spellcheck="false">
-          <p class="field-hint">Endpunkt, der den API-Key serverseitig hält. Siehe <b>api/scan.js</b> im Projekt.</p>
+          <p class="field-hint">Endpunkt, der den API-Key serverseitig hält. Siehe <b>server/scan.js</b> im Projekt.</p>
         </div>
         <div class="field">
-          <label for="set-model">Modell</label>
-          <select id="set-model" name="model">
-            <option value="claude-haiku-4-5">Haiku 4.5 · ~1 Cent — nur für einfache Bons</option>
-            <option value="claude-sonnet-5">Sonnet 5 · ~3 Cent — empfohlen</option>
-            <option value="claude-opus-5">Opus 5 · ~7 Cent — schwierige Bons</option>
-          </select>
-          <p class="field-hint">Das billigste Modell tippt abgekürzte Kassentexte oft nur ab, statt das Produkt zu erkennen. Bei kryptischen Namen oder abweichender Summe ein Modell höher gehen — der Unterschied macht im Jahr etwa einen Euro aus.</p>
+          <label for="set-model">Modell fürs Lesen des Bons</label>
+          <select id="set-model" name="model"></select>
+          <p class="field-hint">Liest das Foto und erkennt die Positionen. Bei kryptischen Namen oder abweichender Summe ein Modell weiter unten in der Liste probieren.</p>
+        </div>
+        <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-resolve" name="resolveUncertain">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Unklare Positionen nachschlagen<small>Zweiter, sehr billiger Durchgang ohne Bild: bestimmt das Produkt hinter unklaren Kassenzeilen und erzeugt eine Suchanfrage zum Nachschlagen.</small></span>
+          </label>
+        </div>
+        <div class="field" id="helper-field">
+          <label for="set-helper">Modell fürs Nachschlagen</label>
+          <select id="set-helper" name="helperModel"></select>
+          <p class="field-hint">Bekommt nur Text, keine Bilder — kostet daher fast nichts. Ein stärkeres Modell lohnt sich hier eher als beim Lesen.</p>
         </div>
         <div class="usage-card" id="usage-card" hidden>
           <div class="usage-figure" id="usage-amount">0 Cent</div>
@@ -262,6 +275,10 @@
     <div class="raw-line" id="item-raw" hidden>
       <span>So steht es auf dem Beleg</span>
       <code id="item-raw-text"></code>
+      <a class="lookup-btn" id="item-lookup" target="_blank" rel="noopener noreferrer" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+        Produkt nachschlagen
+      </a>
     </div>
     <div class="field">
       <label for="item-name">Bezeichnung</label>

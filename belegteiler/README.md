@@ -28,11 +28,17 @@ Wichtig ist nur **HTTPS** — sonst gibt es keine Kamera und keinen Service Work
 
 ### 2. Zugang zur Erkennung hinterlegen
 
-Die Belege liest Claude. Dafür braucht die App einen API-Key von
-[console.anthropic.com](https://console.anthropic.com) (dort Guthaben aufladen,
-schon ein paar Euro reichen für sehr viele Belege).
+Die Belege liest ein Bildmodell. Die App kann zwei Anbieter:
 
-App öffnen → Zahnrad oben rechts → **Anthropic API-Key** einfügen. Fertig.
+**OpenRouter** (Voreinstellung) — ein Zugang, viele Modelle, darunter kostenlose.
+Key auf [openrouter.ai/keys](https://openrouter.ai/keys) erstellen. Für die
+Modelle mit „gratis“ im Namen braucht es kein Guthaben; es gelten 20 Anfragen
+pro Minute und 50 pro Tag.
+
+**Claude (Anthropic)** — Key auf [console.anthropic.com](https://console.anthropic.com).
+Kein kostenloses Kontingent, dafür sehr zuverlässig bei schwierigen Bons.
+
+App öffnen → Zahnrad oben rechts → Anbieter wählen → Key einfügen. Fertig.
 Unten kannst Du gleich noch Deinen Namen, „Für wen“ und den Zahlungshinweis
 (IBAN oder PayPal) eintragen — das erscheint dann auf der Übersicht.
 
@@ -79,11 +85,12 @@ später wieder öffnen.
 | Aufwand | Key einfügen, fertig | zusätzlich einen Endpunkt deployen |
 | Wofür | Dein eigenes Handy | wenn die Seite öffentlich erreichbar ist |
 
-**Zum Direktmodus:** Der Key liegt im Browser-Speicher und wird von dort an die
-Claude-API geschickt — der dafür dokumentierte, vorgesehene Weg
-(`anthropic-dangerous-direct-browser-access`). Auf dem eigenen Telefon ist das in
+**Zum Direktmodus:** Der Key liegt im Browser-Speicher und geht von dort direkt an
+den Anbieter. Beide erlauben das ausdrücklich — OpenRouter über offene
+CORS-Freigabe, Anthropic über den Header
+`anthropic-dangerous-direct-browser-access`. Auf dem eigenen Telefon ist das in
 Ordnung; auf einem geteilten Gerät oder wenn die Seite öffentlich erreichbar ist,
-lieber den Proxy nehmen. Ein Key lässt sich in der Console jederzeit widerrufen und
+lieber den Proxy nehmen. Ein Key lässt sich beim Anbieter jederzeit widerrufen und
 neu erstellen.
 
 **Proxy einrichten:** `server/scan.js` ist ein fertiger Handler nach Web-Standard
@@ -91,56 +98,64 @@ und läuft unverändert auf Cloudflare Workers, Deno Deploy, Vercel Edge und
 Netlify Edge. Zwei Umgebungsvariablen setzen:
 
 ```
-ANTHROPIC_API_KEY = sk-ant-…
-ALLOWED_ORIGIN    = https://<dein-name>.github.io
+OPENROUTER_API_KEY = sk-or-v1-…      # für OpenRouter
+ANTHROPIC_API_KEY  = sk-ant-…        # für Claude
+ALLOWED_ORIGIN     = https://<dein-name>.github.io
 ```
+
+Es genügt der Key des Anbieters, den die App tatsächlich nutzt.
 
 Danach in den Einstellungen auf *Über eigenen Server* umstellen und die URL des
 Endpunkts eintragen.
 
 ---
 
+## Wie die Erkennung arbeitet
+
+Zwei Durchgänge:
+
+1. **Lesen.** Ein Bildmodell bekommt das Foto und gibt die Positionen zurück:
+   Bezeichnung, Menge, Preis, Warengruppe. Es soll dabei nicht den abgekürzten
+   Kassentext abtippen, sondern das Produkt dahinter bestimmen — anhand des
+   Händlers, seiner Eigenmarken, der Abkürzungsmuster und der Preishöhe.
+   Zeilen, bei denen es sich nicht sicher ist, markiert es.
+2. **Nachschlagen.** Nur die markierten Zeilen gehen in einen zweiten Durchgang,
+   diesmal ohne Bild — reiner Text, deshalb um Größenordnungen billiger. Dieses
+   Modell bestimmt das Produkt und formuliert dazu eine Suchanfrage.
+
+Die Suchanfrage landet als Knopf **„Produkt nachschlagen“** in der Bearbeitung
+der Position. Auch ohne den zweiten Durchgang gibt es den Knopf — dann mit einer
+Anfrage aus Händler und Originalzeile. Abschalten lässt sich der zweite Durchgang
+in den Einstellungen.
+
+Daneben steht immer die Originalzeile vom Bon, damit sich jede Deutung nachprüfen
+lässt. Und die App vergleicht die Summe der Positionen mit der aufgedruckten
+Endsumme und warnt bei Abweichung.
+
 ## Was das kostet
 
-Pro Foto wird ein Bild (bei langen Bons zwei bis drei Abschnitte) übertragen und
-eine Liste zurückgegeben. Grob gerechnet:
+Pro Foto wird ein Bild (bei langen Bons zwei bis drei Abschnitte) übertragen.
+Der zweite Durchgang fällt kaum ins Gewicht, weil er nur Text sieht.
 
 | Modell | pro Beleg | bei einem Einkauf pro Woche |
 |---|---|---|
-| Claude Haiku 4.5 | ca. 1 Cent | ca. 0,50 € im Jahr |
-| Claude Sonnet 5 — Voreinstellung | ca. 3 Cent | ca. 1,50 € im Jahr |
-| Claude Opus 5 | ca. 7 Cent | ca. 3,60 € im Jahr |
-
-Zwischen dem billigsten und dem empfohlenen Modell liegt im Jahr etwa ein Euro.
-Haiku 4.5 tippt abgekürzte Kassentexte in der Praxis häufig nur ab
-(„BIES VANILLA 12“), statt das Produkt dahinter zu erkennen — was jede Position
-zur Handarbeit macht. Deshalb ist Sonnet 5 voreingestellt.
+| OpenRouter, Modelle mit „gratis“ | 0 | 0 |
+| Qwen3.7 Flash | ~0,03 Cent | ~2 Cent im Jahr |
+| GPT-5 nano | ~0,06 Cent | ~3 Cent im Jahr |
+| Gemini 2.5 Flash Lite | ~0,08 Cent | ~4 Cent im Jahr |
+| Gemini 2.5 Flash | ~0,4 Cent | ~20 Cent im Jahr |
+| Claude Haiku 4.5 | ~1 Cent | ~0,50 € im Jahr |
+| Claude Sonnet 5 | ~3 Cent | ~1,50 € im Jahr |
+| Claude Opus 5 | ~7 Cent | ~3,60 € im Jahr |
 
 Die App rechnet mit: unter *Einstellungen → Erkennung* steht, was seit dem ersten
-Scan tatsächlich zusammengekommen ist und wie viel ein Beleg im Schnitt kostet.
-Grundlage sind die von der API zurückgemeldeten Token, umgerechnet mit einem festen
-Kurs — deshalb „ca.“.
+Scan zusammengekommen ist. Bei OpenRouter sind das die exakten Beträge, die die
+API je Anfrage zurückmeldet; bei Anthropic eine Rechnung aus den Token.
 
-Werden Positionen trotzdem falsch gelesen, in den Einstellungen ein Modell höher
-gehen. Die Warnung beim Abgleich mit der aufgedruckten Endsumme zeigt zuverlässig
-an, wenn etwas fehlt, und in der Bearbeitung einer Position steht die Originalzeile
-vom Bon — daran lässt sich jede Deutung nachprüfen.
-
-### Und ganz ohne Kosten?
-
-Kurz: geht nicht sauber.
-
-- **Anthropic hat keine kostenlose Stufe.** Der günstigste Weg ist der oben —
-  praktisch bedeutet das: einmal das Mindestguthaben aufladen und jahrelang Ruhe.
-- **Kostenlose Stufen anderer Anbieter** (etwa Google Gemini) gibt es, aber die
-  Inhalte werden dort laut Anbieter zur Produktverbesserung ausgewertet, es gelten
-  Tageslimits, und der Aufruf direkt aus dem Browser ist nicht vorgesehen.
-- **Texterkennung direkt auf dem Handy** (Tesseract o. Ä.) kostet nichts und
-  bräuchte kein Konto, liest aber abgekürzte Bon-Zeilen und verknitterte
-  Thermobelege deutlich schlechter. Bei einer App, deren Ergebnis eine
-  Überweisungssumme ist, wiegt das schwerer als ein paar Cent.
-
----
+Voreingestellt ist ein kostenloses Modell. Kostenlose Modelle sind kleiner und
+lesen verknitterte Thermobons schlechter — wenn Positionen kryptisch bleiben oder
+die Summe nicht passt, lohnt sich der Schritt zu einem der Cent-Bruchteil-Modelle
+weiter unten in der Liste deutlich mehr, als er kostet.
 
 ## Datenschutz
 
@@ -162,7 +177,8 @@ belegteiler/
 │   ├── icons/                 App-Icons
 │   └── js/
 │       ├── app.js             Ablaufsteuerung, Ereignisse, Ansichten
-│       ├── claude.js          Aufruf der Messages API + Werkzeug-Schema
+│       ├── scan.js            Anweisungen, Schema, beide Durchgänge
+│       ├── providers.js       Anthropic und OpenRouter hinter einer Schnittstelle
 │       ├── image.js           Zuschnitt, Skalierung, Aufteilung langer Bons
 │       ├── receipt.js         Datenmodell einer Abrechnung, Summen
 │       ├── categories.js      Warengruppen + Notfall-Zuordnung
