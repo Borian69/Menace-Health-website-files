@@ -4,7 +4,10 @@
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
 /* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
-const CACHE = 'belegteiler-v13';
+const CACHE = 'belegteiler-v14';
+
+// Getrenntes Fach für fertige Erkennungen, die noch niemand abgeholt hat.
+const ERGEBNISSE = 'belegteiler-ergebnisse';
 
 const SHELL = [
   './',
@@ -23,6 +26,7 @@ const SHELL = [
   'assets/js/categories.js',
   'assets/js/feedback.js',
   'assets/js/wav.js',
+  'assets/js/netz.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
   'assets/icons/apple-touch-icon.png',
@@ -39,10 +43,93 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key))))
+      // ERGEBNISSE muss stehenbleiben: dort liegt womöglich gerade die
+      // Antwort auf eine Erkennung, die noch niemand abgeholt hat.
+      .then((keys) => Promise.all(
+        keys.filter((key) => key !== CACHE && key !== ERGEBNISSE).map((key) => caches.delete(key)),
+      ))
       .then(() => self.clients.claim()),
   );
 });
+
+/* ── Anfragen, die den Standby überstehen ────────────────────
+
+   Die Seite wird eingefroren, sobald das Display ausgeht oder sie in
+   den Hintergrund wandert — eine Erkennung, die von dort aus läuft,
+   steht dann still. Dieser Worker gehört nicht zur Seite. `waitUntil`
+   hält ihn für die Dauer der Anfrage am Leben, und das Ergebnis wird
+   haltbar abgelegt, bevor es gemeldet wird. So findet die Seite es
+   selbst dann noch, wenn sie zwischendurch verworfen wurde. */
+
+const laufend = new Set();
+
+self.addEventListener('message', (event) => {
+  const daten = event.data;
+  if (daten?.type === 'anfrage') event.waitUntil(ausfuehren(daten));
+  else if (daten?.type === 'abholen') event.waitUntil(abholen(daten.id, event.source));
+});
+
+async function ausfuehren({ id, url, method, headers, body }) {
+  laufend.add(id);
+  let ergebnis;
+  try {
+    const antwort = await fetch(url, { method: method || 'POST', headers, body });
+    ergebnis = {
+      id,
+      ok: antwort.ok,
+      status: antwort.status,
+      retryAfter: Number(antwort.headers.get('retry-after')) || 0,
+      text: await antwort.text(),
+    };
+  } catch {
+    ergebnis = { id, fehler: true, ok: false, status: 0, retryAfter: 0, text: '' };
+  }
+  laufend.delete(id);
+
+  // Erst ablegen, dann melden — in dieser Reihenfolge, damit zwischen
+  // beidem nichts verlorengehen kann.
+  const cache = await caches.open(ERGEBNISSE);
+  await cache.put(schluessel(id), new Response(JSON.stringify({ ...ergebnis, abgelegtAm: Date.now() })));
+  await aufraeumen(cache);
+  await melden({ type: 'antwort', ...ergebnis });
+}
+
+/* Abgeholte Ergebnisse werden gelöscht — abgeholt wird aber nicht immer.
+   Wurde die Seite verworfen, fragt niemand mehr nach, und der Eintrag
+   bliebe für immer liegen. Alles, was älter als eine Stunde ist, ist
+   ohnehin niemandem mehr von Nutzen. */
+const HALTBAR = 60 * 60 * 1000;
+
+async function aufraeumen(cache) {
+  const jetzt = Date.now();
+  for (const anfrage of await cache.keys()) {
+    const treffer = await cache.match(anfrage);
+    const alter = jetzt - ((await treffer?.json().catch(() => null))?.abgelegtAm ?? 0);
+    if (alter > HALTBAR) await cache.delete(anfrage);
+  }
+}
+
+async function abholen(id, quelle) {
+  const cache = await caches.open(ERGEBNISSE);
+  const treffer = await cache.match(schluessel(id));
+  if (treffer) {
+    const ergebnis = await treffer.json();
+    await cache.delete(schluessel(id));
+    quelle?.postMessage({ type: 'antwort', ...ergebnis });
+    return;
+  }
+  // Läuft noch — die Meldung kommt von selbst.
+  if (laufend.has(id)) return;
+  // Weder fertig noch laufend: Der Worker wurde zwischendurch beendet.
+  quelle?.postMessage({ type: 'antwort', id, unbekannt: true });
+}
+
+const schluessel = (id) => new Request(`${self.location.origin}/__erkennung/${encodeURIComponent(id)}`);
+
+async function melden(nachricht) {
+  const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+  for (const client of clients) client.postMessage(nachricht);
+}
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
