@@ -273,5 +273,32 @@ Icons neu erzeugen (braucht nur Node, keine Pakete):
 node tools/make-icons.mjs
 ```
 
-Nach Änderungen an den App-Dateien die Zahl in `CACHE` in `sw.js` hochzählen,
-sonst hält der Service Worker die alte Fassung fest.
+Nach Änderungen an den App-Dateien **zwei** Zahlen hochzählen, die zusammen
+gehören: `CACHE` in `sw.js` und `BUILD` in `assets/js/app.js`. Laufen sie
+auseinander, zeigen die Einstellungen eine falsche Fassung an — `test13` prüft
+das deshalb.
+
+## Wie eine Änderung auf dem Gerät ankommt
+
+Das ging zwischendurch schief, und zwar auf eine Art, die von aussen wie „der
+Code ist gar nicht angekommen" aussah. Der Service Worker holte zuerst aus dem
+Cache und erneuerte ihn nur im Hintergrund. Damit war jeder Start **eine
+Fassung hinterher**: Wer die App öffnete, sah den alten Stand; der neue landete
+bloss im Cache und wurde erst beim übernächsten Start sichtbar. Zweimal
+schliessen und öffnen hätte geholfen — nur ahnt das niemand.
+
+Jetzt gilt: **Netz zuerst, Cache als Rückfalllinie.** Wer online ist, bekommt
+immer den aktuellen Stand; offline kommt alles aus dem Cache wie vorher.
+Dazu drei Dinge, damit es nicht wieder still schiefgehen kann:
+
+- `registration.update()` beim Start und jedes Mal, wenn die App wieder in den
+  Vordergrund kommt.
+- Übernimmt ein neuer Service Worker, lädt die Seite **einmal** selbst neu —
+  sonst läuft im Fenster weiter der Code, der vor dem Wechsel geladen wurde.
+- Die laufende Fassung steht in den Einstellungen unter *App*, daneben ein Knopf
+  *Neueste Fassung holen*: Service Worker abmelden, alle Caches leeren, neu
+  laden. Der Notausgang, falls doch einmal etwas klemmt.
+
+`test14` prüft das Ganze gegen einen Testserver, der `Cache-Control: max-age=600`
+sendet wie GitHub Pages: Datei am Server ändern, App neu aufrufen, die Änderung
+muss beim **nächsten** Start da sein — und offline muss es weiterhin laufen.

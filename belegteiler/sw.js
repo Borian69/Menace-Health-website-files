@@ -3,7 +3,8 @@
 
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
-const CACHE = 'belegteiler-v12';
+/* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
+const CACHE = 'belegteiler-v13';
 
 const SHELL = [
   './',
@@ -50,20 +51,31 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;  // API-Aufrufe nie abfangen
 
+  /* Netz zuerst, Cache als Rückfalllinie.
+     Vorher stand es andersherum, und das war ein Fehler: Wer aus dem
+     Cache bedient wird, sieht nach einer Änderung noch einmal den alten
+     Stand — die neue Fassung landet nur im Cache und wird erst beim
+     übernächsten Start sichtbar. Genau so wirkte es, als käme der Code
+     gar nicht an. Offline funktioniert weiterhin alles, nur eben aus
+     dem Cache. */
+  /* `cache: 'reload'` umgeht zusätzlich den HTTP-Zwischenspeicher des
+     Browsers. GitHub Pages setzt `Cache-Control: max-age=600`, der
+     Service Worker könnte also „vom Netz geholt" haben und doch eine bis
+     zu zehn Minuten alte Datei bekommen. Im Test hier war es allein
+     nicht nötig — den Ausschlag gibt die Reihenfolge oben. Es bleibt
+     trotzdem stehen: es kostet nichts und schliesst den Fall. */
   event.respondWith(
-    caches.match(request).then((cached) => {
-      // Im Hintergrund aktualisieren, damit neue Versionen ankommen.
-      const network = fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-
-      return cached || network;
-    }),
+    fetch(request, { cache: 'reload' })
+      .then((response) => {
+        if (response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(request, copy));
+        }
+        return response;
+      })
+      .catch(async () => {
+        const cached = await caches.match(request);
+        return cached || new Response('Offline', { status: 503, statusText: 'Offline' });
+      }),
   );
 });
