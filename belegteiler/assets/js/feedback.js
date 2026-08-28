@@ -85,7 +85,10 @@ function play(key, notes) {
 
   if (webAudioReady()) {
     lastPath = 'Web Audio';
-    for (const note of notes) bell(note.freq, note);
+    for (const note of notes) {
+      if (note.to) riser(note.freq, note.to, note);
+      else bell(note.freq, note);
+    }
     return;
   }
   playViaElement(key, notes);
@@ -157,6 +160,32 @@ function bell(freq, { at = 0, duration = 0.4, gain = 0.18, partial = 2.7 } = {})
   }
 }
 
+/**
+ * Riser: die Tonhöhe steigt an und wird lauter, ohne auszuklingen. Er
+ * baut die Spannung auf, die der Glockenton danach auflöst. Ohne ihn
+ * kommt die Bestätigung aus dem Nichts; mit ihm hat sie einen Anlauf.
+ */
+function riser(from, to, { at = 0, duration = 0.42, gain = 0.1 } = {}) {
+  if (!audio) return;
+  const start = audio.currentTime + at;
+
+  for (const [ratio, level] of [[1, gain], [2, gain * 0.4]]) {
+    const osc = audio.createOscillator();
+    const amp = audio.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(from * ratio, start);
+    osc.frequency.exponentialRampToValueAtTime(to * ratio, start + duration);
+
+    amp.gain.setValueAtTime(0.0001, start);
+    amp.gain.exponentialRampToValueAtTime(level, start + duration * 0.88);
+    amp.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+    osc.connect(amp).connect(master || audio.destination);
+    osc.start(start);
+    osc.stop(start + duration + 0.02);
+  }
+}
+
 /** Trockener kurzer Klick fürs Antippen. */
 function click(freq = 1050, gain = 0.07) {
   if (!audio) return;
@@ -191,21 +220,32 @@ export const cue = {
   /** Beleg erkannt — die Zwei-Ton-Bestätigung wie beim Bezahlen. */
   success() {
     play('success', [
-      { freq: 1318.5, gain: 0.18 },                      // E6
-      { freq: 1975.5, at: 0.085, gain: 0.15 },           // B6
+      { freq: 330, to: 1250, duration: 0.42, gain: 0.09 },   // Anlauf
+      { freq: 1318.5, at: 0.42, gain: 0.19 },                // E6 — der Aufschlag
+      { freq: 1975.5, at: 0.505, gain: 0.16 },               // B6
     ]);
-    buzz([12, 45, 22]);
+    buzz([0, 380, 14, 45, 22]);
   },
 
   /** Abrechnung abgeschlossen — aufsteigender Dreiklang. */
   done() {
     play('done', [
-      { freq: 1046.5, gain: 0.14 },                             // C6
-      { freq: 1318.5, at: 0.09, gain: 0.15 },                   // E6
-      { freq: 1568.0, at: 0.18, gain: 0.16, duration: 0.7 },    // G6
-      { freq: 2093.0, at: 0.30, gain: 0.09, duration: 0.9 },    // C7 als Schimmer
+      { freq: 260, to: 1000, duration: 0.6, gain: 0.1 },        // langer Anlauf
+      { freq: 1046.5, at: 0.6,  gain: 0.15 },                   // C6
+      { freq: 1318.5, at: 0.69, gain: 0.16 },                   // E6
+      { freq: 1568.0, at: 0.78, gain: 0.17, duration: 0.75 },   // G6
+      { freq: 2093.0, at: 0.90, gain: 0.10, duration: 0.95 },   // C7 als Schimmer
     ]);
-    buzz([14, 40, 14, 40, 30]);
+    buzz([0, 560, 14, 40, 14, 40, 34]);
+  },
+
+  /** Beleg wandert in die Ablage. */
+  filed() {
+    play('filed', [
+      { freq: 720, to: 1500, duration: 0.2, gain: 0.07 },
+      { freq: 1760, at: 0.2, gain: 0.1, duration: 0.22, partial: 2 },
+    ]);
+    buzz([10, 30, 16]);
   },
 
   /** Etwas ist schiefgegangen. */
@@ -248,12 +288,15 @@ export function countTo(node, to, format) {
   node.dataset.raf = String(requestAnimationFrame(step));
 }
 
-/** Kurzes Aufploppen eines Elements. */
-export function pop(node) {
+/**
+ * Kurzes Aufploppen eines Elements. Der Klassenname ist wählbar, damit
+ * dieselbe Neustart-Mechanik auch andere Animationen auslösen kann.
+ */
+export function pop(node, className = 'pop') {
   if (!node || reduceMotion()) return;
-  node.classList.remove('pop');
+  node.classList.remove(className);
   void node.offsetWidth;              // Neustart der Animation erzwingen
-  node.classList.add('pop');
+  node.classList.add(className);
 }
 
 /**

@@ -14,13 +14,32 @@ const RATE = 22050;
  * @returns {string} data:-URL eines 16-Bit-Mono-WAV
  */
 export function renderTone(notes) {
-  const length = Math.max(...notes.map((n) => (n.at || 0) + (n.duration ?? 0.4))) + 0.05;
+  const length = Math.max(...notes.map((note) => (note.at || 0) + (note.duration ?? 0.4))) + 0.05;
   const count = Math.ceil(length * RATE);
   const samples = new Float32Array(count);
 
   for (const note of notes) {
-    const { freq, at = 0, duration = 0.4, gain = 0.18, partial = 2.7 } = note;
+    const { freq, at = 0, duration = 0.4, gain = 0.18, partial = 2.7, to } = note;
     const start = Math.floor(at * RATE);
+
+    /* Ein Riser: die Tonhöhe steigt an und wird lauter, ohne
+       auszuklingen. Er baut die Spannung auf, die der Glockenton danach
+       auflöst — deshalb keine abfallende Hüllkurve. */
+    if (to) {
+      const steps = Math.ceil(duration * RATE);
+      let phase = 0;
+      for (let i = 0; i < steps; i += 1) {
+        const index = start + i;
+        if (index >= count) break;
+        const progress = i / steps;
+        const current = freq * (to / freq) ** progress;
+        phase += (2 * Math.PI * current) / RATE;
+        // Leiser Anfang, kräftiges Ende, weiches Ausblenden zum Schluss.
+        const envelope = progress ** 1.6 * (1 - progress ** 8);
+        samples[index] += (Math.sin(phase) * 0.6 + Math.sin(phase * 2) * 0.25) * gain * envelope;
+      }
+      continue;
+    }
 
     // Gleiche Form wie im Web-Audio-Weg: Grundton plus schneller
     // ausklingende Oberschwingung, sehr kurzer Anschlag.

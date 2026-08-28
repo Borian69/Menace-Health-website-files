@@ -57,8 +57,7 @@ Belege sammeln sich über den Tag zu **einer** Abrechnung. Erst wenn Du sie
 abschließt, ist sie fertig — bis dahin kannst Du jederzeit weitere Bons anhängen,
 auch nachdem die App zwischendurch zu war.
 
-1. **Icon antippen → „Beleg scannen".** Die Kamera öffnet sich in der App, mit
-   Rahmen zum Anlegen und — wo das Gerät es kann — Licht für dunkle Bons. Es
+1. **Icon antippen → „Beleg scannen".** Die Kamera des Handys öffnet sich. Es
    dürfen ruhig **mehrere Bons nebeneinander** liegen.
 2. **Warten.** Positionen, Preise und Warengruppen werden erkannt; unklare Zeilen
    danach nachgeschlagen. Lange Bons werden automatisch in überlappende
@@ -181,19 +180,17 @@ Zwei Sicherungen greifen deshalb:
 
 ## Kamera
 
-Die Aufnahme läuft in der App, nicht über die System-Kamera. Grund ist ein
-handfester: `<input capture="environment">` ist für den Browser nur ein
-Vorschlag, und viele Android-Browser ignorieren die Richtung und öffnen die
-Frontkamera. Über `getUserMedia` mit `facingMode: environment` lässt sich die
-Rückkamera verbindlich anfordern.
+Fotografiert wird mit der Kamera-App des Handys, angestoßen über
+`<input type="file" accept="image/*" capture="environment">`.
 
-Nebeneffekte, die dem Zweck entgegenkommen: eine Vorschau mit Eck-Rahmen zum
-Anlegen, ein Licht-Knopf für dunkle Thermobons, kein App-Wechsel. Ausgelöst wird
-über `ImageCapture` — das liefert das volle Sensorbild statt nur eines
-Videobildes; wo der Browser das nicht kann, wird das laufende Bild abgegriffen.
-
-Verweigert das Gerät die Kamera, fällt die App auf das Datei-Feld zurück, und
-„Bild aus der Galerie wählen" geht ohnehin immer.
+Es gab zwischendurch eine nachgebaute Kamera in der App über `getUserMedia` —
+der Gedanke war, dass `capture="environment"` für den Browser nur ein Vorschlag
+ist und manche Browser trotzdem die Frontkamera öffnen. Im Alltag hat sich das
+nicht bewährt: die Bilder wurden unschärfer als die der Kamera-App. Das ist auch
+kein Wunder — Autofokus, Belichtung, Bildstabilisierung und die volle Auflösung
+des Sensors sind genau das, worin die Kamera-App gut ist, und für die feine
+Schrift auf einem Kassenbon zählt nichts davon wenig. Sie ist deshalb wieder der
+Weg, „Bild aus der Galerie wählen" die Alternative.
 
 ## Rückmeldung
 

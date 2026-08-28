@@ -11,7 +11,6 @@ import { createBill, addScan, addReceipt, createItem, totals, printedTotal, grou
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
 import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus, canPickOutput, pickOutput } from './feedback.js';
-import * as camera from './camera.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
 
@@ -116,6 +115,9 @@ function openFromHistory(entry) {
 
 /* ── Kamera & Erkennung ──────────────────────────────────── */
 
+/* Aufgenommen wird mit der Kamera-App des Handys. Die kann alles, was
+   für einen Kassenbon zählt — Autofokus, Belichtung, volle Auflösung —
+   und macht es besser als eine nachgebaute Vorschau im Browser. */
 function requestPhoto(input) {
   unlock();                       // echte Geste — hier darf der Ton aufgehen
   if (!isConfigured(settings)) {
@@ -127,67 +129,60 @@ function requestPhoto(input) {
   input.click();
 }
 
-/* Die App-eigene Kamera. `capture="environment"` am Datei-Feld ist für
-   den Browser nur ein Vorschlag — viele Android-Browser nehmen trotzdem
-   die Frontkamera. Über getUserMedia lässt sich die Rückkamera
-   verbindlich anfordern. Klappt das nicht, bleibt das Datei-Feld. */
-async function openCamera() {
-  unlock();
-  if (!isConfigured(settings)) {
-    toast('Erst die Erkennung einrichten.');
-    openSettings();
-    return;
+const openCamera = () => requestPhoto($('#file-camera'));
+
+const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/**
+ * Das aufgenommene Bild wandert sichtbar zu den anderen in die Ablage.
+ * Die Strecke wird gemessen und nicht geraten, damit die Bewegung auf
+ * jedem Bildschirm genau im Ordner endet.
+ * @returns {Promise<void>} erfüllt, wenn das Bild abgelegt ist
+ */
+function fileIntoFolder() {
+  const frame = $('#scan-frame');
+  const folder = $('#scan-folder');
+  // Der Zähler springt erst hoch, wenn der Beleg ankommt.
+  const arrive = () => {
+    $('#folder-count').textContent = String(bill.receipts.length);
+    pop(folder, 'bump');
+  };
+
+  if (reduceMotion()) {
+    document.body.classList.add('filing');
+    arrive();
+    cue.filed();
+    return new Promise((resolve) => setTimeout(resolve, 260));
   }
-  if (!camera.supported()) { requestPhoto($('#file-camera')); return; }
 
-  showView('camera');
-  try {
-    await camera.start($('#cam-video'));
-  } catch (error) {
-    await camera.stop();
-    showView('home');
-    toast(error.message);
-    requestPhoto($('#file-camera'));   // Notweg über die System-Kamera
-    return;
-  }
+  const from = frame.getBoundingClientRect();
+  const to = folder.getBoundingClientRect();
+  frame.style.setProperty('--dx', `${(to.left + to.width / 2) - (from.left + from.width / 2)}px`);
+  // Zielpunkt ist das Ordnerblatt, nicht die Mitte samt Zähler darunter.
+  frame.style.setProperty('--dy', `${(to.top + 26) - (from.top + from.height / 2)}px`);
 
-  const torch = $('#btn-cam-torch');
-  torch.hidden = !camera.hasTorch();
-  torch.classList.remove('on');
-  $('#btn-cam-shoot').disabled = false;
-}
+  document.body.classList.add('filing');
+  setTimeout(() => cue.filed(), 260);
+  setTimeout(arrive, 470);
 
-async function closeCamera(view = 'home') {
-  await camera.stop();
-  showView(view);
-  if (view === 'home') renderHome();
-}
-
-async function shootPhoto() {
-  const button = $('#btn-cam-shoot');
-  button.disabled = true;
-  try {
-    const file = await camera.shoot($('#cam-video'));
-    cue.tick();
-    await camera.stop();
-    handleFiles([file]);
-  } catch (error) {
-    button.disabled = false;
-    toast(error.message || 'Die Aufnahme hat nicht geklappt.');
-  }
+  return new Promise((resolve) => setTimeout(resolve, 720));
 }
 
 async function handleFiles(fileList) {
   const files = [...fileList].filter((file) => file.type.startsWith('image/'));
   if (!files.length) return;
 
-  document.body.classList.remove('scan-failed');
+  document.body.classList.remove('scan-failed', 'filing');
+  $('#scan-folder').classList.remove('bump');
+  // Stand der Ablage vor diesem Beleg — er zählt gleich sichtbar hoch.
+  $('#folder-count').textContent = String(bill && !bill.done ? bill.receipts.length : 0);
   $('#scan-error').hidden = true;
   $('#scan-step').textContent = 'Beleg wird vorbereitet …';
   $('#scan-substep').textContent = files.length > 1
     ? `${files.length} Aufnahmen werden zusammengeführt.`
     : 'Das Bild wird für die Erkennung geschärft.';
   showView('scan');
+  pop($('#scan-frame'), 'pull');      // das Bild wird hervorgezogen
 
   scanAbort?.abort();
   scanAbort = new AbortController();
@@ -213,7 +208,10 @@ async function handleFiles(fileList) {
     persist();
     recordUsage(parsed.usage);
 
+    // Erst wandert der Beleg zu den anderen in die Ablage, dann kommt
+    // der Aufschlag mit dem Betrag — Anlauf und Auflösung nacheinander.
     const sums = totals(bill);
+    await fileIntoFolder();
     await celebrate({
       label: added.length > 1 ? `${added.length} Belege erfasst` : `${added[0]?.store || 'Beleg'} erfasst`,
       amount: euro(sums.parents),
@@ -714,25 +712,6 @@ function wire() {
   $('#btn-capture').addEventListener('click', openCamera);
   $('#btn-pick').addEventListener('click',    () => requestPhoto($('#file-gallery')));
 
-  // Kamera-Ansicht
-  $('#btn-cam-shoot').addEventListener('click', shootPhoto);
-  $('#btn-cam-close').addEventListener('click', () => closeCamera('home'));
-  $('#btn-cam-flip').addEventListener('click', async () => {
-    try {
-      await camera.flip($('#cam-video'));
-      $('#btn-cam-torch').hidden = !camera.hasTorch();
-      $('#btn-cam-torch').classList.remove('on');
-      $('#cam-hint').textContent = camera.facingNow() === 'environment'
-        ? 'Bon ganz ins Bild, von oben fotografieren.'
-        : 'Frontkamera — für Belege ist die Rückkamera schärfer.';
-    } catch (error) {
-      toast(error.message);
-    }
-  });
-  $('#btn-cam-torch').addEventListener('click', async () => {
-    const on = !$('#btn-cam-torch').classList.contains('on');
-    if (await camera.setTorch(on)) $('#btn-cam-torch').classList.toggle('on', on);
-  });
   $('#btn-open-review').addEventListener('click', () => { renderReview(); showView('review'); });
   $('#btn-open-finish').addEventListener('click', openSummary);
   $('#btn-settings').addEventListener('click', openSettings);
