@@ -393,6 +393,15 @@ body[data-view="settings"] #view-settings { display: flex; animation: viewIn .28
 }
 .scan-frame img { width: 100%; height: 100%; object-fit: cover; opacity: .62; }
 
+/* Eigene Ebene für alles, was sich hier bewegt. Ohne das muss der
+   Browser den Rahmen samt Schlagschatten und abgerundeten Ecken bei
+   jedem Bild neu zeichnen — und genau das ruckelt, während nebenan das
+   Foto zerlegt wird. Die Ebene wird angelegt, sobald die Scan-Ansicht
+   sichtbar ist, also vor der Bewegung und nicht mittendrin. */
+body[data-view="scan"] .scan-frame,
+body[data-view="scan"] .scan-beam,
+body[data-view="scan"] .folder { will-change: transform; }
+
 /* Das Foto wird nach der Aufnahme herausgezogen. Als eigene Klasse,
    damit sich die Animation bei jeder neuen Aufnahme neu auslösen lässt —
    ein Element spielt dieselbe Animation sonst nur ein einziges Mal. */

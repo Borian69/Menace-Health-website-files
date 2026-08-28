@@ -217,33 +217,43 @@ export const cue = {
     buzz(8);
   },
 
-  /** Beleg erkannt — die Zwei-Ton-Bestätigung wie beim Bezahlen. */
+  /* Beleg erkannt. Der Aufbau ist bewusst dreiteilig:
+     tiefer Anlauf — Stille — Piep.
+
+     Die Stille dazwischen trägt das Ganze. Läuft der Anlauf direkt in
+     den Ton, verschwimmen beide zu einem einzigen Geräusch. Erst die
+     kurze Lücke macht aus dem Anlauf eine Frage und aus dem Piep die
+     Antwort. Und der Anlauf beginnt tief: von unten hat er Platz zu
+     steigen, weiter oben klingt er bloss dünn. */
   success() {
     play('success', [
-      { freq: 330, to: 1250, duration: 0.42, gain: 0.09 },   // Anlauf
-      { freq: 1318.5, at: 0.42, gain: 0.19 },                // E6 — der Aufschlag
-      { freq: 1975.5, at: 0.505, gain: 0.16 },               // B6
+      { freq: 98, to: 523, duration: 0.5, gain: 0.11 },      // G2 → C5, der Anlauf
+      // 0,14 s Stille
+      { freq: 1318.5, at: 0.64, gain: 0.2, duration: 0.42 }, // E6 — der Piep
+      { freq: 2637.0, at: 0.70, gain: 0.07, duration: 0.3 }, // eine Oktave als Glanz
     ]);
-    buzz([0, 380, 14, 45, 22]);
+    buzz([0, 440, 140, 55, 24]);
   },
 
-  /** Abrechnung abgeschlossen — aufsteigender Dreiklang. */
+  /** Abrechnung abgeschlossen — gleicher Aufbau, längerer Anlauf. */
   done() {
     play('done', [
-      { freq: 260, to: 1000, duration: 0.6, gain: 0.1 },        // langer Anlauf
-      { freq: 1046.5, at: 0.6,  gain: 0.15 },                   // C6
-      { freq: 1318.5, at: 0.69, gain: 0.16 },                   // E6
-      { freq: 1568.0, at: 0.78, gain: 0.17, duration: 0.75 },   // G6
-      { freq: 2093.0, at: 0.90, gain: 0.10, duration: 0.95 },   // C7 als Schimmer
+      { freq: 73, to: 440, duration: 0.7, gain: 0.12 },          // D2 → A4
+      // 0,16 s Stille
+      { freq: 1046.5, at: 0.86, gain: 0.16 },                    // C6
+      { freq: 1318.5, at: 0.95, gain: 0.16 },                    // E6
+      { freq: 1568.0, at: 1.04, gain: 0.17, duration: 0.75 },    // G6
+      { freq: 2093.0, at: 1.16, gain: 0.10, duration: 0.95 },    // C7 als Schimmer
     ]);
-    buzz([0, 560, 14, 40, 14, 40, 34]);
+    buzz([0, 640, 160, 40, 14, 40, 34]);
   },
 
-  /** Beleg wandert in die Ablage. */
+  /** Beleg wandert in die Ablage — dasselbe im Kleinen. */
   filed() {
     play('filed', [
-      { freq: 720, to: 1500, duration: 0.2, gain: 0.07 },
-      { freq: 1760, at: 0.2, gain: 0.1, duration: 0.22, partial: 2 },
+      { freq: 220, to: 780, duration: 0.22, gain: 0.08 },
+      // 0,07 s Stille
+      { freq: 1760, at: 0.29, gain: 0.11, duration: 0.24, partial: 2 },
     ]);
     buzz([10, 30, 16]);
   },

@@ -189,11 +189,19 @@ async function handleFiles(fileList) {
   const { signal } = scanAbort;
 
   try {
+    // Die Vorschau kommt früh zurück, damit im Rahmen nicht die ganze
+    // Rechenzeit über ein Loch klafft.
     const prepared = [];
-    for (const file of files) prepared.push(await prepareImage(file));
+    let erste = true;
+    for (const file of files) {
+      prepared.push(await prepareImage(file, (preview) => {
+        if (!erste) return;
+        erste = false;
+        $('#scan-preview').src = preview;
+      }));
+    }
     if (signal.aborted) return;
 
-    $('#scan-preview').src = prepared[0].preview;
     $('#scan-step').textContent = 'Beleg wird gelesen …';
     $('#scan-substep').textContent = settings.resolveUncertain
       ? 'Positionen und Preise werden erkannt, unklare Zeilen danach nachgeschlagen.'
@@ -838,7 +846,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v13';
+const BUILD = 'v14';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

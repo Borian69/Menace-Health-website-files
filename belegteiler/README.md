@@ -194,9 +194,17 @@ Weg, „Bild aus der Galerie wählen" die Alternative.
 
 ## Rückmeldung
 
+Der Ton ist dreiteilig: **tiefer Anlauf — Stille — Piep.** Die Stille dazwischen
+trägt das Ganze. Läuft der Anlauf direkt in den Ton, verschwimmen beide zu einem
+Geräusch; erst die Lücke macht aus dem Anlauf eine Frage und aus dem Piep die
+Antwort. Und der Anlauf beginnt tief (98 Hz bei der Bestätigung, 73 Hz beim
+Abschluss) — von unten hat er Platz zu steigen, weiter oben klingt er dünn.
+`test16` misst die Hüllkurve nach: Aufbau um Faktor 8, Pause exakt still, Piep
+mehr als fünfmal so laut wie der Anlauf.
+
 Erkannter Beleg und abgeschlossene Abrechnung werden bestätigt wie eine Zahlung
-am Handy: ein Ring läuft nach außen, ein Haken zeichnet sich, zwei helle
-Glockentöne, ein kurzer Impuls in der Hand. Beträge zählen hoch statt zu
+am Handy: ein Ring läuft nach außen, ein Haken zeichnet sich, dazu der Ton und
+ein kurzer Impuls in der Hand. Beträge zählen hoch statt zu
 springen, Häkchen ploppen beim Antippen.
 
 Die Töne werden im Browser erzeugt, nicht als Datei geladen — die App bleibt
@@ -277,6 +285,36 @@ Nach Änderungen an den App-Dateien **zwei** Zahlen hochzählen, die zusammen
 gehören: `CACHE` in `sw.js` und `BUILD` in `assets/js/app.js`. Laufen sie
 auseinander, zeigen die Einstellungen eine falsche Fassung an — `test13` prüft
 das deshalb.
+
+## Wenn das Display ausgeht
+
+Die Seite wird eingefroren, sobald das Handy in den Standby geht oder sie
+in den Hintergrund wandert. Eine Anfrage, die aus der Seite heraus läuft,
+hängt dann fest — die Antwort mag da sein, aber der Code, der sie annimmt,
+läuft nicht. Für eine Erkennung, die zwanzig Sekunden dauert, reicht ein
+Blick zur Seite.
+
+Ein Service Worker gehört nicht zur Seite. Läuft einer, bekommt er die
+Anfrage (`netz.js` → `sw.js`), und `event.waitUntil` hält ihn für ihre
+Dauer am Leben. Das Ergebnis wird **haltbar abgelegt, bevor es gemeldet
+wird**; verpasst die eingefrorene Seite die Meldung, holt sie es beim
+Zurückkommen ab. Abgeholtes wird gelöscht, alles Ältere als eine Stunde
+ebenfalls. Ohne Worker wird direkt gefragt — langsamer, aber nie ein
+Totalausfall.
+
+Was `test15` belegt: Der Durchlauf über den Worker kommt sauber durch,
+ein verpasstes Ergebnis lässt sich nachträglich abholen, und es wird
+nicht doppelt ausgeliefert. Was er **nicht** belegt: dass das Einfrieren
+allein ohne Worker etwas kaputtmacht — im Testbrowser läuft das Netz auch
+in der eingefrorenen Seite weiter, die Antwort wird beim Aufwachen
+nachgereicht. Der Lauf ohne Worker steht als Gegenprobe drin, wird aber
+bewusst nicht bewertet.
+
+Zum Testen wichtig: Playwright kann Anfragen aus einem Service Worker
+nicht abfangen — weder `page.route()` noch `context.route()` (geprüft mit
+1.56). Die Logik-Suiten laufen deshalb mit `serviceWorkers: 'block'` über
+den direkten Weg; `test15` mockt auf Server-Ebene und deckt den Weg über
+den Worker ab.
 
 ## Wie eine Änderung auf dem Gerät ankommt
 

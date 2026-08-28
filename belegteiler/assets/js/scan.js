@@ -12,6 +12,7 @@
 
 import { categoryIds } from './categories.js';
 import { provider } from './providers.js';
+import { anfrage } from './netz.js';
 
 const MAX_TOKENS = 8000;
 
@@ -194,42 +195,35 @@ async function call({ settings, model, system, text, images, tool, signal, attem
     ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ provider: api.id, body }) }
     : { method: 'POST', headers: api.headers(key.trim()), body: JSON.stringify(body) };
 
-  let response;
-  try {
-    response = await fetch(url, { ...init, signal });
-  } catch (error) {
-    if (error.name === 'AbortError') throw error;
-    throw new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
-  }
+  // Läuft ein Service Worker, stellt der die Anfrage — dann überlebt
+  // sie das Sperren des Displays. Siehe netz.js.
+  const { ok, status, retryAfter, payload } = await anfrage(url, init, signal);
 
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const retryAfter = Number(response.headers.get('retry-after')) || 0;
+  if (!ok) {
     const ownLimit = payload?.error?.metadata?.error_type === 'rate_limit_exceeded';
 
     // Einmal nachfassen — aber nicht, wenn wirklich das eigene
     // Kontingent erschöpft ist; da hilft Warten in Sekunden nicht.
-    if (attempt === 1 && RETRY_STATUS.has(response.status) && !ownLimit && retryAfter <= MAX_WAIT_SECONDS) {
+    if (attempt === 1 && RETRY_STATUS.has(status) && !ownLimit && retryAfter <= MAX_WAIT_SECONDS) {
       await sleep(Math.max(1200, retryAfter * 1000), signal);
       return call({ settings, model, system, text, images, tool, signal, attempt: 2, allowFallback });
     }
 
     // Zweite Rettungsleine: ein anderes Modell.
     const fallback = (settings.fallbackModel || '').trim();
-    if (allowFallback && fallback && fallback !== model && FALLBACK_STATUS.has(response.status)) {
+    if (allowFallback && fallback && fallback !== model && FALLBACK_STATUS.has(status)) {
       const result = await call({
         settings, model: fallback, system, text, images, tool, signal, allowFallback: false,
       });
       return { ...result, switchedFrom: model };
     }
 
-    const message = api.error(response.status, payload, { retryAfter })
-      || (response.status >= 500
+    const message = api.error(status, payload, { retryAfter })
+      || (status >= 500
         ? 'Der Dienst ist gerade nicht erreichbar. Bitte in einem Moment nochmal versuchen.'
-        : `Unerwartete Antwort (HTTP ${response.status}).`);
+        : `Unerwartete Antwort (HTTP ${status}).`);
     const failure = new Error(message);
-    failure.status = response.status;
+    failure.status = status;
     throw failure;
   }
 
