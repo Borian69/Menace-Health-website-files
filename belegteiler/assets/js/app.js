@@ -531,7 +531,15 @@ function openSettings() {
   applyMode();
   hideTestResult();
   renderUsage();
+  renderBuild();
   showView('settings');
+}
+
+/* Welche Fassung läuft hier gerade — damit sich nach einer Änderung mit
+   einem Blick prüfen lässt, ob sie angekommen ist, statt zu raten. */
+function renderBuild() {
+  const worker = navigator.serviceWorker?.controller ? 'aus dem Zwischenspeicher bedient' : 'direkt vom Server';
+  $('#build-line').textContent = `${BUILD} · ${worker}`;
 }
 
 function recordUsage(usage) {
@@ -800,6 +808,7 @@ function wire() {
     node.className = `test-result ${status.ok ? 'ok' : 'fail'}`;
     node.textContent = status.text;
   });
+  $('#btn-update').addEventListener('click', forceUpdate);
   $('#btn-reset-usage').addEventListener('click', () => { clearUsage(); renderUsage(); });
   $('#btn-reset').addEventListener('click', () => {
     if (!confirm('Einstellungen und alle Abrechnungen von diesem Gerät löschen?')) return;
@@ -828,9 +837,45 @@ function fillProviderSelect() {
   for (const api of Object.values(PROVIDERS)) select.append(el('option', { value: api.id, text: api.label }));
 }
 
+/* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
+const BUILD = 'v13';
+
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
-  navigator.serviceWorker.register('sw.js').catch(() => { /* offline-Betrieb ist optional */ });
+
+  /* Übernimmt ein neuer Service Worker, läuft im Fenster trotzdem noch
+     der alte Code — er wurde ja vor dem Wechsel geladen. Einmal neu
+     laden, sonst bleibt eine Änderung unsichtbar, obwohl sie längst da
+     ist. Beim allerersten Besuch gibt es nichts zu ersetzen. */
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let reloading = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController || reloading) return;
+    reloading = true;
+    location.reload();
+  });
+
+  navigator.serviceWorker.register('sw.js').then((registration) => {
+    const check = () => registration.update().catch(() => {});
+    check();
+    // Beim Zurückkommen in die App nachsehen, ob es etwas Neues gibt.
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+  }).catch(() => { /* offline-Betrieb ist optional */ });
+}
+
+/** Notweg: Service Worker abmelden, alle Caches leeren, neu laden. */
+async function forceUpdate() {
+  const button = $('#btn-update');
+  button.disabled = true;
+  button.textContent = 'Wird geholt …';
+  try {
+    const registrations = await navigator.serviceWorker?.getRegistrations?.() ?? [];
+    await Promise.all(registrations.map((entry) => entry.unregister()));
+    const keys = await caches?.keys?.() ?? [];
+    await Promise.all(keys.map((key) => caches.delete(key)));
+  } catch { /* dann eben nur neu laden */ }
+  // Der Zeitstempel umgeht auch den Zwischenspeicher des Browsers.
+  location.replace(`${location.pathname}?frisch=${Date.now()}`);
 }
 
 configureFeedback(settings);
