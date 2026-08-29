@@ -175,9 +175,14 @@ function fileIntoFolder() {
    Es geht oft genug schief, dass „nochmal fotografieren" die falsche
    Antwort ist: Der Bon liegt dann schon wieder in der Tüte. Jede
    Aufnahme wird deshalb abgelegt, bevor die Erkennung startet, und erst
-   gelöscht, wenn sie durch ist. Dazwischen wird von allein
-   weiterprobiert — mit wachsendem Abstand, damit ein überlastetes
-   Modell zur Ruhe kommt. */
+   gelöscht, wenn sie durch ist.
+
+   Ob danach von allein weiterprobiert wird, ist eine Einstellung und
+   ab Werk aus. Der Grund ist praktischer Natur: Ein Anlauf, der nach
+   vier Sekunden nachrückt, überschreibt die Fehleranzeige, bevor man
+   sie gelesen hat — an die Details kommt man dann gar nicht mehr
+   heran. Eingeschaltet wächst der Abstand (4, 10, 25, 60 Sekunden),
+   damit ein überlastetes Modell zur Ruhe kommt. */
 
 const ABSTAENDE = [4, 10, 25, 60];   // Sekunden bis zum nächsten Anlauf
 let auftrag = null;                  // der Auftrag, an dem gerade gearbeitet wird
@@ -324,9 +329,11 @@ function zeigeFehler(error, { auftragDa }) {
   if (!auftragDa) return;
 
   const rest = ABSTAENDE[auftrag.versuche - 1];
-  if (!rest || error.wiederholbar === false) {
+  const vonAllein = settings.autoRetry && rest && error.wiederholbar !== false;
+
+  if (!vonAllein) {
     $('#scan-retry-note').hidden = false;
-    $('#scan-retry-note').textContent = ABSTAENDE[auftrag.versuche - 1]
+    $('#scan-retry-note').textContent = rest
       ? 'Der Beleg ist gespeichert. Du kannst es jederzeit nochmal versuchen.'
       : `Nach ${auftrag.versuche} Anläufen aufgehört. Der Beleg ist gespeichert — nochmal versuchen geht jederzeit.`;
     renderWaiting();
@@ -697,6 +704,7 @@ function openSettings() {
   $('#set-helper').value = settings.helperModel;
   $('#set-fallback').value = settings.fallbackModel;
   $('#set-resolve').checked = settings.resolveUncertain;
+  $('#set-auto-retry').checked = settings.autoRetry === true;
   $('#set-sounds').checked = settings.sounds !== false;
   $('#set-haptics').checked = settings.haptics !== false;
   $('#set-volume').value = Math.round((settings.volume ?? 0.7) * 100);
@@ -842,6 +850,7 @@ function readSettingsForm() {
     helperModel: $('#set-helper').value,
     fallbackModel: $('#set-fallback').value,
     resolveUncertain: $('#set-resolve').checked,
+    autoRetry: $('#set-auto-retry').checked,
     sounds:  $('#set-sounds').checked,
     haptics: $('#set-haptics').checked,
     volume:  Number($('#set-volume').value) / 100,
@@ -1024,6 +1033,7 @@ function wire() {
   /* Kommt das Netz zurück, ist das der beste Moment für einen neuen
      Anlauf — dann muss niemand daran denken. */
   window.addEventListener('online', async () => {
+    if (!settings.autoRetry) return;      // nichts passiert von allein
     if (auftrag || document.body.dataset.view === 'scan') return;
     if (await naechster()) {
       toast('Wieder online — der wartende Beleg wird erneut versucht.');
@@ -1053,7 +1063,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v16';
+const BUILD = 'v17';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
