@@ -295,8 +295,13 @@ export async function scanReceipt(parts, settings, signal) {
       settings,
       model,
       system: SYSTEM_PROMPT,
+      /* Ohne Richtungsangabe: Geteilt wird entlang der langen Kante,
+         bei einem Hochformat also quer und bei einem Querformat
+         längs. „Aufeinanderfolgend" stimmt in beiden Fällen, „von oben
+         nach unten" stimmte nur im einen — und eine falsche Angabe
+         bringt kleine Modelle zuverlässig durcheinander. */
       text: parts.length > 1
-        ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten (von oben nach unten). Erfasse jeden Kassenbon darauf vollständig.`
+        ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten. Sie gehören in dieser Reihenfolge zusammen; ein Bon kann über zwei Abschnitte reichen. Die Abschnitte sind für die Lesbarkeit in Graustufen umgewandelt. Erfasse jeden Kassenbon vollständig, aber keinen doppelt.`
         : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
       images: parts,
       tool: SCAN_TOOL,

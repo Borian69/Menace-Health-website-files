@@ -705,6 +705,7 @@ function openSettings() {
   $('#set-fallback').value = settings.fallbackModel;
   $('#set-resolve').checked = settings.resolveUncertain;
   $('#set-auto-retry').checked = settings.autoRetry === true;
+  $('#set-bild').checked = settings.bildAufbereiten !== false;
   $('#set-sounds').checked = settings.sounds !== false;
   $('#set-haptics').checked = settings.haptics !== false;
   $('#set-volume').value = Math.round((settings.volume ?? 0.7) * 100);
@@ -851,6 +852,7 @@ function readSettingsForm() {
     fallbackModel: $('#set-fallback').value,
     resolveUncertain: $('#set-resolve').checked,
     autoRetry: $('#set-auto-retry').checked,
+    bildAufbereiten: $('#set-bild').checked,
     sounds:  $('#set-sounds').checked,
     haptics: $('#set-haptics').checked,
     volume:  Number($('#set-volume').value) / 100,
@@ -1063,7 +1065,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v17';
+const BUILD = 'v18';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

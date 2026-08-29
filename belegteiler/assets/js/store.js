@@ -18,6 +18,11 @@ const DEFAULTS = {
   helperModel:   'google/gemma-4-31b-it:free',
   fallbackModel: 'google/gemini-2.5-flash-lite',
   resolveUncertain: true,
+  /* Kassenbons sind grau auf weiss und meist unter Mischlicht
+     fotografiert. Spreizen und Nachschärfen hilft der Erkennung
+     spürbar — deshalb an. Abschaltbar, falls ein Foto einmal schon
+     kräftig genug ist. */
+  bildAufbereiten: true,
   /* Aus als Vorgabe: Ein Anlauf, der von allein nachrückt, überschreibt
      die Fehleranzeige, bevor man sie lesen konnte. Wer wissen will,
      woran es liegt, kommt sonst nicht an die Details. Der Beleg bleibt
