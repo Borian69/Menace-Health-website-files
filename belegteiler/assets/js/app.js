@@ -7,7 +7,7 @@ import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, cle
 import { prepareImage } from './image.js';
 import { scanReceipt, testConnection } from './scan.js';
 import { PROVIDERS, provider, detectProvider } from './providers.js';
-import { createBill, addScan, addReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
+import { createBill, addScan, addReceipt, removeReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
 import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus, canPickOutput, pickOutput } from './feedback.js';
@@ -34,9 +34,47 @@ function persist() {
 
 /* ── Ansichten & Rückmeldungen ───────────────────────────── */
 
+/* ── Zurück-Geste ────────────────────────────────────────────
+
+   Als installierte App hat der Belegteiler keine Adressleiste und keinen
+   Zurück-Pfeil des Browsers — es gibt nur die Geste beziehungsweise den
+   Zurück-Knopf des Systems. Und der kannte bisher genau einen Schritt:
+   raus aus der App. Grund ist, dass ein Ansichtswechsel hier nur eine
+   Klasse am body umsetzt und der Browser davon nichts mitbekommt; sein
+   Verlauf besteht aus einem einzigen Eintrag.
+
+   Also bekommt jede Ansicht ihren Eintrag im Verlauf, und popstate
+   stellt die vorherige wieder her. Aus dem Startbildschirm heraus darf
+   die App weiterhin schliessen — dort ist Zurück auch gemeint. */
+
+let ausDemVerlauf = false;   // gerade von popstate ausgelöst: nicht erneut merken
+
 function showView(name) {
   document.body.dataset.view = name;
   document.querySelector(`#view-${name} .scroll`)?.scrollTo(0, 0);
+
+  if (ausDemVerlauf) return;
+  if (history.state?.view === name && !history.state?.sheet) return;
+  history.pushState({ view: name }, '');
+}
+
+/** Eine Ansicht wiederherstellen, ohne sie erneut in den Verlauf zu legen. */
+function ansichtZurueck(name) {
+  // Was sich nicht mehr sinnvoll herstellen lässt, führt nach Hause.
+  const machbar = name === 'home'
+    || (name === 'review' && bill?.items?.length)
+    || (name === 'summary' && summary)
+    || name === 'settings';
+  const ziel = machbar ? name : 'home';
+
+  ausDemVerlauf = true;
+  try {
+    if (ziel === 'home') { nurBeleg = null; persist(); renderHome(); }
+    else if (ziel === 'review') renderReview();
+    showView(ziel);
+  } finally {
+    ausDemVerlauf = false;
+  }
 }
 
 let toastTimer = null;
@@ -55,13 +93,15 @@ function renderHome() {
   renderOpenBill();
   renderWaiting();
 
-  const history = loadHistory();
-  $('#history-section').hidden = history.length === 0;
+  // Nicht "history" nennen: das verschattet sonst window.history,
+  // über das die Zurück-Geste läuft.
+  const verlauf = loadHistory();
+  $('#history-section').hidden = verlauf.length === 0;
 
   const list = $('#history-list');
   list.replaceChildren();
 
-  for (const entry of history) {
+  for (const entry of verlauf) {
     const sums = totals(entry);
     list.append(el('li', {},
       el('button', { class: 'history-item', onClick: () => openFromHistory(entry) },
@@ -126,6 +166,33 @@ function zeigeBeleg(id) {
   nurBeleg = id;
   renderReview();
   showView('review');
+}
+
+/** Einen ganzen Beleg samt seiner Positionen aus der Abrechnung nehmen. */
+function belegLoeschen() {
+  if (!bill || !nurBeleg) return;
+  const beleg = bill.receipts.find((receipt) => receipt.id === nurBeleg);
+  const anzahl = bill.items.filter((item) => item.receiptId === nurBeleg).length;
+  const name = beleg ? `${beleg.store}${beleg.time ? ` · ${beleg.time}` : ''}` : 'Diesen Beleg';
+
+  if (!confirm(`${name} mit ${anzahl} ${anzahl === 1 ? 'Position' : 'Positionen'} löschen?`)) return;
+
+  removeReceipt(bill, nurBeleg);
+  nurBeleg = null;
+
+  // War es der letzte, gibt es nichts mehr zuzuordnen.
+  if (!bill.items.length && !bill.done) {
+    clearOpenBill();
+    bill = null;
+    renderHome();
+    showView('home');
+    toast('Beleg gelöscht — die Abrechnung ist wieder leer.');
+    return;
+  }
+
+  persist();
+  renderReview();
+  toast('Beleg gelöscht.');
 }
 
 /* ── Kamera & Erkennung ──────────────────────────────────── */
@@ -591,12 +658,19 @@ function openItemSheet(id) {
   $('#btn-item-delete').hidden = !item;
 
   $('#sheet-backdrop').hidden = false;
+  // Eigener Eintrag: Zurück soll erst das Blatt schliessen, nicht die Ansicht wechseln.
+  history.pushState({ view: document.body.dataset.view, sheet: true }, '');
   setTimeout(() => $('#item-name').focus(), 60);
 }
+
+let blattPerKnopf = false;
 
 function closeItemSheet() {
   $('#sheet-backdrop').hidden = true;
   editing = null;
+  /* Den Eintrag des Blatts wieder abräumen, sonst bräuchte es später
+     zwei Rückwärtsschritte für einen sichtbaren. */
+  if (history.state?.sheet) { blattPerKnopf = true; history.back(); }
 }
 
 function saveItemSheet() {
@@ -992,6 +1066,15 @@ function wire() {
 
   // Review
   $('#btn-filter-off').addEventListener('click', () => { nurBeleg = null; renderReview(); });
+  $('#btn-receipt-delete').addEventListener('click', belegLoeschen);
+
+  /* Zurück-Geste des Handys: eine Ansicht zurück statt App zu. */
+  window.addEventListener('popstate', (event) => {
+    // Ein per Knopf geschlossenes Blatt hat den Eintrag selbst abgeräumt.
+    if (blattPerKnopf) { blattPerKnopf = false; return; }
+    if (!$('#sheet-backdrop').hidden) { $('#sheet-backdrop').hidden = true; editing = null; return; }
+    ansichtZurueck(event.state?.view || 'home');
+  });
   $('#btn-review-back').addEventListener('click', () => {
     persist(); nurBeleg = null; showView('home'); renderHome();
   });
@@ -1105,7 +1188,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v19';
+const BUILD = 'v20';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
@@ -1144,6 +1227,10 @@ async function forceUpdate() {
   // Der Zeitstempel umgeht auch den Zwischenspeicher des Browsers.
   location.replace(`${location.pathname}?frisch=${Date.now()}`);
 }
+
+/* Der Startbildschirm ist der Boden des Verlaufs. Von hier aus darf die
+   Zurück-Geste die App schliessen — dort ist sie auch so gemeint. */
+history.replaceState({ view: 'home' }, '');
 
 configureFeedback(settings);
 fillCategorySelect();

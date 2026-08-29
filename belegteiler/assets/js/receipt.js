@@ -12,6 +12,17 @@ export function createBill() {
 }
 
 /** Einen einzelnen erkannten Beleg übernehmen. */
+/**
+ * Einen Beleg samt seiner Positionen aus der Abrechnung nehmen.
+ * @returns {number} wie viele Positionen dabei weggefallen sind
+ */
+export function removeReceipt(bill, id) {
+  const vorher = bill.items.length;
+  bill.items = bill.items.filter((item) => item.receiptId !== id);
+  bill.receipts = bill.receipts.filter((receipt) => receipt.id !== id);
+  return vorher - bill.items.length;
+}
+
 export function addReceipt(bill, parsed) {
   const receipt = {
     id:    uid(),

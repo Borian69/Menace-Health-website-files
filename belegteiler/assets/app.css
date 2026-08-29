@@ -853,15 +853,18 @@ body.scan-failed .scan-status { display: none; }
 
 /* Zuordnung auf einen Beleg beschränkt */
 .filter-bar {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 9px;
   margin: 0 0 14px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--r);
   border: 1px solid var(--accent-line);
   background: var(--accent-dim);
   font-size: 13.5px;
   color: var(--accent-bright);
 }
+.filter-actions { display: flex; gap: 7px; }
+#btn-receipt-delete { color: var(--danger); border-color: rgba(232, 112, 94, .38); }
 
 .p-foot {
   margin-top: 20px;
