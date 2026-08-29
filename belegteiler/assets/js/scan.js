@@ -14,7 +14,13 @@ import { categoryIds } from './categories.js';
 import { provider } from './providers.js';
 import { anfrage } from './netz.js';
 
-const MAX_TOKENS = 8000;
+/* Ein langer Bon mit vierzig Positionen braucht mehrere tausend Token
+   allein für die Antwort. Wird sie abgeschnitten, ist das JSON
+   unvollständig — der häufigste Grund, warum die Erkennung reihenweise
+   scheiterte. An der Modell-Liste von OpenRouter nachgesehen: Alle
+   hinterlegten Modelle erlauben mindestens 16384 Token Antwort, die
+   meisten deutlich mehr. Bei den Gratis-Modellen kostet das nichts. */
+const MAX_TOKENS = 16000;
 
 /* ── Anweisung für den Bild-Durchgang ────────────────────── */
 
@@ -301,12 +307,24 @@ export async function scanReceipt(parts, settings, signal) {
   }
 
   if (!receipts.length) {
+    const d = result?.diagnose || {};
     const hint = result?.text?.trim();
-    const failure = new Error(hint
-      ? `Auf dem Bild wurde kein Kassenbon erkannt. ${hint.slice(0, 200)}`
-      : 'Es konnten keine Positionen gelesen werden. Vielleicht hilft ein schärferes Foto bei mehr Licht.');
-    // Vorübergehend: Ein späterer Anlauf kann durchaus gelingen.
-    failure.wiederholbar = true;
+
+    // Sagen, was tatsächlich schiefging, statt pauschal aufs Foto zu zeigen.
+    let message;
+    if (d.grund === 'length') {
+      message = 'Die Antwort der Erkennung wurde abgeschnitten — der Bon ist für dieses Modell zu lang. Ein gründlicheres Modell in den Einstellungen hilft.';
+    } else if (!d.werkzeugAufruf) {
+      message = hint
+        ? `Das Modell hat geantwortet, statt die Positionen zu erfassen: „${hint.slice(0, 160)}“`
+        : 'Das Modell hat die Positionen nicht erfasst. Ein anderes Modell in den Einstellungen hilft meist.';
+    } else {
+      message = 'Es konnten keine Positionen gelesen werden. Vielleicht hilft ein schärferes Foto bei mehr Licht.';
+    }
+
+    const failure = new Error(message);
+    failure.wiederholbar = true;   // ein späterer Anlauf kann gelingen
+    failure.diagnose = { ...d, versucht: versuche.join(', '), text: hint?.slice(0, 300) || '' };
     throw failure;
   }
 
@@ -335,9 +353,19 @@ export async function scanReceipt(parts, settings, signal) {
     }
   }
 
+  /* Aus einer abgeschnittenen Antwort wurde gerettet, was vollständig
+     ankam. Das muss dranstehen — sonst fehlen am Ende still Positionen
+     und die Summe stimmt scheinbar grundlos nicht. */
+  const notizen = [
+    result.args?.notes || '',
+    result.diagnose?.abgeschnitten
+      ? 'Die Antwort war abgeschnitten — die letzten Positionen können fehlen. Bitte die Summe prüfen.'
+      : '',
+  ].filter(Boolean).join(' ');
+
   return {
     receipts,
-    notes: result.args?.notes || '',
+    notes: notizen,
     usage: { cents, clarified, switchedTo },
   };
 }

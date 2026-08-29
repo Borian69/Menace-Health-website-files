@@ -315,6 +315,7 @@ function zeigeFehler(error, { auftragDa }) {
   $('#scan-error').hidden = false;
   $('#scan-error-msg').textContent = error.message || 'Unbekannter Fehler.';
   $('#btn-scan-model').hidden = !MODEL_TROUBLE.has(error.status);
+  zeigeDetails(error);
 
   // Ohne abgelegtes Foto gibt es nichts zu wiederholen.
   $('#btn-scan-again').hidden = !auftragDa;
@@ -333,6 +334,35 @@ function zeigeFehler(error, { auftragDa }) {
   }
 
   countdown(rest);
+}
+
+/* Was genau schiefging — aufklappbar und kopierbar.
+
+   Ohne das bleibt „es funktioniert nicht" die einzige Information, die
+   je aus der App herauskommt, und jede Fehlersuche ist Raten. */
+let letzteDetails = '';
+
+function zeigeDetails(error) {
+  const d = error.diagnose || {};
+  const zeilen = [
+    `Zeit:     ${new Date().toLocaleString('de-DE')}`,
+    `Fassung:  ${BUILD}`,
+    `Anbieter: ${settings.provider}`,
+    `Modell:   ${settings.model}${settings.fallbackModel ? ` (Ausweich: ${settings.fallbackModel})` : ''}`,
+    d.versucht ? `Versucht: ${d.versucht}` : '',
+    d.modell ? `Geantwortet hat: ${d.modell}` : '',
+    error.status ? `HTTP:     ${error.status}` : '',
+    d.grund ? `Abbruchgrund: ${d.grund}` : '',
+    'werkzeugAufruf' in d ? `Funktionsaufruf kam an: ${d.werkzeugAufruf ? 'ja' : 'nein'}` : '',
+    d.abgeschnitten ? 'Antwort war abgeschnitten: ja' : '',
+    `Meldung:  ${error.message || '—'}`,
+    d.text ? `\nAntworttext des Modells:\n${d.text}` : '',
+  ].filter(Boolean);
+
+  letzteDetails = zeilen.join('\n');
+  $('#scan-details-text').textContent = letzteDetails;
+  $('#scan-details').hidden = false;
+  $('#scan-details').open = false;
 }
 
 /** Sichtbar herunterzählen und dann von allein noch einmal versuchen. */
@@ -891,6 +921,14 @@ function wire() {
     versuche(scanAbort.signal);
   });
   $('#btn-scan-photo').addEventListener('click', openCamera);
+  $('#btn-copy-details').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(letzteDetails);
+      toast('Details kopiert.');
+    } catch {
+      toast('Kopieren geht hier nicht — Text markieren und kopieren.');
+    }
+  });
   $('#btn-scan-drop').addEventListener('click', wartendenVerwerfen);
   $('#btn-waiting-retry').addEventListener('click', wartendenAufnehmen);
   $('#btn-scan-model').addEventListener('click', openSettings);
@@ -1015,7 +1053,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v15';
+const BUILD = 'v16';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
