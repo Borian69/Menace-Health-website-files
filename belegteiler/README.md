@@ -286,6 +286,36 @@ gehören: `CACHE` in `sw.js` und `BUILD` in `assets/js/app.js`. Laufen sie
 auseinander, zeigen die Einstellungen eine falsche Fassung an — `test13` prüft
 das deshalb.
 
+## Was mit dem Foto passiert, bevor es losgeht
+
+Ein Kassenbon ist der unangenehmste Fall für ein Kameraauge: graue
+Nadeldruck-Schrift auf weissem Thermopapier, im Laden unter Mischlicht.
+Zwei Schritte machen daraus etwas Lesbares.
+
+**Zerlegen nach Auflösung, nicht nach Seitenverhältnis.** Vorher wurde nur
+geteilt, wenn ein Bild deutlich höher als breit war. Ein Handyfoto im
+Querformat mit zwei Bons nebeneinander (4080 × 3060, Verhältnis 0,75) fiel
+durch dieses Raster: Es wurde gar nicht zerlegt, sondern komplett auf die
+Zielkante heruntergerechnet — Faktor 2,6, und von der Kassenschrift blieb
+zu wenig übrig. Jetzt entscheidet die Auflösung: Ist die lange Kante ein
+Vielfaches der Zielgrösse, wird entlang dieser Kante so oft geteilt (höchstens
+viermal). An eben diesem Foto gemessen: statt einem Bild mit 1176 × 1568
+jetzt zwei mit je 2000 × 1440 — **gut dreimal so viele Pixel**.
+
+**Spreizen und Nachschärfen.** Der Tonwertumfang wird auf Schwarz bis Weiss
+gezogen (zwei Prozent an jedem Ende abgeschnitten, damit ein Lichtreflex die
+Spreizung nicht bestimmt), die Buchstabenkanten per Unscharfmaskierung
+nachgezogen, alles in Graustufen — Farbe trägt auf einem Bon keine
+Information. Beim Foto, das den Anstoss gab, lag der Weisspunkt bei 181 statt
+255; danach bei 255.
+
+Abschaltbar in den Einstellungen. `test20` misst beides am echten Foto:
+Abschnittszahl, Kantenlänge je Abschnitt, Tonwertumfang, und dass
+ausgeschaltet wirklich nichts angefasst wird.
+
+Ein Bon pro Foto bleibt trotzdem die schärfere Aufnahme — bei zweien teilen
+sich beide dieselben Pixel.
+
 ## Wenn das Display ausgeht
 
 Die Seite wird eingefroren, sobald das Handy in den Standby geht oder sie
