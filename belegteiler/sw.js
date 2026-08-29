@@ -4,7 +4,7 @@
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
 /* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
-const CACHE = 'belegteiler-v14';
+const CACHE = 'belegteiler-v15';
 
 // Getrenntes Fach für fertige Erkennungen, die noch niemand abgeholt hat.
 const ERGEBNISSE = 'belegteiler-ergebnisse';
@@ -27,6 +27,7 @@ const SHELL = [
   'assets/js/feedback.js',
   'assets/js/wav.js',
   'assets/js/netz.js',
+  'assets/js/warteschlange.js',
   'assets/icons/icon-192.png',
   'assets/icons/icon-512.png',
   'assets/icons/apple-touch-icon.png',

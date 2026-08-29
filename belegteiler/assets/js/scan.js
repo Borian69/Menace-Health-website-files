@@ -224,6 +224,11 @@ async function call({ settings, model, system, text, images, tool, signal, attem
         : `Unerwartete Antwort (HTTP ${status}).`);
     const failure = new Error(message);
     failure.status = status;
+    /* Vorübergehend oder dauerhaft? Ein überlastetes Modell, eine kurze
+       Sperre oder ein Serverfehler geben sich von selbst — dafür lohnt
+       ein späterer Anlauf. Ein abgelehnter Schlüssel oder ein Modell,
+       das es nicht gibt, ändert sich durch Warten nicht. */
+    failure.wiederholbar = status === 0 || status >= 500 || RETRY_STATUS.has(status);
     throw failure;
   }
 
@@ -259,29 +264,58 @@ const fallbackQuery = (store, item) =>
  * @param {string[]} parts Base64-JPEGs
  */
 export async function scanReceipt(parts, settings, signal) {
-  const result = await call({
-    settings,
-    model: settings.model,
-    system: SYSTEM_PROMPT,
-    text: parts.length > 1
-      ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten (von oben nach unten). Erfasse jeden Kassenbon darauf vollständig.`
-      : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
-    images: parts,
-    tool: SCAN_TOOL,
-    signal,
-  });
+  /* Der zweite Fehlerfall, und der häufigere: Die Anfrage geht durch,
+     das Modell antwortet mit 200 — und liefert trotzdem nichts
+     Brauchbares. Kleine und kostenlose Modelle vergessen gern den
+     Werkzeugaufruf oder brechen mitten in der Liste ab. Das ist keine
+     Aussage über das Foto, sondern Streuung: Derselbe Aufruf klappt beim
+     nächsten Mal oft. Bisher flog der Scan hier sofort raus und das Foto
+     war weg.
 
-  const receipts = (result.args?.receipts || []).filter((receipt) => receipt?.items?.length);
+     Also: noch einmal dasselbe Modell, dann das Ausweichmodell. Jeder
+     Anlauf kostet erneut — bei einem Gratis-Modell nichts, sonst
+     Bruchteile eines Cents, und nur im Fehlerfall. */
+  const versuche = [settings.model, settings.model];
+  const ausweich = (settings.fallbackModel || '').trim();
+  if (ausweich && ausweich !== settings.model) versuche.push(ausweich);
+
+  let result = null;
+  let receipts = [];
+  let genutztesModell = settings.model;
+
+  for (const [nummer, model] of versuche.entries()) {
+    if (nummer > 0) await sleep(900, signal);   // kurz Luft holen
+    result = await call({
+      settings,
+      model,
+      system: SYSTEM_PROMPT,
+      text: parts.length > 1
+        ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten (von oben nach unten). Erfasse jeden Kassenbon darauf vollständig.`
+        : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
+      images: parts,
+      tool: SCAN_TOOL,
+      signal,
+    });
+    receipts = (result.args?.receipts || []).filter((receipt) => receipt?.items?.length);
+    if (receipts.length) { genutztesModell = model; break; }
+  }
+
   if (!receipts.length) {
-    const hint = result.text?.trim();
-    throw new Error(hint
+    const hint = result?.text?.trim();
+    const failure = new Error(hint
       ? `Auf dem Bild wurde kein Kassenbon erkannt. ${hint.slice(0, 200)}`
       : 'Es konnten keine Positionen gelesen werden. Vielleicht hilft ein schärferes Foto bei mehr Licht.');
+    // Vorübergehend: Ein späterer Anlauf kann durchaus gelingen.
+    failure.wiederholbar = true;
+    throw failure;
   }
 
   let cents = result.usage.cents;
   let clarified = 0;
-  const switchedTo = result.switchedFrom ? settings.fallbackModel : '';
+  // Ausgewichen wurde entweder wegen eines Fehlercodes (in call) oder
+  // weil das gewählte Modell nichts Brauchbares geliefert hat (oben).
+  const switchedTo = result.switchedFrom ? settings.fallbackModel
+    : (genutztesModell !== settings.model ? genutztesModell : '');
 
   if (settings.resolveUncertain) {
     try {

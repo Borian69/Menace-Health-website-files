@@ -504,6 +504,39 @@ body.scan-failed .folder { opacity: 0; }
   background: var(--surface);
 }
 .scan-error h3 { font-family: var(--serif); font-size: 19px; }
+.retry-note {
+  font-size: 13px;
+  color: var(--accent-bright);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent-line);
+  border-radius: var(--r-sm);
+  padding: 9px 12px;
+  font-variant-numeric: tabular-nums;
+}
+.link-btn.danger { color: var(--danger); }
+
+/* Aufnahme, die noch auf ihre Erkennung wartet */
+.waiting {
+  display: flex; align-items: center; gap: 13px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: var(--r);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-dim);
+}
+.waiting-thumb {
+  width: 42px; height: 54px;
+  flex: none;
+  object-fit: cover;
+  border-radius: var(--r-sm);
+  background: var(--surface-2);
+}
+.waiting-body { flex: 1; min-width: 0; }
+.waiting-label { font-family: var(--serif); font-size: 16px; color: var(--accent-bright); }
+.waiting-meta {
+  font-size: 12.5px; color: var(--muted); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .scan-error p { color: var(--muted); font-size: 14px; line-height: 1.55; word-break: break-word; }
 .scan-error .row-btns { width: 100%; margin-top: 4px; }
 

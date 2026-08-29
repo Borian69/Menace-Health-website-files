@@ -11,6 +11,7 @@ import { createBill, addScan, addReceipt, createItem, totals, printedTotal, grou
 import { buildSummary, renderPaper, buildText, fileName } from './summary.js';
 import { renderSummaryImage } from './canvas.js';
 import { configure as configureFeedback, unlock, cue, countTo, pop, celebrate, audioStatus, canPickOutput, pickOutput } from './feedback.js';
+import { merken, vergessen, naechster, leeren as warteschlangeLeeren } from './warteschlange.js';
 
 /* ── Zustand ─────────────────────────────────────────────── */
 
@@ -51,6 +52,7 @@ function toast(message) {
 function renderHome() {
   $('#setup-card').hidden = isConfigured(settings);
   renderOpenBill();
+  renderWaiting();
 
   const history = loadHistory();
   $('#history-section').hidden = history.length === 0;
@@ -168,73 +170,130 @@ function fileIntoFolder() {
   return new Promise((resolve) => setTimeout(resolve, 720));
 }
 
+/* ── Wiederholen ─────────────────────────────────────────────
+
+   Es geht oft genug schief, dass „nochmal fotografieren" die falsche
+   Antwort ist: Der Bon liegt dann schon wieder in der Tüte. Jede
+   Aufnahme wird deshalb abgelegt, bevor die Erkennung startet, und erst
+   gelöscht, wenn sie durch ist. Dazwischen wird von allein
+   weiterprobiert — mit wachsendem Abstand, damit ein überlastetes
+   Modell zur Ruhe kommt. */
+
+const ABSTAENDE = [4, 10, 25, 60];   // Sekunden bis zum nächsten Anlauf
+let auftrag = null;                  // der Auftrag, an dem gerade gearbeitet wird
+let wiederholUhr = null;
+let countdownUhr = null;
+
+function uhrenAus() {
+  clearTimeout(wiederholUhr); wiederholUhr = null;
+  clearInterval(countdownUhr); countdownUhr = null;
+  $('#scan-retry-note').hidden = true;
+}
+
+/** Aufnahme(n) aufbereiten, ablegen und den ersten Anlauf starten. */
 async function handleFiles(fileList) {
   const files = [...fileList].filter((file) => file.type.startsWith('image/'));
   if (!files.length) return;
 
-  document.body.classList.remove('scan-failed', 'filing');
-  $('#scan-folder').classList.remove('bump');
-  // Stand der Ablage vor diesem Beleg — er zählt gleich sichtbar hoch.
-  $('#folder-count').textContent = String(bill && !bill.done ? bill.receipts.length : 0);
-  $('#scan-error').hidden = true;
-  $('#scan-step').textContent = 'Beleg wird vorbereitet …';
-  $('#scan-substep').textContent = files.length > 1
-    ? `${files.length} Aufnahmen werden zusammengeführt.`
-    : 'Das Bild wird für die Erkennung geschärft.';
-  showView('scan');
-  pop($('#scan-frame'), 'pull');      // das Bild wird hervorgezogen
+  uhrenAus();
+  zeigeScanAnsicht(files.length);
 
   scanAbort?.abort();
   scanAbort = new AbortController();
   const { signal } = scanAbort;
 
+  let parts = [];
+  let preview = '';
   try {
-    // Die Vorschau kommt früh zurück, damit im Rahmen nicht die ganze
-    // Rechenzeit über ein Loch klafft.
-    const prepared = [];
-    let erste = true;
     for (const file of files) {
-      prepared.push(await prepareImage(file, (preview) => {
-        if (!erste) return;
-        erste = false;
-        $('#scan-preview').src = preview;
-      }));
+      const fertig = await prepareImage(file, (bild) => {
+        if (preview) return;
+        preview = bild;
+        $('#scan-preview').src = bild;
+      });
+      parts = parts.concat(fertig.parts);
+      if (!preview) preview = fertig.preview;
     }
-    if (signal.aborted) return;
-
-    $('#scan-step').textContent = 'Beleg wird gelesen …';
-    $('#scan-substep').textContent = settings.resolveUncertain
-      ? 'Positionen und Preise werden erkannt, unklare Zeilen danach nachgeschlagen.'
-      : 'Positionen, Preise und Kategorien werden erkannt.';
-
-    const parts = prepared.flatMap((item) => item.parts);
-    const parsed = await scanReceipt(parts, settings, signal);
-    if (signal.aborted) return;
-
-    if (!bill || bill.done) bill = createBill();
-    const added = addScan(bill, parsed);
-    persist();
-    recordUsage(parsed.usage);
-
-    // Erst wandert der Beleg zu den anderen in die Ablage, dann kommt
-    // der Aufschlag mit dem Betrag — Anlauf und Auflösung nacheinander.
-    const sums = totals(bill);
-    await fileIntoFolder();
-    await celebrate({
-      label: added.length > 1 ? `${added.length} Belege erfasst` : `${added[0]?.store || 'Beleg'} erfasst`,
-      amount: euro(sums.parents),
-    });
-
-    renderReview();
-    showView('review');
-
-    if (parsed.usage?.switchedTo) toast(`Ausgewichen auf ${modelLabel(parsed.usage.switchedTo)} — das gewählte Modell war nicht verfügbar.`);
-    else if (parsed.notes) toast(parsed.notes);
-    else if (bill.receipts.length > 1) toast(`${bill.receipts.length} Belege in dieser Abrechnung.`);
   } catch (error) {
     if (error.name === 'AbortError' || signal.aborted) return;
-    showScanError(error);
+    zeigeFehler(error, { auftragDa: false });
+    return;
   }
+  if (signal.aborted) return;
+
+  auftrag = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    parts, preview, angelegt: Date.now(), versuche: 0, fehler: '',
+  };
+  await merken(auftrag);     // ab hier ist die Aufnahme sicher
+  await versuche(signal);
+}
+
+/** Einen Anlauf mit dem abgelegten Foto. */
+async function versuche(signal = scanAbort?.signal) {
+  if (!auftrag) return;
+  uhrenAus();
+
+  document.body.classList.remove('scan-failed', 'filing');
+  $('#scan-error').hidden = true;
+  $('#scan-preview').src = auftrag.preview;
+  $('#scan-step').textContent = 'Beleg wird gelesen …';
+  $('#scan-substep').textContent = auftrag.versuche === 0
+    ? (settings.resolveUncertain
+      ? 'Positionen und Preise werden erkannt, unklare Zeilen danach nachgeschlagen.'
+      : 'Positionen, Preise und Kategorien werden erkannt.')
+    : `Anlauf ${auftrag.versuche + 1} mit derselben Aufnahme.`;
+  showView('scan');
+
+  try {
+    const parsed = await scanReceipt(auftrag.parts, settings, signal);
+    if (signal?.aborted) return;
+    await vergessen(auftrag.id);
+    const fertig = auftrag;
+    auftrag = null;
+    await uebernehmen(parsed, fertig);
+  } catch (error) {
+    if (error.name === 'AbortError' || signal?.aborted) return;
+    auftrag.versuche += 1;
+    auftrag.fehler = error.message || '';
+    await merken(auftrag);
+    zeigeFehler(error, { auftragDa: true });
+  }
+}
+
+/** Erfolgsweg: in die Abrechnung übernehmen und bestätigen. */
+async function uebernehmen(parsed) {
+  if (!bill || bill.done) bill = createBill();
+  const added = addScan(bill, parsed);
+  persist();
+  recordUsage(parsed.usage);
+
+  const sums = totals(bill);
+  await fileIntoFolder();
+  await celebrate({
+    label: added.length > 1 ? `${added.length} Belege erfasst` : `${added[0]?.store || 'Beleg'} erfasst`,
+    amount: euro(sums.parents),
+  });
+
+  renderReview();
+  showView('review');
+
+  if (parsed.usage?.switchedTo) toast(`Ausgewichen auf ${modelLabel(parsed.usage.switchedTo)} — das gewählte Modell war nicht verfügbar.`);
+  else if (parsed.notes) toast(parsed.notes);
+  else if (bill.receipts.length > 1) toast(`${bill.receipts.length} Belege in dieser Abrechnung.`);
+}
+
+function zeigeScanAnsicht(anzahlBilder) {
+  document.body.classList.remove('scan-failed', 'filing');
+  $('#scan-folder').classList.remove('bump');
+  $('#folder-count').textContent = String(bill && !bill.done ? bill.receipts.length : 0);
+  $('#scan-error').hidden = true;
+  $('#scan-step').textContent = 'Beleg wird vorbereitet …';
+  $('#scan-substep').textContent = anzahlBilder > 1
+    ? `${anzahlBilder} Aufnahmen werden zusammengeführt.`
+    : 'Das Bild wird für die Erkennung geschärft.';
+  showView('scan');
+  pop($('#scan-frame'), 'pull');
 }
 
 /** Lesbarer Name eines Modells, sonst die nackte Kennung. */
@@ -246,12 +305,93 @@ function modelLabel(id) {
 // Statuscodes, bei denen ein anderes Modell die naheliegende Abhilfe ist.
 const MODEL_TROUBLE = new Set([402, 404, 429, 502, 503, 504]);
 
-function showScanError(error) {
+/**
+ * Fehler zeigen — und, wenn es sich lohnt, von allein weiterprobieren.
+ * @param {{auftragDa: boolean}} lage
+ */
+function zeigeFehler(error, { auftragDa }) {
   cue.error();
   document.body.classList.add('scan-failed');
   $('#scan-error').hidden = false;
   $('#scan-error-msg').textContent = error.message || 'Unbekannter Fehler.';
   $('#btn-scan-model').hidden = !MODEL_TROUBLE.has(error.status);
+
+  // Ohne abgelegtes Foto gibt es nichts zu wiederholen.
+  $('#btn-scan-again').hidden = !auftragDa;
+  $('#btn-scan-drop').hidden = !auftragDa;
+  $('#btn-scan-back').textContent = auftragDa ? 'Später — Beleg aufheben' : 'Abbrechen';
+  if (!auftragDa) return;
+
+  const rest = ABSTAENDE[auftrag.versuche - 1];
+  if (!rest || error.wiederholbar === false) {
+    $('#scan-retry-note').hidden = false;
+    $('#scan-retry-note').textContent = ABSTAENDE[auftrag.versuche - 1]
+      ? 'Der Beleg ist gespeichert. Du kannst es jederzeit nochmal versuchen.'
+      : `Nach ${auftrag.versuche} Anläufen aufgehört. Der Beleg ist gespeichert — nochmal versuchen geht jederzeit.`;
+    renderWaiting();
+    return;
+  }
+
+  countdown(rest);
+}
+
+/** Sichtbar herunterzählen und dann von allein noch einmal versuchen. */
+function countdown(sekunden) {
+  const note = $('#scan-retry-note');
+  note.hidden = false;
+  let rest = sekunden;
+
+  const zeigen = () => {
+    note.textContent = `Anlauf ${auftrag.versuche + 1} in ${rest} s — der Beleg bleibt gespeichert.`;
+  };
+  zeigen();
+
+  countdownUhr = setInterval(() => {
+    rest -= 1;
+    if (rest <= 0) { clearInterval(countdownUhr); countdownUhr = null; return; }
+    zeigen();
+  }, 1000);
+
+  wiederholUhr = setTimeout(() => {
+    scanAbort = new AbortController();
+    versuche(scanAbort.signal);
+  }, sekunden * 1000);
+}
+
+/** Der wartende Beleg auf dem Startbildschirm. */
+async function renderWaiting() {
+  const karte = $('#waiting-card');
+  const offen = await naechster();
+  karte.hidden = !offen;
+  if (!offen) return;
+
+  $('#waiting-thumb').src = offen.preview || '';
+  const wann = new Date(offen.angelegt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+  $('#waiting-meta').textContent = offen.versuche
+    ? `${wann} · ${offen.versuche} ${offen.versuche === 1 ? 'Anlauf' : 'Anläufe'} · ${offen.fehler || 'Erkennung fehlgeschlagen'}`
+    : `${wann} · noch nicht erkannt`;
+}
+
+/** Einen aufgehobenen Beleg wieder aufnehmen. */
+async function wartendenAufnehmen() {
+  const offen = await naechster();
+  if (!offen) { toast('Es wartet kein Beleg.'); return; }
+  auftrag = offen;
+  scanAbort?.abort();
+  scanAbort = new AbortController();
+  await versuche(scanAbort.signal);
+}
+
+/** Den wartenden Beleg wegwerfen. */
+async function wartendenVerwerfen() {
+  if (!auftrag) return;
+  if (!confirm('Diese Aufnahme verwerfen? Sie ist danach weg.')) return;
+  await vergessen(auftrag.id);
+  auftrag = null;
+  uhrenAus();
+  await renderWaiting();
+  showView('home');
+  renderHome();
 }
 
 /* ── Review ──────────────────────────────────────────────── */
@@ -743,9 +883,27 @@ function wire() {
   }
 
   // Scan
-  $('#btn-scan-retry').addEventListener('click', openCamera);
+  // Wiederholen heißt: dasselbe Foto nochmal — nicht ein neues machen.
+  $('#btn-scan-again').addEventListener('click', () => {
+    uhrenAus();
+    scanAbort?.abort();
+    scanAbort = new AbortController();
+    versuche(scanAbort.signal);
+  });
+  $('#btn-scan-photo').addEventListener('click', openCamera);
+  $('#btn-scan-drop').addEventListener('click', wartendenVerwerfen);
+  $('#btn-waiting-retry').addEventListener('click', wartendenAufnehmen);
   $('#btn-scan-model').addEventListener('click', openSettings);
-  $('#btn-scan-back').addEventListener('click', () => { scanAbort?.abort(); showView(bill ? 'review' : 'home'); });
+  /* „Später" bricht nur den laufenden Anlauf ab. Der Beleg bleibt in
+     der Warteschlange und wird beim nächsten Öffnen wieder angeboten. */
+  $('#btn-scan-back').addEventListener('click', async () => {
+    scanAbort?.abort();
+    uhrenAus();
+    auftrag = null;
+    await renderWaiting();
+    showView(bill && !bill.done && bill.items.length ? 'review' : 'home');
+    renderHome();
+  });
   $('#btn-scan-manual').addEventListener('click', () => {
     if (!bill || bill.done) bill = createBill();
     if (!bill.receipts.length) addReceipt(bill, { store: 'Einkauf', items: [], receipt_total: null });
@@ -821,7 +979,18 @@ function wire() {
   $('#btn-reset').addEventListener('click', () => {
     if (!confirm('Einstellungen und alle Abrechnungen von diesem Gerät löschen?')) return;
     clearEverything();
+    warteschlangeLeeren();
     location.reload();
+  });
+
+  /* Kommt das Netz zurück, ist das der beste Moment für einen neuen
+     Anlauf — dann muss niemand daran denken. */
+  window.addEventListener('online', async () => {
+    if (auftrag || document.body.dataset.view === 'scan') return;
+    if (await naechster()) {
+      toast('Wieder online — der wartende Beleg wird erneut versucht.');
+      wartendenAufnehmen();
+    }
   });
 
   // Browser lassen Ton erst nach einer echten Geste zu.
@@ -846,7 +1015,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v14';
+const BUILD = 'v15';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
