@@ -12,6 +12,33 @@ function weekday(iso) {
   return Number.isNaN(date.getTime()) ? '' : weekdayFormat.format(date);
 }
 
+/* Der Betreff für die Überweisung.
+
+   Er soll ohne Nachfrage erklären, wofür das Geld ist: welche Märkte,
+   welcher Tag. Die Länge ist nicht beliebig — im SEPA-Verwendungszweck
+   sind 140 Zeichen Platz, und viele Banking-Apps schneiden gnadenlos
+   ab. Passt die Aufzählung nicht, wird sie gekürzt und die Zahl der
+   übrigen Läden angehängt, statt mitten im Namen abzubrechen. */
+const ZWECK_MAX = 140;
+
+function verwendungszweck(perReceipt, stores, date) {
+  const tage = [...new Set(perReceipt.map((receipt) => receipt.date).filter(Boolean))].sort();
+  const wann = tage.length > 1
+    ? `${formatDate(tage[0], { short: true })}–${formatDate(tage[tage.length - 1], { short: true })}`
+    : formatDate(tage[0] || date, { short: true });
+
+  const bauen = (namen, rest) =>
+    `Einkauf ${wann}: ${namen.join(', ')}${rest ? ` +${rest} weitere` : ''}`;
+
+  let namen = [...stores];
+  let text = bauen(namen, 0);
+  while (text.length > ZWECK_MAX && namen.length > 1) {
+    namen = namen.slice(0, -1);
+    text = bauen(namen, stores.length - namen.length);
+  }
+  return text.slice(0, ZWECK_MAX);
+}
+
 /** Gemeinsame Datenbasis für Karte, Text und Bild. */
 export function buildSummary(bill, settings) {
   const showMine = Boolean(settings.showMine);
@@ -60,6 +87,7 @@ export function buildSummary(bill, settings) {
   return {
     receipts: perReceipt.length > 1 ? perReceipt : [],
     title,
+    verwendungszweck: verwendungszweck(perReceipt, stores, date),
     store:   storeLabel(bill),
     date,
     weekday: weekday(date),
@@ -137,6 +165,10 @@ export function renderPaper(node, summary) {
     node.append(el('div', { class: 'p-pay' }, el('b', { text: 'Überweisen an' }), summary.payTo));
   }
 
+  // Der Betreff gehört mit aufs Papier — sonst muss ihn jemand abtippen.
+  node.append(el('div', { class: 'p-zweck' },
+    el('b', { text: 'Verwendungszweck' }), summary.verwendungszweck));
+
   node.append(el('div', {
     class: 'p-foot',
     text: summary.from ? `Zusammengestellt von ${summary.from}` : 'Belegteiler',
@@ -169,6 +201,7 @@ export function buildText(summary) {
     lines.push('');
     lines.push(`Überweisen an: ${summary.payTo}`);
   }
+  lines.push(`Verwendungszweck: ${summary.verwendungszweck}`);
   if (summary.from) {
     lines.push('');
     lines.push(`— ${summary.from}`);

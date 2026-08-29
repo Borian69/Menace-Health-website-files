@@ -58,6 +58,11 @@ Preise
 - Pfand: eigene Position, positiver Betrag, Kategorie "pfand".
 - Leergut, Rabatte, Coupons, Treuevorteile: NEGATIVER Betrag – Leergut in "pfand", der Rest in "rabatt".
 
+Jede Zeile einzeln — das ist der häufigste Fehler
+- Vier Zeilen ergeben vier Positionen, auch wenn sie sich nur in einem Wort unterscheiden. "UM RIEG SALT CAR", "UM RIEG VANILLA", "UM RIEG BLA&WHI", "UM RIEG WHITE CA" sind vier verschiedene Artikel, nicht einer.
+- Fasse niemals ähnliche Zeilen zusammen und überspringe keine, weil sie der vorherigen gleicht.
+- Zähle vor dem Antworten die Artikelzeilen auf dem Bon und vergleiche mit der Zahl deiner Positionen. Weicht sie ab, fehlt etwas.
+
 Nicht übernehmen
 - Zwischensummen, "SUMME", "zu zahlen", Mehrwertsteuertabellen, Zahlungszeilen (EC-Cash, Gegeben, Rückgeld), Punktestände, TSE-Daten, Werbetexte.
 
@@ -261,6 +266,32 @@ export async function testConnection(settings, signal) {
   return true;
 }
 
+/* Zwei Cent Spielraum: Rundungen bei Mehrwertsteuer und Pfand. */
+const TOLERANZ = 2;
+
+/**
+ * Wie weit liegen die erfassten Positionen neben der gedruckten Summe?
+ * @returns {{cent: number, geprueft: boolean, je: {store: string, differenz: number}[]}}
+ */
+function fehlbetrag(receipts) {
+  let summe = 0;
+  let geprueft = false;
+  const je = [];
+
+  for (const receipt of receipts) {
+    const gedruckt = Number(receipt.receipt_total);
+    if (!Number.isFinite(gedruckt)) continue;      // ohne Endsumme nichts zu prüfen
+    geprueft = true;
+    const erfasst = receipt.items.reduce((s, item) => s + (Number(item.total_price) || 0), 0);
+    const differenz = Math.round((erfasst - gedruckt) * 100);
+    summe += Math.abs(differenz);
+    if (Math.abs(differenz) > TOLERANZ) je.push({ store: receipt.store || 'Beleg', differenz });
+  }
+
+  // Ohne gedruckte Summe gibt es kein Urteil — dann gilt der Versuch als in Ordnung.
+  return { cent: geprueft ? summe : 0, geprueft, je };
+}
+
 /** Ohne Klär-Durchgang: eine brauchbare Suchanfrage geht auch so. */
 const fallbackQuery = (store, item) =>
   [store, item.raw_text || item.name].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
@@ -285,9 +316,17 @@ export async function scanReceipt(parts, settings, signal) {
   const ausweich = (settings.fallbackModel || '').trim();
   if (ausweich && ausweich !== settings.model) versuche.push(ausweich);
 
+  /* Der Bon bringt seine eigene Prüfsumme mit: die gedruckte Endsumme.
+     Stimmt sie nicht mit den erfassten Positionen überein, fehlt etwas
+     — typischerweise hat das Modell mehrere fast gleiche Zeilen zu
+     einer zusammengezogen. Das ist objektiv messbar, also muss darüber
+     nicht der Mensch entscheiden: Solange Anläufe übrig sind, wird
+     weiterprobiert, und am Ende gewinnt der Versuch mit der kleinsten
+     Abweichung. */
   let result = null;
   let receipts = [];
   let genutztesModell = settings.model;
+  let bester = null;
 
   for (const [nummer, model] of versuche.entries()) {
     if (nummer > 0) await sleep(900, signal);   // kurz Luft holen
@@ -308,7 +347,19 @@ export async function scanReceipt(parts, settings, signal) {
       signal,
     });
     receipts = (result.args?.receipts || []).filter((receipt) => receipt?.items?.length);
-    if (receipts.length) { genutztesModell = model; break; }
+    if (!receipts.length) continue;
+
+    const luecke = fehlbetrag(receipts);
+    if (!bester || luecke.cent < bester.luecke.cent) {
+      bester = { result, receipts, model, luecke };
+    }
+    // Passt die Summe, ist nichts mehr zu holen.
+    if (luecke.cent <= TOLERANZ) break;
+  }
+
+  if (bester) {
+    ({ result, receipts } = bester);
+    genutztesModell = bester.model;
   }
 
   if (!receipts.length) {
@@ -361,10 +412,18 @@ export async function scanReceipt(parts, settings, signal) {
   /* Aus einer abgeschnittenen Antwort wurde gerettet, was vollständig
      ankam. Das muss dranstehen — sonst fehlen am Ende still Positionen
      und die Summe stimmt scheinbar grundlos nicht. */
+  /* Bleibt nach allen Anläufen eine Lücke zur gedruckten Summe, wird
+     sie benannt statt verschwiegen. Meist fehlt genau eine Zeile. */
+  const luecke = bester?.luecke || fehlbetrag(receipts);
   const notizen = [
     result.args?.notes || '',
     result.diagnose?.abgeschnitten
       ? 'Die Antwort war abgeschnitten — die letzten Positionen können fehlen. Bitte die Summe prüfen.'
+      : '',
+    luecke.je.length
+      ? `Die Positionen ergeben nicht die gedruckte Summe (${luecke.je
+        .map((e) => `${e.store}: ${e.differenz > 0 ? '+' : '−'}${(Math.abs(e.differenz) / 100).toFixed(2).replace('.', ',')} €`)
+        .join(', ')}). Vermutlich fehlt eine Zeile.`
       : '',
   ].filter(Boolean).join(' ');
 
