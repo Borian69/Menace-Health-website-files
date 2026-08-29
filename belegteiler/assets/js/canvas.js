@@ -291,6 +291,24 @@ function paint(ctx, summary, dry) {
     y += payHeight + 26;
   }
 
+  /* Der Verwendungszweck steht mit auf dem Bild. Wer es in WhatsApp
+     bekommt, hat den Betreff sonst nirgends und tippt ihn ab. */
+  if (summary.verwendungszweck) {
+    ctx.font = `24px ${SANS}`;
+    const zweckLines = wrap(ctx, summary.verwendungszweck, CONTENT - 60);
+    const zweckHeight = 58 + zweckLines.length * 32 + 22;
+    draw(() => {
+      ctx.font = `700 19px ${SANS}`;
+      ctx.fillStyle = FAINT;
+      tracked(ctx, 'VERWENDUNGSZWECK', PAD + 30, y + 30, 3.4);
+
+      ctx.font = `24px ${SANS}`;
+      ctx.fillStyle = INK;
+      zweckLines.forEach((line, index) => ctx.fillText(line, PAD + 30, y + 66 + index * 32));
+    });
+    y += zweckHeight;
+  }
+
   y += 14;
   draw(() => {
     ctx.font = `20px ${SANS}`;

@@ -21,6 +21,7 @@ let summary = null;
 let summaryBlob = null;
 let scanAbort = null;
 let editing = null;          // id der Position, die gerade im Sheet liegt
+let nurBeleg = null;         // id des Belegs, auf den die Zuordnung gefiltert ist
 
 /* Jede Änderung sofort sichern. Eine laufende Abrechnung landet in
    ihrem eigenen Fach, eine bereits abgeschlossene aktualisiert ihren
@@ -97,12 +98,16 @@ function renderOpenBill() {
     + `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`;
   countTo($('#open-amount'), sums.parents, euro);
 
+  /* Die Läden sind Knöpfe: Antippen öffnet die Zuordnung und zeigt nur
+     diesen Beleg. Bei vier Belegen an einem Tag ist das der kürzeste
+     Weg zu der einen Position, die man nachsehen will. */
   const stores = $('#open-stores');
   stores.replaceChildren();
   for (const receipt of running.receipts) {
-    stores.append(el('span', {
+    stores.append(el('button', {
       class: 'open-store',
       text: receipt.time ? `${receipt.store} · ${receipt.time}` : receipt.store,
+      onClick: () => zeigeBeleg(receipt.id),
     }));
   }
 
@@ -111,6 +116,14 @@ function renderOpenBill() {
 
 function openFromHistory(entry) {
   bill = { ...structuredClone(entry), done: true };
+  nurBeleg = null;
+  renderReview();
+  showView('review');
+}
+
+/** Zuordnung öffnen und auf einen einzelnen Beleg beschränken. */
+function zeigeBeleg(id) {
+  nurBeleg = id;
   renderReview();
   showView('review');
 }
@@ -269,6 +282,7 @@ async function versuche(signal = scanAbort?.signal) {
 /** Erfolgsweg: in die Abrechnung übernehmen und bestätigen. */
 async function uebernehmen(parsed) {
   if (!bill || bill.done) bill = createBill();
+  nurBeleg = null;                       // ein neuer Beleg gehört immer gezeigt
   const added = addScan(bill, parsed);
   persist();
   recordUsage(parsed.usage);
@@ -446,10 +460,23 @@ function renderReview() {
     `${sums.count} ${sums.count === 1 ? 'Position' : 'Positionen'}`,
   ].filter(Boolean).join(' · ');
 
+  const gefiltert = nurBeleg
+    ? bill.items.filter((item) => item.receiptId === nurBeleg)
+    : bill.items;
+
+  const leiste = $('#filter-bar');
+  leiste.hidden = !nurBeleg;
+  if (nurBeleg) {
+    const beleg = bill.receipts.find((r) => r.id === nurBeleg);
+    $('#filter-label').textContent = beleg
+      ? `Nur ${beleg.store}${beleg.time ? ` · ${beleg.time}` : ''}`
+      : 'Nur ein Beleg';
+  }
+
   const list = $('#category-list');
   list.replaceChildren();
 
-  for (const group of groupByCategory(bill.items)) {
+  for (const group of groupByCategory(gefiltert)) {
     const items = el('div', { class: 'items' });
     for (const item of group.items) items.append(itemRow(item));
 
@@ -606,6 +633,7 @@ function openSummary() {
   summary = buildSummary(bill, settings);
   summaryBlob = null;
   renderPaper($('#paper'), summary);
+  $('#zweck-text').textContent = summary.verwendungszweck;
   $('#btn-finish').hidden = Boolean(bill.done);
   showView('summary');
 }
@@ -963,7 +991,10 @@ function wire() {
   });
 
   // Review
-  $('#btn-review-back').addEventListener('click', () => { persist(); showView('home'); renderHome(); });
+  $('#btn-filter-off').addEventListener('click', () => { nurBeleg = null; renderReview(); });
+  $('#btn-review-back').addEventListener('click', () => {
+    persist(); nurBeleg = null; showView('home'); renderHome();
+  });
   $('#btn-add-receipt').addEventListener('click', openCamera);
   $('#btn-all-mine').addEventListener('click', () => setAllMine(true));
   $('#btn-all-parents').addEventListener('click', () => setAllMine(false));
@@ -983,6 +1014,15 @@ function wire() {
   $('#btn-share').addEventListener('click', shareSummary);
   $('#btn-finish').addEventListener('click', finishBill);
   $('#btn-copy').addEventListener('click', copySummary);
+  $('#btn-copy-zweck').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(summary.verwendungszweck);
+      cue.tick();
+      toast('Verwendungszweck kopiert.');
+    } catch {
+      toast('Kopieren geht hier nicht — Text markieren und kopieren.');
+    }
+  });
   $('#btn-download').addEventListener('click', downloadSummary);
 
   // Einstellungen
@@ -1065,7 +1105,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v18';
+const BUILD = 'v19';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
