@@ -18,6 +18,11 @@ const DEFAULTS = {
   helperModel:   'google/gemma-4-31b-it:free',
   fallbackModel: 'google/gemini-2.5-flash-lite',
   resolveUncertain: true,
+  /* Aus als Vorgabe: Ein Anlauf, der von allein nachrückt, überschreibt
+     die Fehleranzeige, bevor man sie lesen konnte. Wer wissen will,
+     woran es liegt, kommt sonst nicht an die Details. Der Beleg bleibt
+     ohnehin gespeichert und lässt sich jederzeit von Hand wiederholen. */
+  autoRetry: false,
   fromName: '',
   toName:   '',
   payTo:    '',

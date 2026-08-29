@@ -268,6 +268,13 @@
           </label>
         </div>
         <div class="field">
+          <label class="switch">
+            <input type="checkbox" id="set-auto-retry" name="autoRetry">
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-label">Bei Fehlschlag von allein wiederholen<small>Startet nach 4, 10, 25 und 60 Sekunden neue Anläufe. Aus lässt die Fehlermeldung stehen — nötig, wenn Du die Details lesen willst. Der Beleg bleibt so oder so gespeichert.</small></span>
+          </label>
+        </div>
+        <div class="field">
           <label for="set-fallback">Ausweichmodell</label>
           <select id="set-fallback" name="fallbackModel"></select>
           <p class="field-hint">Springt ein, wenn das gewählte Modell überlastet ist oder sein Gratis-Kontingent leer. Braucht Guthaben — dafür scheitert kein Scan mehr an einem vollen Gratis-Modell. „Keins“ schaltet das ab.</p>
