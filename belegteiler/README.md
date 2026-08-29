@@ -286,6 +286,31 @@ gehören: `CACHE` in `sw.js` und `BUILD` in `assets/js/app.js`. Laufen sie
 auseinander, zeigen die Einstellungen eine falsche Fassung an — `test13` prüft
 das deshalb.
 
+## Die Zurück-Geste
+
+Als installierte App gibt es keine Adressleiste und keinen Zurück-Pfeil des
+Browsers — nur die Geste beziehungsweise den Zurück-Knopf des Systems. Und der
+kannte lange genau einen Schritt: raus aus der App, egal wo man gerade war.
+
+Der Grund ist unscheinbar: Ein Ansichtswechsel setzt hier nur ein Attribut am
+`body`. Der Browser bekommt davon nichts mit, sein Verlauf besteht aus einem
+einzigen Eintrag — und den verlässt Zurück eben.
+
+Jetzt legt jede Ansicht ihren Eintrag an, und `popstate` stellt die vorherige
+wieder her. Das Bearbeiten-Blatt bekommt einen eigenen, damit Zurück zuerst das
+Blatt schliesst und nicht gleich die Ansicht wechselt; wird es per Knopf
+geschlossen, räumt es seinen Eintrag selbst wieder ab. Der Startbildschirm ist
+der Boden: Von dort darf Zurück die App schliessen, dort ist es auch so gemeint.
+
+Eine Falle am Rande, die dabei auffiel: `renderHome()` hatte eine lokale
+Variable `history` für den Abrechnungsverlauf und verschattete damit
+`window.history` — genau das Objekt, über das die Geste läuft. Sie heisst jetzt
+`verlauf`.
+
+`test22` fährt das durch: aus den Einstellungen, aus der Übersicht, aus der
+Zuordnung, aus dem Blatt — und prüft nach jedem Schritt, dass die App noch da
+ist.
+
 ## Was mit dem Foto passiert, bevor es losgeht
 
 Ein Kassenbon ist der unangenehmste Fall für ein Kameraauge: graue
