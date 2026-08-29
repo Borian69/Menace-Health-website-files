@@ -4,7 +4,7 @@
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
 /* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
-const CACHE = 'belegteiler-v20';
+const CACHE = 'belegteiler-v21';
 
 // Getrenntes Fach für fertige Erkennungen, die noch niemand abgeholt hat.
 const ERGEBNISSE = 'belegteiler-ergebnisse';
@@ -82,8 +82,15 @@ async function ausfuehren({ id, url, method, headers, body }) {
       retryAfter: Number(antwort.headers.get('retry-after')) || 0,
       text: await antwort.text(),
     };
-  } catch {
-    ergebnis = { id, fehler: true, ok: false, status: 0, retryAfter: 0, text: '' };
+  } catch (error) {
+    /* Den Grund mitnehmen. Hier stand ein nacktes catch, und damit war
+       an der einzigen Stelle, an der etwas über den Fehlschlag zu
+       erfahren gewesen wäre, nichts mehr übrig — die Diagnose zeigte
+       dann nur "Keine Verbindung" ohne jeden Anhaltspunkt. */
+    ergebnis = {
+      id, fehler: true, ok: false, status: 0, retryAfter: 0, text: '',
+      grund: `${error?.name || 'Fehler'}: ${error?.message || error}`,
+    };
   }
   laufend.delete(id);
 

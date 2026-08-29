@@ -78,15 +78,40 @@ function ueberWorker(url, init, signal) {
   });
 }
 
-async function direkt(url, init, signal) {
+/* Ein gescheiterter Netzabruf sagt nur "Failed to fetch" — die Ursache
+   liegt unterhalb dessen, was JavaScript zu sehen bekommt. Also wird
+   alles mitgegeben, was sich von aussen feststellen lässt: welcher Weg,
+   wie lange es dauerte, wie gross die Anfrage war, ob das Gerät sich für
+   online hält. Aus "abgebrochen nach 40 s bei 1,8 MB" lässt sich etwas
+   schliessen, aus "Keine Verbindung" nichts. */
+function verbindungsfehler({ grund, weg, url, init, begonnen }) {
+  const mb = ((init?.body?.length || 0) / 1024 / 1024).toFixed(2);
+  const sekunden = ((Date.now() - begonnen) / 1000).toFixed(1);
+
+  const fehler = new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
+  fehler.wiederholbar = true;   // kommt das Netz zurück, klappt es
+  fehler.diagnose = {
+    grund,
+    weg,
+    ziel: String(url).replace(/^(https?:\/\/[^/]+).*$/, '$1'),
+    anfrageMB: mb,
+    dauerSekunden: sekunden,
+    geraetOnline: navigator.onLine,
+  };
+  return fehler;
+}
+
+async function direkt(url, init, signal, weg = 'direkt') {
+  const begonnen = Date.now();
   let antwort;
   try {
     antwort = await fetch(url, { ...init, signal });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    const fehler = new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
-    fehler.wiederholbar = true;   // kommt das Netz zurück, klappt es
-    throw fehler;
+    throw verbindungsfehler({
+      grund: `${error?.name || 'Fehler'}: ${error?.message || error}`,
+      weg, url, init, begonnen,
+    });
   }
   return {
     ok: antwort.ok,
@@ -103,17 +128,29 @@ async function direkt(url, init, signal) {
  */
 export async function anfrage(url, init, signal) {
   if (nutzbar()) {
+    const begonnen = Date.now();
     const antwort = await ueberWorker(url, init, signal);
-    // 'unbekannt': Der Worker wurde zwischendurch beendet und weiß
-    // nichts mehr von der Anfrage. Dann eben selbst fragen.
-    if (!antwort.unbekannt) {
-      if (antwort.fehler) throw new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
+
+    /* Scheitert der Umweg, wird direkt gefragt statt aufzugeben. Hier
+       stand ein throw — und damit war ein Fehlschlag im Worker das Ende
+       der Erkennung, obwohl der direkte Weg womöglich durchgekommen
+       wäre. Auch 'unbekannt' (Worker zwischendurch beendet) landet hier. */
+    if (!antwort.unbekannt && !antwort.fehler) {
       return {
         ok: antwort.ok,
         status: antwort.status,
         retryAfter: antwort.retryAfter || 0,
         payload: parse(antwort.text),
       };
+    }
+
+    try {
+      return await direkt(url, init, signal, 'direkt nach Worker-Fehlschlag');
+    } catch (error) {
+      // Beide Wege gescheitert: den Grund des Workers mit angeben.
+      if (error.diagnose && antwort.grund) error.diagnose.workerGrund = antwort.grund;
+      if (error.diagnose) error.diagnose.workerDauer = `${((Date.now() - begonnen) / 1000).toFixed(1)} s`;
+      throw error;
     }
   }
   return direkt(url, init, signal);

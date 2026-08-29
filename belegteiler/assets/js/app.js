@@ -443,6 +443,15 @@ function zeigeDetails(error) {
     d.grund ? `Abbruchgrund: ${d.grund}` : '',
     'werkzeugAufruf' in d ? `Funktionsaufruf kam an: ${d.werkzeugAufruf ? 'ja' : 'nein'}` : '',
     d.abgeschnitten ? 'Antwort war abgeschnitten: ja' : '',
+
+    // Bei einem Netzfehler zählt etwas anderes als bei einer Antwort.
+    d.weg ? `Weg:      ${d.weg}` : '',
+    d.ziel ? `Ziel:     ${d.ziel}` : '',
+    d.anfrageMB ? `Anfrage:  ${d.anfrageMB} MB` : '',
+    d.dauerSekunden ? `Abbruch nach: ${d.dauerSekunden} s` : '',
+    'geraetOnline' in d ? `Gerät meldet online: ${d.geraetOnline ? 'ja' : 'nein'}` : '',
+    d.workerGrund ? `Zuvor im Service Worker: ${d.workerGrund}` : '',
+    d.workerDauer ? `Dauer im Service Worker: ${d.workerDauer}` : '',
     `Meldung:  ${error.message || '—'}`,
     d.text ? `\nAntworttext des Modells:\n${d.text}` : '',
   ].filter(Boolean);
@@ -1188,7 +1197,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v20';
+const BUILD = 'v21';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
