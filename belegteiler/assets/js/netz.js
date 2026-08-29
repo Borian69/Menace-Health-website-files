@@ -42,13 +42,29 @@ if ('serviceWorker' in navigator) {
 
 const nutzbar = () => Boolean(navigator.serviceWorker?.controller);
 
+/* Kommt gar nichts zurück, darf die App nicht ewig warten. Der Worker
+   kann zwischendurch ersetzt oder beendet worden sein, dann läuft die
+   Erkennung gegen eine Wand und die Anzeige steht still. Nach dieser
+   Frist wird stattdessen direkt gefragt. Grosszügig bemessen: Ein Bild
+   mit mehreren Abschnitten darf durchaus eine Minute brauchen. */
+const WORKER_FRIST = 90_000;
+
 function ueberWorker(url, init, signal) {
   const id = `${Date.now()}-${(laufendeNummer += 1)}`;
 
   return new Promise((resolve, reject) => {
-    offen.set(id, { resolve, reject });
+    const frist = setTimeout(() => {
+      if (!offen.delete(id)) return;
+      resolve({ id, unbekannt: true });    // löst den direkten Weg aus
+    }, WORKER_FRIST);
+
+    offen.set(id, {
+      resolve: (wert) => { clearTimeout(frist); resolve(wert); },
+      reject: (fehler) => { clearTimeout(frist); reject(fehler); },
+    });
 
     const abbrechen = () => {
+      clearTimeout(frist);
       offen.delete(id);
       const fehler = new Error('Abgebrochen');
       fehler.name = 'AbortError';

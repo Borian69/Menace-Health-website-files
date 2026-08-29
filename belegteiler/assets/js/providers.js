@@ -55,7 +55,10 @@ const anthropic = {
       model,
       max_tokens: maxTokens,
       system,
-      ...(tool ? { tools: [{ name: tool.name, description: tool.description, input_schema: tool.schema }] } : {}),
+      ...(tool ? {
+        tools: [{ name: tool.name, description: tool.description, input_schema: tool.schema }],
+        tool_choice: { type: 'tool', name: tool.name },   // erzwingen, siehe OpenRouter
+      } : {}),
       messages: [{ role: 'user', content }],
     };
   },
@@ -73,7 +76,17 @@ const anthropic = {
     const [inPrice, outPrice] = ANTHROPIC_PRICES[payload?.model] || ANTHROPIC_PRICES['claude-sonnet-5'];
     const dollars = (input * inPrice + (usage.output_tokens || 0) * outPrice) / 1_000_000;
 
-    return { args, text, usage: { cents: dollars * USD_TO_EUR * 100 } };
+    return {
+      args,
+      text,
+      usage: { cents: dollars * USD_TO_EUR * 100 },
+      diagnose: {
+        grund: payload?.stop_reason || '',
+        werkzeugAufruf: Boolean(call),
+        abgeschnitten: Boolean(args?.__abgeschnitten),
+        modell: payload?.model || '',
+      },
+    };
   },
 
   error(status, payload, { retryAfter } = {}) {
@@ -138,11 +151,15 @@ const openrouter = {
         { role: 'system', content: system },
         { role: 'user', content },
       ],
-      // Nicht erzwungen: nicht jedes Modell auf OpenRouter beherrscht
-      // tool_choice. Kommt kein Funktionsaufruf, greift der JSON-Notweg.
+      /* Erzwungen, nicht 'auto'. Vorher stand hier die Vermutung, nicht
+         jedes Modell beherrsche tool_choice — an der Modell-Liste von
+         OpenRouter nachgeprüft: alle neun hinterlegten Modelle melden
+         tool_choice als unterstützt. Mit 'auto' antworten kleine
+         Modelle bei einem Bild gern in Prosa statt die Funktion zu
+         rufen, und das sieht dann aus wie „nichts erkannt". */
       ...(tool ? {
         tools: [{ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.schema } }],
-        tool_choice: 'auto',
+        tool_choice: { type: 'function', function: { name: tool.name } },
       } : {}),
     };
   },
@@ -155,7 +172,19 @@ const openrouter = {
 
     // OpenRouter liefert die tatsächlichen Kosten in jeder Antwort mit.
     const dollars = Number(payload?.usage?.cost) || 0;
-    return { args, text, usage: { cents: dollars * USD_TO_EUR * 100 } };
+    return {
+      args,
+      text,
+      usage: { cents: dollars * USD_TO_EUR * 100 },
+      // Für die Fehlersuche: Warum hat das Modell aufgehört, und kam
+      // überhaupt ein Funktionsaufruf an?
+      diagnose: {
+        grund: payload?.choices?.[0]?.finish_reason || '',
+        werkzeugAufruf: Boolean(call),
+        abgeschnitten: Boolean(args?.__abgeschnitten),
+        modell: payload?.model || '',
+      },
+    };
   },
 
   error(status, payload, { retryAfter } = {}) {
@@ -200,7 +229,61 @@ export function detectProvider(key) {
   return null;
 }
 
-const asObject = (value) => (typeof value === 'string' ? JSON.parse(value) : value);
+/* Die Argumente eines Funktionsaufrufs lesen.
+
+   Hier stand ein nacktes JSON.parse. Das war der Fehler, der die App
+   unbrauchbar gemacht hat: Bricht das Modell mitten in der
+   Positionsliste ab — bei langen Bons der Normalfall, finish_reason
+   'length' —, ist das JSON unvollständig und JSON.parse wirft. Der
+   rohe SyntaxError flog an der gesamten Wiederhol-Logik vorbei, denn
+   die greift nur, wenn gar nichts erkannt wurde, nicht wenn das Lesen
+   der Antwort scheitert. Jeder Anlauf starb identisch, und auf dem
+   Bildschirm stand eine Meldung, mit der niemand etwas anfangen kann.
+
+   Jetzt wird zuerst normal gelesen und, wenn das misslingt, gerettet,
+   was vollständig angekommen ist. Zehn von zwölf Positionen sind
+   deutlich besser als eine Fehlermeldung. */
+function asObject(value) {
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    const gerettet = reparieren(value);
+    if (gerettet) { gerettet.__abgeschnitten = true; return gerettet; }
+    return null;
+  }
+}
+
+/**
+ * Abgeschnittenes JSON schließen: bis zur letzten vollständigen
+ * geschweiften Klammer zurückgehen und die offenen Klammern ergänzen.
+ * @returns {object|null}
+ */
+function reparieren(text) {
+  const ende = text.lastIndexOf('}');
+  if (ende === -1) return null;
+  const teil = text.slice(0, ende + 1);
+
+  // Klammern zählen, dabei Zeichenketten und Maskierungen beachten.
+  const offen = [];
+  let inString = false;
+  let maskiert = false;
+  for (const zeichen of teil) {
+    if (maskiert) { maskiert = false; continue; }
+    if (zeichen === '\\') { maskiert = true; continue; }
+    if (zeichen === '"') { inString = !inString; continue; }
+    if (inString) continue;
+    if (zeichen === '{') offen.push('}');
+    else if (zeichen === '[') offen.push(']');
+    else if (zeichen === '}' || zeichen === ']') offen.pop();
+  }
+
+  try {
+    return JSON.parse(teil + offen.reverse().join(''));
+  } catch {
+    return null;
+  }
+}
 
 /** Holt ein JSON-Objekt aus einer Textantwort — Notweg ohne Funktionsaufruf. */
 function extractJson(text) {
