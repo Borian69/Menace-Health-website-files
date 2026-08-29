@@ -68,7 +68,9 @@ async function direkt(url, init, signal) {
     antwort = await fetch(url, { ...init, signal });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    throw new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
+    const fehler = new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
+    fehler.wiederholbar = true;   // kommt das Netz zurück, klappt es
+    throw fehler;
   }
   return {
     ok: antwort.ok,

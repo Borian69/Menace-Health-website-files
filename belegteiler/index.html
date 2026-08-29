@@ -44,6 +44,16 @@
       <button class="ghost-btn" id="btn-pick">Bild aus der Galerie wählen</button>
     </div>
 
+    <!-- Aufnahme, die noch nicht durch ist -->
+    <div class="waiting" id="waiting-card" hidden>
+      <img class="waiting-thumb" id="waiting-thumb" alt="">
+      <div class="waiting-body">
+        <div class="waiting-label">Beleg wartet noch</div>
+        <div class="waiting-meta" id="waiting-meta"></div>
+      </div>
+      <button class="chip-btn" id="btn-waiting-retry">Nochmal</button>
+    </div>
+
     <div class="open-bill" id="open-bill" hidden>
       <div class="open-head">
         <div>
@@ -100,12 +110,17 @@
     <div class="scan-error" id="scan-error" hidden>
       <h3 id="scan-error-title">Das hat nicht geklappt</h3>
       <p id="scan-error-msg"></p>
+      <p class="retry-note" id="scan-retry-note" hidden></p>
       <div class="row-btns">
-        <button class="secondary-btn" id="btn-scan-retry">Nochmal versuchen</button>
+        <button class="primary-btn" id="btn-scan-again">Nochmal versuchen</button>
+      </div>
+      <div class="row-btns">
+        <button class="secondary-btn" id="btn-scan-photo">Neues Foto</button>
         <button class="ghost-btn" id="btn-scan-manual">Manuell erfassen</button>
       </div>
       <button class="secondary-btn" id="btn-scan-model" hidden>Anderes Modell wählen</button>
-      <button class="link-btn" id="btn-scan-back">Abbrechen</button>
+      <button class="link-btn" id="btn-scan-back">Später — Beleg aufheben</button>
+      <button class="link-btn danger" id="btn-scan-drop">Beleg verwerfen</button>
     </div>
   </div>
 </section>
