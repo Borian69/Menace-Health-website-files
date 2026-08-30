@@ -823,6 +823,20 @@ body.scan-failed .scan-status { display: none; }
 }
 .p-pay b { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .16em; color: #A39B84; margin-bottom: 5px; font-weight: 700; }
 
+/* Tageswechsel innerhalb einer Abrechnung */
+.p-day {
+  margin: 22px 0 10px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  font-weight: 700;
+  color: #A39B84;
+  border-bottom: 1px solid var(--paper-line);
+  padding-bottom: 6px;
+}
+.p-day:first-child { margin-top: 0; }
+
 .p-zweck {
   margin-top: 14px;
   font-family: var(--sans);
@@ -840,8 +854,10 @@ body.scan-failed .scan-status { display: none; }
   border: 1px solid var(--line-strong);
   background: var(--surface);
 }
+.zweck-actions { display: flex; gap: 7px; }
 .zweck-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap;
   font-size: 11px; text-transform: uppercase; letter-spacing: .16em; color: var(--faint);
   margin-bottom: 9px;
 }

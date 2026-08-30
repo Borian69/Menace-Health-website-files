@@ -1106,6 +1106,21 @@ function wire() {
   $('#btn-share').addEventListener('click', shareSummary);
   $('#btn-finish').addEventListener('click', finishBill);
   $('#btn-copy').addEventListener('click', copySummary);
+  /* Eigene Nachricht statt Anhängsel: Beim Überweisen muss der Betreff
+     mit einem Griff kopierbar sein. Steht er mitten in einer langen
+     Nachricht, markiert man ihn auf dem Handy mühsam von Hand. */
+  $('#btn-share-zweck').addEventListener('click', async () => {
+    try {
+      if (navigator.share) await navigator.share({ text: summary.verwendungszweck });
+      else {
+        await navigator.clipboard.writeText(summary.verwendungszweck);
+        toast('Teilen geht hier nicht — Verwendungszweck kopiert.');
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      toast(error.message || 'Senden hat nicht geklappt.');
+    }
+  });
   $('#btn-copy-zweck').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(summary.verwendungszweck);
@@ -1197,7 +1212,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v21';
+const BUILD = 'v22';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

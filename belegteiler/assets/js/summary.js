@@ -65,24 +65,45 @@ export function buildSummary(bill, settings) {
      mehrere im Spiel sind, ist die entscheidende Frage „was habe ich wo
      gekauft“ — dann gliedert die Rechnung nach Beleg, mit Ort und
      Uhrzeit in der Überschrift. */
+  const tage = [...new Set(perReceipt.map((receipt) => receipt.date).filter(Boolean))].sort();
+  const mehrereTage = tage.length > 1;
+
+  /* Zieht sich eine Abrechnung über mehrere Tage, ist der Tag die
+     gröbere Ordnung — dann wird er als eigene Zwischenüberschrift
+     gesetzt, sobald er wechselt. Sonst stünden Belege von Mittwoch und
+     Freitag ununterscheidbar untereinander. */
   const byStore = perReceipt.length > 1;
+  let letzterTag = '';
   const sections = byStore
-    ? perReceipt.map((receipt) => ({
-        label: receipt.store,
-        meta: [formatDate(receipt.date, { short: true }), receipt.time && `${receipt.time} Uhr`].filter(Boolean).join(' · '),
-        items: receipt.items,
-        sum: receipt.parents,
-      }))
-    : groupByCategory(visible).map((group) => ({ label: group.label, meta: '', items: group.items, sum: group.sum }));
+    ? perReceipt.map((receipt) => {
+        const tagLabel = mehrereTage && receipt.date !== letzterTag
+          ? `${weekday(receipt.date)}, ${formatDate(receipt.date)}`
+          : '';
+        letzterTag = receipt.date;
+        return {
+          label: receipt.store,
+          meta: [formatDate(receipt.date, { short: true }), receipt.time && `${receipt.time} Uhr`].filter(Boolean).join(' · '),
+          tagLabel,
+          items: receipt.items,
+          sum: receipt.parents,
+        };
+      })
+    : groupByCategory(visible).map((group) => ({ label: group.label, meta: '', tagLabel: '', items: group.items, sum: group.sum }));
 
   /* Bei einem Beleg nennt die Überschrift den Laden. Bei mehreren
      stehen die Läden ohnehin als Zwischenüberschriften — dann benennt
      sie, was das Papier ist. */
   const stores = [...new Set(perReceipt.map((receipt) => receipt.store).filter(Boolean))];
-  const oneDay = new Set(perReceipt.map((receipt) => receipt.date)).size <= 1;
   const title = !byStore && stores.length === 1
     ? `Einkauf bei ${stores[0]}`
-    : (oneDay ? 'Tagesabrechnung' : 'Abrechnung');
+    : (mehrereTage ? 'Abrechnung' : 'Tagesabrechnung');
+
+  /* Über mehrere Tage steht der Zeitraum in der Unterzeile, nicht nur
+     der erste Tag. Sonst stand dort der 27., obwohl auch Belege vom 29.
+     dabei waren. */
+  const zeitraum = mehrereTage
+    ? `${formatDate(tage[0])} – ${formatDate(tage[tage.length - 1])}`
+    : formatDate(tage[0] || date);
 
   return {
     receipts: perReceipt.length > 1 ? perReceipt : [],
@@ -90,8 +111,10 @@ export function buildSummary(bill, settings) {
     verwendungszweck: verwendungszweck(perReceipt, stores, date),
     store:   storeLabel(bill),
     date,
-    weekday: weekday(date),
-    dateLabel: formatDate(date),
+    // Über mehrere Tage trägt der Zeitraum die Angabe, nicht ein Wochentag.
+    weekday: mehrereTage ? '' : weekday(date),
+    dateLabel: zeitraum,
+    mehrereTage,
     from:    trimOr(settings.fromName, ''),
     to:      trimOr(settings.toName, ''),
     payTo:   trimOr(settings.payTo, ''),
@@ -130,6 +153,7 @@ export function renderPaper(node, summary) {
   }
 
   for (const section of summary.sections) {
+    if (section.tagLabel) node.append(el('div', { class: 'p-day', text: section.tagLabel }));
     node.append(el('div', { class: `p-cat${summary.byStore ? ' p-store' : ''}` },
       el('span', { text: section.label }),
       section.meta ? el('em', { text: section.meta }) : null,
@@ -154,7 +178,11 @@ export function renderPaper(node, summary) {
     el('span', { class: 'p-total-amt', text: euro(summary.parents) }),
   ));
 
-  if (summary.mine !== 0) {
+  /* Was der Einkauf insgesamt kostete und was davon meins war, geht
+     die Empfänger nichts an — sie sollen sehen, was sie zahlen, sonst
+     nichts. Nur wer die eigenen Positionen ausdrücklich mitschickt,
+     bekommt die Aufschlüsselung dazu. */
+  if (summary.showMine && summary.mine !== 0) {
     node.append(el('div', { class: 'p-minor' },
       el('span', { text: 'Einkauf gesamt' }), el('span', { text: euro(summary.total) })));
     node.append(el('div', { class: 'p-minor' },
@@ -179,10 +207,11 @@ export function renderPaper(node, summary) {
 
 export function buildText(summary) {
   const lines = [];
-  lines.push(`${summary.title} — ${formatDate(summary.date, { short: true })}`);
+  lines.push(`${summary.title} — ${summary.dateLabel}`);
   lines.push('');
 
   for (const section of summary.sections) {
+    if (section.tagLabel) { lines.push(section.tagLabel.toUpperCase()); lines.push(''); }
     lines.push(section.meta ? `${section.label.toUpperCase()} — ${section.meta}` : section.label.toUpperCase());
     for (const item of section.items) {
       const quantity = quantityLabel(item.quantity, item.unit);
@@ -194,14 +223,14 @@ export function buildText(summary) {
   }
 
   lines.push(summary.to ? `${summary.to} zahlt: ${euro(summary.parents)}` : `Bitte überweisen: ${euro(summary.parents)}`);
-  if (summary.mine !== 0) {
+  // Gesamtsumme und Eigenanteil bleiben draussen — siehe renderPaper.
+  if (summary.showMine && summary.mine !== 0) {
     lines.push(`(Einkauf gesamt ${euro(summary.total)}, davon meins ${euro(Math.abs(summary.mine))})`);
   }
   if (summary.payTo) {
     lines.push('');
     lines.push(`Überweisen an: ${summary.payTo}`);
   }
-  lines.push(`Verwendungszweck: ${summary.verwendungszweck}`);
   if (summary.from) {
     lines.push('');
     lines.push(`— ${summary.from}`);
