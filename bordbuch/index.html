@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="de" data-theme="nacht">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bordbuch</title>
+<meta name="description" content="Datum, Kilometerstand, Arbeit — in zehn Sekunden eingetragen. Übersicht, Kalender, Jahreskurve und ein PDF, das beim Verkauf bares Geld wert ist.">
+<meta name="theme-color" content="#0E0F11">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bordbuch">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Das Moch-Design-System: Schriften, Tokens, Formsprache, Komponenten. -->
+<link rel="stylesheet" href="../design/styles.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body data-tab="neu" data-ansicht="liste">
+
+<header class="topbar">
+  <div class="mark">Bordbuch</div>
+  <button class="icon-btn" id="btn-einstellungen" aria-label="Einstellungen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+  </button>
+</header>
+
+<main>
+
+<!-- ══════════════════ EINTRAGEN ══════════════════ -->
+<section class="pane" id="pane-neu">
+  <div class="scroll">
+
+    <!-- Der eine helle Block dieser Ansicht: der aktuelle Stand. -->
+    <div class="shirt" id="stand-karte">
+      <span class="label">Kilometerstand</span>
+      <div class="odo" id="odo">—</div>
+      <span class="hemd-meta muted" id="odo-meta">Noch kein Eintrag</span>
+    </div>
+
+    <form id="form-neu" novalidate>
+      <div class="feld-reihe">
+        <div class="field">
+          <label for="f-datum">Datum</label>
+          <input type="date" id="f-datum" required>
+        </div>
+        <div class="field">
+          <label for="f-km">Stand (km)</label>
+          <input type="text" id="f-km" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="123456" required>
+        </div>
+      </div>
+      <p class="hinweis" id="km-hinweis"></p>
+
+      <div class="field">
+        <label>Arbeit</label>
+        <div class="chips" id="arten-chips"></div>
+      </div>
+
+      <div class="field">
+        <label for="f-text">Beschreibung</label>
+        <input type="text" id="f-text" autocomplete="off" placeholder="Was wurde gemacht?">
+      </div>
+
+      <details class="mehr" id="mehr-angaben">
+        <summary>Kosten, Werkstatt, Notiz</summary>
+        <div class="feld-reihe">
+          <div class="field">
+            <label for="f-kosten">Kosten (€)</label>
+            <input type="text" id="f-kosten" inputmode="decimal" autocomplete="off" placeholder="89,90">
+          </div>
+          <div class="field">
+            <label for="f-werkstatt">Werkstatt</label>
+            <input type="text" id="f-werkstatt" autocomplete="off" placeholder="Name oder Ort">
+          </div>
+        </div>
+        <div class="field">
+          <label for="f-notiz">Notiz</label>
+          <input type="text" id="f-notiz" autocomplete="off" placeholder="Nur für dich">
+        </div>
+      </details>
+
+      <button type="submit" class="btn btn-primary" id="btn-speichern">Eintragen</button>
+      <p class="fehlerzeile" id="form-fehler" hidden></p>
+    </form>
+
+    <section class="abschnitt" id="letzte-abschnitt" hidden>
+      <div class="abschnitt-kopf">
+        <span class="label">Zuletzt eingetragen</span>
+        <button class="btn btn-quiet" id="btn-alle-zeigen">Alle</button>
+      </div>
+      <ul class="liste" id="letzte-liste"></ul>
+    </section>
+
+    <p class="leer" id="leer-hinweis">
+      Das erste Mal? Trag den heutigen Kilometerstand ein — ab da zählt jeder
+      weitere Eintrag auf ihn auf.
+    </p>
+
+    <div class="spacer"></div>
+  </div>
+</section>
+
+<!-- ══════════════════ VERLAUF ══════════════════ -->
+<section class="pane" id="pane-verlauf">
+
+  <div class="segment" role="tablist" aria-label="Ansicht">
+    <button role="tab" type="button" data-ansicht="liste" aria-selected="true">Liste</button>
+    <button role="tab" type="button" data-ansicht="kalender" aria-selected="false">Kalender</button>
+    <button role="tab" type="button" data-ansicht="verlauf" aria-selected="false">Verlauf</button>
+  </div>
+
+  <div class="scroll">
+
+    <!-- ── Liste ── -->
+    <div class="ansicht" id="ansicht-liste">
+      <div class="suchzeile">
+        <input type="search" id="f-suche" placeholder="Suchen — Arbeit, Werkstatt, Jahr" autocomplete="off">
+      </div>
+      <div class="filter-chips" id="filter-chips"></div>
+      <div id="liste-halter"></div>
+    </div>
+
+    <!-- ── Kalender ── -->
+    <div class="ansicht" id="ansicht-kalender" hidden>
+      <div class="blaettern">
+        <button class="icon-btn klein" id="monat-zurueck" aria-label="Vorheriger Monat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+        </button>
+        <span class="blaettern-titel" id="monat-titel">—</span>
+        <button class="icon-btn klein" id="monat-vor" aria-label="Nächster Monat">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+      <div id="kalender-halter"></div>
+      <div id="kalender-tag"></div>
+    </div>
+
+    <!-- ── Verlauf / Diagramme ── -->
+    <div class="ansicht" id="ansicht-verlauf" hidden>
+      <div class="blaettern">
+        <button class="icon-btn klein" id="jahr-zurueck" aria-label="Vorheriges Jahr">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+        </button>
+        <span class="blaettern-titel n" id="jahr-titel">—</span>
+        <button class="icon-btn klein" id="jahr-vor" aria-label="Nächstes Jahr">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- Bewusst eine ruhige Karte statt eines zweiten Hemd-Blocks: der
+           helle Block gehört dem Kilometerstand, und laut sind in dieser
+           Ansicht schon die Balken und der Primärknopf. -->
+      <div class="card" id="jahr-karte">
+        <span class="label">Fahrleistung im Jahr</span>
+        <div class="kennzahl-wert gross" id="jahr-km">—</div>
+        <span class="hemd-meta muted" id="jahr-meta"></span>
+      </div>
+
+      <div class="kennzahlen" id="jahr-kennzahlen"></div>
+
+      <figure class="diagramm">
+        <figcaption>
+          <span class="label">Kilometer je Monat</span>
+          <span class="dg-lesehilfe" id="lese-balken">Antippen für den Monatswert</span>
+        </figcaption>
+        <div class="dg-halter" id="halter-balken"></div>
+      </figure>
+
+      <figure class="diagramm">
+        <figcaption>
+          <span class="label">Aufsummiert über das Jahr</span>
+          <span class="dg-lesehilfe" id="lese-kurve">Antippen für den Stand im Monat</span>
+        </figcaption>
+        <div class="dg-halter" id="halter-kurve"></div>
+      </figure>
+
+      <p class="fussnote">
+        Zwischen zwei Ablesungen wird gleichmäßig verteilt — genauer geht es
+        nicht, wenn dazwischen niemand gezählt hat. Häufigere Einträge machen
+        die Kurve genauer.
+      </p>
+
+      <div class="tabellenrahmen" id="jahr-tabelle"></div>
+    </div>
+
+    <button type="button" class="btn btn-primary" id="btn-pdf">Alles als PDF sichern</button>
+    <button type="button" class="btn btn-ghost" id="btn-pdf-teilen" hidden>PDF teilen</button>
+
+    <div class="spacer"></div>
+  </div>
+</section>
+
+</main>
+
+<nav class="tabbar" aria-label="Hauptbereiche">
+  <button type="button" data-tab="neu" aria-current="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    <span>Eintragen</span>
+  </button>
+  <button type="button" data-tab="verlauf">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16V9M12 16v-4M16 16v-8"/></svg>
+    <span>Verlauf</span>
+  </button>
+</nav>
+
+<!-- ══════════════════ EINSTELLUNGEN ══════════════════ -->
+<section class="voll" id="view-einstellungen" hidden>
+  <header class="topbar">
+    <button class="icon-btn" id="btn-zurueck" aria-label="Zurück">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+    </button>
+    <div class="topbar-titel">Einstellungen</div>
+    <span class="icon-btn-platz"></span>
+  </header>
+
+  <div class="scroll">
+
+    <div class="abschnitt">
+      <span class="label">Fahrzeug</span>
+      <p class="hinweis">Steht im Kopf des PDF. Ohne diese Angaben ist die Liste
+        nur eine Liste — mit ihnen ist sie ein Nachweis.</p>
+      <div class="field">
+        <label for="e-fahrzeug">Fahrzeug</label>
+        <input type="text" id="e-fahrzeug" placeholder="z. B. VW Golf VII 1.6 TDI">
+      </div>
+      <div class="feld-reihe">
+        <div class="field">
+          <label for="e-kennzeichen">Kennzeichen</label>
+          <input type="text" id="e-kennzeichen" placeholder="M-AB 1234">
+        </div>
+        <div class="field">
+          <label for="e-baujahr">Baujahr</label>
+          <input type="text" id="e-baujahr" inputmode="numeric" placeholder="2016">
+        </div>
+      </div>
+      <div class="field">
+        <label for="e-fin">Fahrgestellnummer</label>
+        <input type="text" id="e-fin" autocomplete="off" placeholder="Optional">
+      </div>
+    </div>
+
+    <div class="abschnitt">
+      <span class="label">Anzeige</span>
+      <label class="schalter">
+        <input type="checkbox" id="e-kosten-anzeigen">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Kosten anzeigen
+          <small>Beträge in Liste, Kalender und Kennzahlen.</small></span>
+      </label>
+      <label class="schalter">
+        <input type="checkbox" id="e-haptik">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Kurzes Vibrieren
+          <small>Bestätigt einen gespeicherten Eintrag.</small></span>
+      </label>
+    </div>
+
+    <div class="abschnitt">
+      <span class="label">PDF</span>
+      <div class="field">
+        <label for="e-format">Papierformat</label>
+        <select id="e-format">
+          <option value="a4">A4</option>
+          <option value="letter">Letter</option>
+        </select>
+      </div>
+      <label class="schalter">
+        <input type="checkbox" id="e-pdf-kosten">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Kosten ins PDF
+          <small>Beim Verkauf oft besser ohne.</small></span>
+      </label>
+      <label class="schalter">
+        <input type="checkbox" id="e-pdf-notizen">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Werkstatt und Notiz ins PDF</span>
+      </label>
+      <button type="button" class="btn btn-ghost" id="btn-pdf-druck">Druckfassung sichern</button>
+      <p class="hinweis">Die Druckfassung trägt keine Hintergrundfläche — Weiß ist
+        dort kein Farbauftrag. Inhalt und Seitenzahlen sind identisch.</p>
+      <button type="button" class="btn btn-quiet" id="btn-pdf-test">Testseite erzeugen</button>
+    </div>
+
+    <div class="abschnitt">
+      <span class="label">Daten</span>
+      <div class="statuskarte" id="speicher-status"></div>
+      <div class="knopfreihe">
+        <button type="button" class="btn btn-ghost" id="btn-export">Sicherung speichern</button>
+        <button type="button" class="btn btn-ghost" id="btn-import">Sicherung laden</button>
+      </div>
+      <input type="file" id="datei-import" accept="application/json,.json" hidden>
+      <button type="button" class="btn btn-quiet gefahr" id="btn-alles-loeschen">Alle Daten löschen</button>
+    </div>
+
+    <!-- ── Diagnose ── -->
+    <div class="abschnitt">
+      <span class="label">Diagnose</span>
+      <p class="hinweis">Für den Fall, dass etwas nicht so läuft wie erwartet.
+        Der Hauptschalter aktiviert das Protokoll; darunter lässt sich für jeden
+        Bereich einzeln entscheiden, ob er mitschreibt.</p>
+
+      <label class="schalter">
+        <input type="checkbox" id="e-debug">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Debug-Modus
+          <small>Protokoll, Rohwerte im Diagramm, Datum in jeder Kalenderzelle.</small></span>
+      </label>
+
+      <div id="debug-bereiche" class="unterschalter"></div>
+
+      <button type="button" class="btn btn-primary" id="btn-selbsttest">Selbsttest starten</button>
+      <div id="test-ergebnisse"></div>
+
+      <div class="knopfreihe">
+        <button type="button" class="btn btn-ghost" id="btn-demo">Testdaten anlegen</button>
+        <button type="button" class="btn btn-ghost" id="btn-demo-weg">Testdaten entfernen</button>
+      </div>
+
+      <details class="mehr" id="protokoll-block">
+        <summary>Ereignis-Protokoll</summary>
+        <pre class="protokoll" id="protokoll"></pre>
+        <div class="knopfreihe">
+          <button type="button" class="btn btn-ghost" id="btn-protokoll-kopieren">Kopieren</button>
+          <button type="button" class="btn btn-quiet" id="btn-protokoll-leeren">Leeren</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="abschnitt">
+      <span class="label">Über</span>
+      <p class="hinweis" id="ueber-text"></p>
+      <button type="button" class="btn btn-quiet" id="btn-neu-laden">Nach neuer Fassung suchen</button>
+    </div>
+
+    <div class="spacer"></div>
+  </div>
+</section>
+
+<!-- ══════════════════ EINTRAG BEARBEITEN ══════════════════ -->
+<div class="blende" id="blende" hidden>
+  <div class="tafel" role="dialog" aria-modal="true" aria-labelledby="tafel-titel">
+    <div class="tafel-griff" aria-hidden="true"></div>
+    <h3 id="tafel-titel">Eintrag</h3>
+
+    <div class="feld-reihe">
+      <div class="field">
+        <label for="b-datum">Datum</label>
+        <input type="date" id="b-datum">
+      </div>
+      <div class="field">
+        <label for="b-km">Stand (km)</label>
+        <input type="text" id="b-km" inputmode="numeric" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label>Arbeit</label>
+      <div class="chips" id="b-arten"></div>
+    </div>
+    <div class="field">
+      <label for="b-text">Beschreibung</label>
+      <input type="text" id="b-text" autocomplete="off">
+    </div>
+    <div class="feld-reihe">
+      <div class="field">
+        <label for="b-kosten">Kosten (€)</label>
+        <input type="text" id="b-kosten" inputmode="decimal" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="b-werkstatt">Werkstatt</label>
+        <input type="text" id="b-werkstatt" autocomplete="off">
+      </div>
+    </div>
+    <div class="field">
+      <label for="b-notiz">Notiz</label>
+      <input type="text" id="b-notiz" autocomplete="off">
+    </div>
+
+    <p class="fehlerzeile" id="tafel-fehler" hidden></p>
+
+    <div class="tafel-knoepfe">
+      <button type="button" class="btn btn-primary" id="btn-tafel-sichern">Änderung sichern</button>
+      <div class="knopfreihe">
+        <button type="button" class="btn btn-ghost" id="btn-tafel-abbrechen">Abbrechen</button>
+        <button type="button" class="btn btn-ghost gefahr" id="btn-tafel-loeschen">Löschen</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-halter" aria-live="polite"></div>
+
+<script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

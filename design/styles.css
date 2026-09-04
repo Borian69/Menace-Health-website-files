@@ -1,0 +1,7 @@
+/* Moch — Design System · Einstiegspunkt
+   Diese eine Datei einbinden. Reihenfolge zählt: Schriften, dann Tokens, dann
+   Formsprache, dann Komponentenschicht. */
+@import url("./fonts.css");
+@import url("./tokens.css");
+@import url("./shape.css");
+@import url("./bundle.css");

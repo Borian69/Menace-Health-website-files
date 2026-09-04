@@ -1,0 +1,96 @@
+/* Moch — Design Tokens · v2.0
+   Zwei Themes. Dark = Bühne (Web, Produkt, Social). Elfenbein = Dokument (Angebot, Print, Mail).
+   Kein #FFFFFF, kein #000000. Weiß existiert nur als unbedruckte Druckfassung. */
+
+:root{
+  /* ---- Elfenbein-Theme (Dokument) ---- */
+  --ground:#F4EEE3;        /* Elfenbein   — Grundfläche            */
+  --surface:#FCFAF4;       /* Pergament   — Karten, Panels         */
+  --surface-2:#E9E0CF;     /* Leinwand    — eingelassene Flächen   */
+  --line:#CFBFA6;          /* Sand        — Linien, Rahmen         */
+  --line-strong:#B5A184;   /* Naht hell   — starke Trennung        */
+  --text:#16110E;          /* Tinte                                */
+  --muted:#5E5245;         /* Asche       — Sekundärtext           */
+  --brand:#5A3E27;         /* Walnuss Tief — Primärakzent          */
+  --accent-2:#5E2226;      /* Oxblood Tief                          */
+  --brass:#7A5E1E;         /* Messing Tief — textsicher, 5,3:1     */
+  --brass-line:#D4AC52;    /* Messing      — nur Linie             */
+  --shirt:#F5F0E6;         /* Hemd                                  */
+
+  /* ---- Status (themeunabhängig, nie Markenfarbe) ---- */
+  --success:#2E6B4F;
+  --warning:#B07A16;
+  --error:#C0453F;
+  --info:#3B6079;
+
+  /* ---- Typografie ----
+     Drei Familien, nie eine vierte. Der Charakter entsteht aus dem Bruch
+     zwischen ihnen: fette Didone laut, serifenlose Grotesk leise.
+     Abril Fatface hat nur einen Schnitt (400) — sie ist reine Display-Schrift
+     und erst ab --display-min lesbar. Darunter übernimmt --font-text 600. */
+  --font-display:"Abril Fatface",Georgia,"Times New Roman",serif;
+  --font-text:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",Consolas,monospace;
+  --display-track:.012em;   /* Laufweite Display — gemessen, siehe Kap. 02  */
+  --display-min:24px;       /* darunter nie Abril, sondern Archivo 600      */
+  --mark-track:.06em;       /* Laufweite der Wortmarke                      */
+  --measure:66ch;
+  --leading:1.5;
+
+  /* ---- Raum: 8er-Raster, keine Zwischenwerte ---- */
+  --s1:8px;  --s2:16px; --s3:24px; --s4:32px; --s5:48px;
+  --s6:64px; --s7:96px; --s8:128px; --s9:160px;
+  /* ---- Radien · Werte des Leitfadens, Kurve G2 ------------------------
+     Die Zahlen sind unverändert die des Leitfadens. Die Ecke läuft als
+     Superellipse statt als Kreisbogen (tokens/shape.css) — bei diesen
+     Radien ist der Unterschied unter einem Pixel, deshalb wird nichts
+     kompensiert. */
+  --radius:2px;             /* strukturell: Karten, Flächen, Bilder   */
+  --radius-interactive:4px; /* Buttons, Felder, Chips                 */
+  --border:1px;
+  --container:1240px;
+
+  /* ---- Muster: Ton in Ton, max. 1,20 : 1 ---- */
+  --pattern-light:#EBE3D5;
+
+  /* ---- Die drei Fonds als benannte Konstanten · Leitfaden Kap. 13 ----
+     „Verbindlich ist der Name, nicht der Hexwert." Die Fonds sind
+     Alternativen, nie nebeneinander — je Ansicht genau einer. */
+  --ground-alt1:#0E1626;    /* Mitternacht            */
+  --ground-alt2:#280F14;    /* Oxblood                */
+  --surface-alt1:#20304C;   /* Karten auf Mitternacht */
+  --surface-alt2:#471C23;   /* Karten auf Oxblood     */
+}
+
+/* ---- Dark-Theme · Fond A: Nacht (Standard, 60 %) ---- */
+[data-theme="nacht"], .theme-nacht{
+  --ground:#0E0F11; --surface:#24272C; --surface-2:#060708;
+  --line:#2C3037; --line-strong:#414751;
+  --text:#F2EBDD; --muted:#A9A69F;
+  --brand:#6B4A2F; --brand-ink:#C79466;
+  --accent-2:#471C23; --brass:#D4AC52; --brass-line:#D4AC52;
+  --shirt:#F5F0E6;
+  --pattern-dark:#17191D; --pattern-card:#2E3138; --pattern-accent:#55222B;
+}
+/* ---- Fond B: Mitternacht (30 %) ---- */
+[data-theme="mitternacht"], .theme-mitternacht{
+  --ground:#0E1626; --surface:#20304C; --surface-2:#080E19;
+  --line:#2A3B58; --line-strong:#3E5379;
+  --text:#F2EBDD; --muted:#A9A69F;
+  --brand:#6B4A2F; --brand-ink:#C79466;
+  --accent-2:#471C23; --brass:#D4AC52; --brass-line:#D4AC52;
+  --shirt:#F5F0E6;
+  /* Der Leitfaden definiert keine Mustertöne für Mitternacht (Kap. 13 nennt
+     nur dark/card/light/accent). Nicht erfinden — Muster entfällt hier. */
+  --pattern-accent:#55222B;
+}
+/* ---- Fond C: Oxblood (10 %, nur Cover und Kapiteltrenner) ---- */
+[data-theme="oxblood"], .theme-oxblood{
+  --ground:#280F14; --surface:#471C23; --surface-2:#1A090C;
+  --line:#55222B; --line-strong:#6E2E38;
+  --text:#F2EBDD; --muted:#A9A69F;
+  --brand:#6B4A2F; --brand-ink:#C79466;
+  --accent-2:#471C23; --brass:#D4AC52; --brass-line:#D4AC52;
+  --shirt:#F5F0E6;
+  --pattern-accent:#55222B;
+}

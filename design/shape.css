@@ -1,0 +1,49 @@
+/* @moch-shape:start */
+/* Moch — Formsprache der Ecken · G2
+
+   Eine Ecke aus `border-radius` ist ein Kreisbogen: Die Krümmung springt an der
+   Nahtstelle von 0 (Gerade) auf 1/r (Bogen) und am Ende wieder zurück. Das ist
+   G1 — die Tangente stimmt, die Krümmung nicht. Eine Superellipse läuft mit
+   Krümmung 0 in die Gerade hinein und wieder heraus: G2.
+
+   ACHTUNG BEIM PARAMETER: `superellipse(k)` in CSS nennt nicht den klassischen
+   Exponenten, sondern dessen Logarithmus zur Basis 2. `superellipse(2)` ist der
+   Exponent 4 (das klassische Squircle), `superellipse(4)` wäre Exponent 16 —
+   praktisch ein Rechteck. Jedes k > 1 ist bereits krümmungsstetig.
+
+   GEMESSEN, nicht gerechnet — diagonale Schnitttiefe bei Radius 64 px, per
+   Treffertest an der gerenderten Form abgetastet:
+
+       round (G1)          25,60 px    Faktor 1,00
+       superellipse(1.1)   24,10 px    Faktor 1,06
+       superellipse(1.2)   22,65 px    Faktor 1,13   ← gewählt
+       superellipse(1.3)   21,30 px    Faktor 1,20
+       squircle = se(2)    13,50 px    Faktor 1,90
+       superellipse(4)      3,00 px    Faktor 8,53
+
+   Gewählt ist superellipse(1.2): krümmungsstetig, aber nur 13 % flacher als der
+   Kreisbogen. Bei den Systemradien 2 px und 4 px ist das ein Bruchteil eines
+   Pixels — deshalb bleiben die Radien unverändert bei den Werten des
+   Leitfadens. Es ändert sich die Kurve, nicht das Maß.
+
+   Wer den stärkeren Squircle-Charakter will, setzt --corner auf
+   superellipse(2) — dann brauchen die Radien Faktor 1,9, also 4 px und 8 px,
+   und das ist eine Abweichung, die nach Kapitel 02 begründet gehört. */
+
+:root{
+  --corner:superellipse(1.2);
+}
+
+/* `corner-shape` wirkt nur dort, wo ein Radius gesetzt ist — überall sonst ist
+   die Regel folgenlos. Deshalb global: jede gerundete Ecke im System ist G2,
+   auch die, die ein Layout später selbst setzt. */
+*,*::before,*::after{ corner-shape:var(--corner) }
+
+/* Ausnahme: echte Kreise und Pillen. Bei border-radius:50 % bzw. 999 px ist der
+   Kreisbogen die gewollte Form — eine Superellipse macht daraus ein Squircle. */
+.is-circle,.is-pill{ corner-shape:round }
+
+/* Engines ohne `corner-shape` zeigen den Kreisbogen. Weil die Radien bei 2 px
+   und 4 px bleiben, ist das Ergebnis dort exakt der Leitfaden — die Form ist
+   dann G1, die Maße stimmen. Kein Layoutunterschied, keine Überrundung. */
+/* @moch-shape:end */
