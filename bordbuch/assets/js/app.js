@@ -1316,12 +1316,17 @@ async function importiere(event) {
       eintraege = [...eintraege, ...gelesen.filter((eintrag) => !bekannt.has(eintrag.id))];
     }
     if (Array.isArray(daten.belege)) await belege.importiere(daten.belege);
+
+    /* Erst sichern, dann die Einstellungen aufbauen: Die Speicherkarte
+       dort liest aus dem Gerätespeicher und hätte sonst „0 Einträge“
+       gemeldet, während daneben zwei stehen. */
+    sichere();
+
     if (daten.einstellungen) {
       einstellungen = speichereEinstellungen(daten.einstellungen);
       setzeFlags(einstellungen);
-      fuelleEinstellungen();
     }
-    sichere();
+    fuelleEinstellungen();
     zeichneAlles();
     melde(`${plural(gelesen.length, 'Eintrag', 'Einträge')} übernommen.`);
     log('daten', 'Sicherung eingelesen', { anzahl: gelesen.length, ersetzt: ersetzen });
