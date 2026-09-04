@@ -42,6 +42,27 @@ export const euro = (cents) => eurFormat.format((cents || 0) / 100);
 /** 123456 → "123.456" */
 export const km = (value) => kmFormat.format(Math.round(value || 0));
 
+/* Kraftstoff wird in Millilitern gerechnet, damit sich beim Summieren
+   nichts verschiebt — wie die Kosten in Cent. */
+const literFormat = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const verbrauchFormat = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const spritFormat = new Intl.NumberFormat('de-DE', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+
+/** 45670 → "45,67 L" */
+export const liter = (milliliter) => `${literFormat.format((milliliter || 0) / 1000)} L`;
+
+/** 6,43 → "6,4" — die Einheit steht in der Überschrift, nicht am Wert. */
+export const verbrauchZahl = (wert) => verbrauchFormat.format(wert || 0);
+
+/** 174,9 Cent → "1,749" */
+export const spritZahl = (cent) => spritFormat.format((cent || 0) / 100);
+
+/** Eingabe "45,67" → 45670 Milliliter. */
+export function toMilliliter(value) {
+  const cent = toCents(value);          // dieselbe Kommalogik, zwei Stellen
+  return cent > 0 ? cent * 10 : null;
+}
+
 /** Beliebige Eingabe ("89,90", "89.90", 89.9) → Cent. */
 export function toCents(value) {
   if (typeof value === 'number' && Number.isFinite(value)) return Math.round(value * 100);

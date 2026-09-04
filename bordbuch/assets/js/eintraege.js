@@ -39,6 +39,8 @@ export function normalisiere(roh) {
   const kmStand = Number.parseInt(roh.km, 10);
   if (!datum || !Number.isFinite(kmStand) || kmStand < 0) return null;
 
+  const milliliter = Number.parseInt(roh.liter, 10);
+
   return {
     id:         typeof roh.id === 'string' && roh.id ? roh.id : uid(),
     datum,
@@ -48,6 +50,17 @@ export function normalisiere(roh) {
     kosten:     Number.isFinite(Number.parseInt(roh.kosten, 10)) ? Math.max(0, Number.parseInt(roh.kosten, 10)) : null,
     werkstatt:  String(roh.werkstatt || '').slice(0, 120).trim(),
     notiz:      String(roh.notiz || '').slice(0, 800).trim(),
+
+    /* Nur beim Tanken belegt. Menge in Millilitern — ganzzahlig, wie die
+       Kosten in Cent, damit sich beim Summieren nichts verschiebt.
+       `voll` entscheidet über die Verbrauchsrechnung: Nur zwischen zwei
+       vollen Tanks steht fest, wie viel wirklich verbraucht wurde. */
+    liter:      Number.isFinite(milliliter) && milliliter > 0 ? milliliter : null,
+    voll:       roh.voll !== false,
+
+    // Verweise auf Bilder in der Belegablage (IndexedDB).
+    belege:     Array.isArray(roh.belege) ? roh.belege.filter((id) => typeof id === 'string').slice(0, 12) : [],
+
     demo:       roh.demo === true,
     angelegt:   Number.isFinite(roh.angelegt) ? roh.angelegt : Date.now(),
     geaendert:  Number.isFinite(roh.geaendert) ? roh.geaendert : Date.now(),

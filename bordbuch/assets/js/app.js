@@ -7,13 +7,15 @@
    wird, in kalender.js, diagramm.js und pdf.js. Hier steht, wann was
    passiert. */
 
-import { $, $$, el, icon, euro, km, toKm, toCents, formatDatum, formatMonat, heuteISO, istISO, uid, plural } from './util.js';
+import { $, $$, el, icon, euro, km, liter, verbrauchZahl, spritZahl, toKm, toCents, toMilliliter, formatDatum, formatMonat, heuteISO, istISO, uid, plural } from './util.js';
 import { log, fehler, messe, setzeFlags, BEREICHE, protokollText, protokollLeeren, beiEintrag, flags } from './debug.js';
 import { ladeEinstellungen, speichereEinstellungen, ladeEintraege, speichereEintraege, alsJSON, ausJSON, speicherInfo, alleDatenLoeschen } from './store.js';
 import { ARTEN, artVon, normalisiere, sortiere, sortiereNeueste, statistik, strecken, monateFuerJahr, jahre, nachTag } from './eintraege.js';
 import { gitter } from './kalender.js';
-import { balken, kurve, tabelle } from './diagramm.js';
+import { balken, kurve, tabelle, zeitreihe } from './diagramm.js';
 import { erzeugePDF, testSeite } from './pdf.js';
+import { verbrauchsBilanz, fehlenderGrund, unplausibelHinweis } from './verbrauch.js';
+import * as belege from './belege.js';
 import { erzeugeDemo, istDemo } from './demo.js';
 import { BUILD } from './fassung.js';
 
@@ -31,6 +33,8 @@ let kalMonat = new Date().getMonth();
 let gewaehlterTag = null;
 let jahr = new Date().getFullYear();
 let letztesPDF = null;
+let neueBelege = [];        // Belege des noch nicht gespeicherten Eintrags
+let offenerBeleg = null;    // im Betrachter
 
 /* Zahl im Systemsatz: monospaced, tabellarisch, 93 %. Gilt für jede
    Ziffer der App — Signatur-Regel 1. */
@@ -55,10 +59,14 @@ function start() {
   verdrahteKalender();
   verdrahteVerlauf();
   verdrahteTafel();
+  verdrahteBelege();
   verdrahteEinstellungen();
 
   zeichneAlles();
   registriereWorker();
+
+  // Bilder, auf die kein Eintrag mehr zeigt, belegen sonst für immer Platz.
+  belege.raeumeAuf(eintraege);
 }
 
 function zeichneAlles() {
@@ -68,6 +76,7 @@ function zeichneAlles() {
   renderListe();
   renderKalender();
   renderVerlauf();
+  renderVerbrauch();
   fertig({ eintraege: eintraege.length });
 }
 
@@ -104,7 +113,10 @@ function zeigeTab(name) {
   }
   log('ui', 'Bereich gewechselt', { bereich: name });
   // Die Diagramme brauchen eine sichtbare Breite — vorher ist sie null.
-  if (name === 'verlauf') renderDiagramme();
+  if (name === 'verlauf') {
+    renderDiagramme();
+    renderVerbrauchsDiagramme();
+  }
 }
 
 function zeigeAnsicht(name) {
@@ -112,11 +124,13 @@ function zeigeAnsicht(name) {
   $('#ansicht-liste').hidden = name !== 'liste';
   $('#ansicht-kalender').hidden = name !== 'kalender';
   $('#ansicht-verlauf').hidden = name !== 'verlauf';
+  $('#ansicht-verbrauch').hidden = name !== 'verbrauch';
   for (const knopf of $$('.segment button')) {
     knopf.setAttribute('aria-selected', String(knopf.dataset.ansicht === name));
   }
   log('ui', 'Ansicht gewechselt', { ansicht: name });
   if (name === 'verlauf') renderDiagramme();
+  if (name === 'verbrauch') renderVerbrauchsDiagramme();
 }
 
 /* ── Eintragen ───────────────────────────────────────────── */
@@ -135,13 +149,33 @@ function baueArtChips(halter, holeArt, setzeArt) {
           anderer.setAttribute('aria-pressed', String(anderer.dataset.art === art.id));
         }
         // Beschreibung nur füllen, solange nichts Eigenes drinsteht.
-        const feld = halter.id === 'arten-chips' ? $('#f-text') : $('#b-text');
+        const imFormular = halter.id === 'arten-chips';
+        const feld = imFormular ? $('#f-text') : $('#b-text');
         const vorbelegt = ARTEN.some((eintrag) => eintrag.standard === feld.value);
         if (!feld.value || vorbelegt) feld.value = art.standard;
+        zeigeTankfelder(imFormular);
       },
     }, icon(art.pfad, { size: 15 }), art.label);
     halter.append(knopf);
   }
+}
+
+/* Beim Tanken erscheinen Liter und Betrag oben im Formular. Der Betrag
+   steht dann nicht mehr im Klappbereich — zwei Felder für dieselbe Zahl
+   wären eine Falle. */
+function zeigeTankfelder(imFormular = true) {
+  const tanken = (imFormular ? neuArt : tafelArt) === 'tanken';
+  $(imFormular ? '#tank-felder' : '#b-tank-felder').hidden = !tanken;
+  $(imFormular ? '#feld-kosten' : '#b-feld-kosten').hidden = tanken;
+}
+
+/** Der bezahlte Betrag — je nachdem, welches Feld gerade sichtbar ist. */
+function betragAus(imFormular = true) {
+  const tanken = (imFormular ? neuArt : tafelArt) === 'tanken';
+  const feld = $(tanken
+    ? (imFormular ? '#f-tank-betrag' : '#b-tank-betrag')
+    : (imFormular ? '#f-kosten' : '#b-kosten'));
+  return feld.value.trim() ? toCents(feld.value) : null;
 }
 
 function verdrahteFormular() {
@@ -186,7 +220,10 @@ function speichereNeuen() {
     km: kmStand,
     art: neuArt,
     text: $('#f-text').value || artVon(neuArt).standard,
-    kosten: $('#f-kosten').value.trim() ? toCents($('#f-kosten').value) : null,
+    kosten: betragAus(true),
+    liter: neuArt === 'tanken' ? toMilliliter($('#f-liter').value) : null,
+    voll: $('#f-voll').checked,
+    belege: neueBelege.map((beleg) => beleg.id),
     werkstatt: $('#f-werkstatt').value,
     notiz: $('#f-notiz').value,
   });
@@ -198,10 +235,20 @@ function speichereNeuen() {
 
   log('eintrag', 'Eintrag angelegt', { id: eintrag.id, datum: eintrag.datum, km: eintrag.km, art: eintrag.art });
 
+  // Die Belege gehören jetzt dem Eintrag. Bis hierhin trugen sie eine
+  // vorläufige Kennung — die wird nachgezogen, damit die Ablage nicht
+  // auf einen Eintrag zeigt, den es nie gab.
+  for (const beleg of neueBelege) belege.ordneZu(beleg.id, eintrag.id).catch(() => {});
+  neueBelege = [];
+  renderBelegzeile('#f-belege', [], { entfernbar: true });
+
   $('#f-km').value = '';
   $('#f-text').value = '';
   $('#f-kosten').value = '';
   $('#f-notiz').value = '';
+  $('#f-liter').value = '';
+  $('#f-tank-betrag').value = '';
+  $('#f-voll').checked = true;
   $('#f-datum').value = heuteISO();
   $('#mehr-angaben').open = false;
   zeigeKmHinweis();
@@ -253,9 +300,14 @@ function renderLetzte() {
 
 /* ── Eine Zeile in jeder Liste ───────────────────────────── */
 
-function eintragZeile(eintrag, { strecke = null } = {}) {
+function eintragZeile(eintrag, { strecke = null, verbrauch = null } = {}) {
   const art = artVon(eintrag.art);
   const meta = [];
+  if (eintrag.art === 'tanken' && eintrag.liter) {
+    meta.push(liter(eintrag.liter));
+    if (!eintrag.voll) meta.push('Teilbetankung');
+    if (eintrag.kosten) meta.push(`${spritZahl(eintrag.kosten / (eintrag.liter / 1000))} €/L`);
+  }
   if (eintrag.werkstatt) meta.push(eintrag.werkstatt);
   if (einstellungen.kostenAnzeigen && eintrag.kosten) meta.push(euro(eintrag.kosten));
   if (eintrag.notiz) meta.push(eintrag.notiz);
@@ -275,6 +327,13 @@ function eintragZeile(eintrag, { strecke = null } = {}) {
     meta.length ? el('span', { class: 'eintrag-meta', text: meta.join(' · ') }) : null,
     strecke !== null
       ? el('span', { class: 'eintrag-strecke', text: strecke >= 0 ? `+${km(strecke)} km seit dem Eintrag davor` : `${km(strecke)} km — Stand niedriger als davor` })
+      : null,
+    verbrauch !== null
+      ? el('span', { class: 'eintrag-strecke', text: `${verbrauchZahl(verbrauch)} L/100 km seit der letzten vollen Tankfüllung` })
+      : null,
+    eintrag.belege.length
+      ? el('span', { class: 'eintrag-belege', 'aria-label': `${eintrag.belege.length} Beleg(e)` },
+        eintrag.belege.map(() => el('i')))
       : null,
   ));
 }
@@ -319,6 +378,10 @@ function renderListe() {
   const streckeNach = new Map();
   for (const abschnitt of strecken(eintraege)) streckeNach.set(abschnitt.bis.id, abschnitt.km);
 
+  // Der gemessene Verbrauch hängt am abschließenden vollen Tank.
+  const verbrauchNach = new Map();
+  for (const messung of verbrauchsBilanz(eintraege).reihe) verbrauchNach.set(messung.bis.id, messung.verbrauch);
+
   const gefiltert = sortiereNeueste(eintraege).filter((eintrag) => {
     if (filterArt && eintrag.art !== filterArt) return false;
     if (!suche) return true;
@@ -351,7 +414,10 @@ function renderListe() {
       letztesJahr = eintragsJahr;
       liste.append(el('li', { class: 'jahr-trenner' }, zahl(eintragsJahr)));
     }
-    liste.append(el('li', {}, eintragZeile(eintrag, { strecke: streckeNach.has(eintrag.id) ? streckeNach.get(eintrag.id) : null })));
+    liste.append(el('li', {}, eintragZeile(eintrag, {
+      strecke: streckeNach.has(eintrag.id) ? streckeNach.get(eintrag.id) : null,
+      verbrauch: verbrauchNach.has(eintrag.id) ? verbrauchNach.get(eintrag.id) : null,
+    })));
   }
   halter.append(liste);
   fertig({ zeilen: gefiltert.length });
@@ -522,15 +588,34 @@ function zeigeLesehilfe(sel, monat, werte, ersatz) {
 
 /* ── PDF ─────────────────────────────────────────────────── */
 
-function baueLetztePDF({ druck = false } = {}) {
+async function baueLetztePDF({ druck = false } = {}) {
+  /* Die Bilder müssen erst aus der Ablage geholt werden — deshalb ist
+     das hier asynchron, während pdf.js selbst synchron bleibt und nur
+     fertige Bytes bekommt. */
+  let bilder = [];
+  if (einstellungen.pdfBelege !== false) {
+    /* Wer der Eigentümer ist, sagt die Liste des Eintrags — nicht das
+       Feld im Beleg. Beim Anlegen über das Formular gibt es die Kennung
+       des Eintrags noch gar nicht, wenn das Foto schon gewählt wird. */
+    for (const eintrag of sortiere(eintraege)) {
+      for (const id of eintrag.belege) {
+        const beleg = await belege.alsBytes(id).catch(() => null);
+        if (beleg) bilder.push({ ...beleg, eintragId: eintrag.id });
+      }
+    }
+  }
+
   // Aufsteigend wie ein Scheckheft: vorne die erste Fahrt, hinten die
   // letzte. So liest ein Käufer die Geschichte des Wagens.
   const ergebnis = erzeugePDF({
     eintraege: sortiere(eintraege),
     einstellungen,
     statistik: statistik(eintraege),
+    bilanz: verbrauchsBilanz(eintraege),
+    belege: bilder,
     druck,
   });
+
   // Zum Teilen wird nur die Versandfassung gemerkt.
   if (!druck) letztesPDF = ergebnis;
   return ergebnis;
@@ -542,22 +627,26 @@ function dateiname({ druck = false } = {}) {
   return `Bordbuch-${kennung}-${heuteISO()}${druck ? '-DRUCK' : ''}.pdf`;
 }
 
-function pdfSichern() {
+async function pdfSichern() {
   if (!eintraege.length) return melde('Noch nichts einzutragen ins PDF.');
+  const knopf = $('#btn-pdf');
+  knopf.disabled = true;
   try {
-    const ergebnis = baueLetztePDF();
+    const ergebnis = await baueLetztePDF();
     ladeDatei(ergebnis.blob, dateiname());
     melde(`PDF mit ${plural(eintraege.length, 'Eintrag', 'Einträgen')} auf ${plural(ergebnis.seiten, 'Seite', 'Seiten')}.`);
   } catch (error) {
     fehler('pdf', 'PDF fehlgeschlagen', error);
     melde('Das PDF ließ sich nicht erzeugen. Details stehen im Protokoll.');
+  } finally {
+    knopf.disabled = false;
   }
   return undefined;
 }
 
 async function pdfTeilen() {
   try {
-    const ergebnis = letztesPDF || baueLetztePDF();
+    const ergebnis = letztesPDF || await baueLetztePDF();
     const datei = new File([ergebnis.blob], dateiname(), { type: 'application/pdf' });
     if (navigator.canShare && navigator.canShare({ files: [datei] })) {
       await navigator.share({ files: [datei], title: 'Bordbuch' });
@@ -579,6 +668,283 @@ function ladeDatei(blob, name) {
   verweis.remove();
   setTimeout(() => URL.revokeObjectURL(adresse), 5000);
   log('pdf', 'Datei ausgegeben', { name, bytes: blob.size });
+}
+
+/* ── Belege ──────────────────────────────────────────────────
+   Ein Foto der Rechnung neben dem Eintrag ist das, was aus einer Liste
+   einen Nachweis macht. Die Bilder liegen in IndexedDB, nicht bei den
+   Einträgen — siehe belege.js. */
+
+function verdrahteBelege() {
+  $('#btn-beleg').addEventListener('click', () => $('#datei-beleg').click());
+  $('#datei-beleg').addEventListener('change', (event) => nimmBeleg(event, true));
+
+  $('#btn-b-beleg').addEventListener('click', () => $('#datei-b-beleg').click());
+  $('#datei-b-beleg').addEventListener('change', (event) => nimmBeleg(event, false));
+
+  $('#btn-betrachter-zu').addEventListener('click', schliesseBetrachter);
+  $('#btn-beleg-loeschen').addEventListener('click', loescheOffenenBeleg);
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !$('#betrachter').hidden) schliesseBetrachter();
+  });
+}
+
+async function nimmBeleg(event, imFormular) {
+  const datei = event.target.files && event.target.files[0];
+  event.target.value = '';
+  if (!datei) return;
+
+  const knopf = $(imFormular ? '#btn-beleg' : '#btn-b-beleg');
+  knopf.disabled = true;
+  melde('Beleg wird aufbereitet …');
+
+  try {
+    /* Beim neuen Eintrag gibt es noch keine Kennung — sie wird jetzt
+       vergeben und beim Speichern übernommen. So gehört das Bild von
+       Anfang an zum richtigen Eintrag. */
+    const eintragId = imFormular ? (neueBelege[0]?.eintragId || `vor-${uid()}`) : tafelId;
+    const beleg = await belege.lege(datei, eintragId);
+
+    if (imFormular) {
+      neueBelege.push(beleg);
+      renderBelegzeile('#f-belege', neueBelege, { entfernbar: true });
+    } else {
+      const eintrag = eintraege.find((kandidat) => kandidat.id === tafelId);
+      if (eintrag) {
+        eintrag.belege = [...eintrag.belege, beleg.id];
+        eintrag.geaendert = Date.now();
+        sichere();
+        await zeigeTafelBelege(eintrag);
+        zeichneAlles();
+      }
+    }
+    melde(`Beleg gesichert (${(beleg.bytes / 1024).toFixed(0)} KB).`);
+  } catch (error) {
+    fehler('daten', 'Beleg abgelehnt', error);
+    melde(error.message || 'Der Beleg ließ sich nicht speichern.');
+  } finally {
+    knopf.disabled = false;
+  }
+}
+
+/* Jedes angezeigte Bild bekommt eine Objekt-Adresse, und die hält den
+   Speicher fest, bis sie freigegeben wird. Deshalb merkt sich jeder
+   Behälter seine eigenen und räumt sie beim nächsten Aufbau weg. */
+const adressen = new Map();
+
+function frischeAdresse(schluessel, blob) {
+  const adresse = URL.createObjectURL(blob);
+  const bisher = adressen.get(schluessel) || [];
+  bisher.push(adresse);
+  adressen.set(schluessel, bisher);
+  return adresse;
+}
+
+function gibAdressenFrei(schluessel) {
+  for (const adresse of adressen.get(schluessel) || []) URL.revokeObjectURL(adresse);
+  adressen.set(schluessel, []);
+}
+
+function renderBelegzeile(sel, liste, { entfernbar = false } = {}) {
+  const halter = $(sel);
+  gibAdressenFrei(sel);
+  halter.textContent = '';
+
+  for (const beleg of liste) {
+    halter.append(el('button', {
+      class: 'beleg-daumen',
+      type: 'button',
+      'aria-label': 'Beleg ansehen',
+      onclick: () => oeffneBetrachter(beleg, entfernbar ? liste : null),
+    }, el('img', { src: frischeAdresse(sel, beleg.vorschau || beleg.bild), alt: '' })));
+  }
+}
+
+async function zeigeTafelBelege(eintrag) {
+  const halter = $('#b-belege');
+  halter.textContent = '';
+  if (!eintrag.belege.length) return;
+
+  halter.append(el('span', { class: 'beleg-daumen beleg-laedt', text: '…' }));
+  const geladen = await belege.holeViele(eintrag.belege);
+  renderBelegzeile('#b-belege', geladen);
+}
+
+function oeffneBetrachter(beleg, ausListe) {
+  offenerBeleg = { beleg, ausListe };
+  gibAdressenFrei('betrachter');
+  $('#betrachter-bild').src = frischeAdresse('betrachter', beleg.bild);
+  $('#betrachter-titel').textContent = `${beleg.breite} × ${beleg.hoehe} · ${(beleg.bytes / 1024).toFixed(0)} KB`;
+  $('#betrachter').hidden = false;
+  log('ui', 'Beleg geöffnet', { id: beleg.id });
+}
+
+function schliesseBetrachter() {
+  $('#betrachter').hidden = true;
+  $('#betrachter-bild').removeAttribute('src');
+  gibAdressenFrei('betrachter');
+  offenerBeleg = null;
+}
+
+async function loescheOffenenBeleg() {
+  if (!offenerBeleg) return;
+  const { beleg, ausListe } = offenerBeleg;
+  if (!window.confirm('Diesen Beleg löschen?')) return;
+
+  await belege.loesche(beleg.id);
+
+  if (ausListe) {
+    neueBelege = neueBelege.filter((kandidat) => kandidat.id !== beleg.id);
+    renderBelegzeile('#f-belege', neueBelege, { entfernbar: true });
+  } else {
+    const eintrag = eintraege.find((kandidat) => kandidat.belege.includes(beleg.id));
+    if (eintrag) {
+      eintrag.belege = eintrag.belege.filter((id) => id !== beleg.id);
+      eintrag.geaendert = Date.now();
+      sichere();
+      await zeigeTafelBelege(eintrag);
+      zeichneAlles();
+    }
+  }
+
+  schliesseBetrachter();
+  melde('Beleg gelöscht.');
+}
+
+/* ── Verbrauch ───────────────────────────────────────────── */
+
+let letzteBilanz = null;
+
+function renderVerbrauch() {
+  const bilanz = verbrauchsBilanz(eintraege);
+  letzteBilanz = bilanz;
+
+  const wert = $('#verbrauch-wert');
+  wert.textContent = '';
+  if (bilanz.schnitt) {
+    wert.append(zahl(verbrauchZahl(bilanz.schnitt)), ' L/100 km');
+    // Gezählt wird, was auch gerechnet wurde — sonst passen Zahl und
+    // Strecke in derselben Zeile nicht zusammen.
+    const gerechnet = bilanz.reihe.filter((messung) => messung.plausibel).length;
+    $('#verbrauch-meta').textContent = `aus ${plural(gerechnet, 'Messung', 'Messungen')} über `
+      + `${km(bilanz.messstrecke)} km`;
+  } else {
+    wert.textContent = '—';
+    $('#verbrauch-meta').textContent = `${plural(bilanz.tankungen, 'Tankfüllung', 'Tankfüllungen')} eingetragen`;
+  }
+
+  $('#verbrauch-hinweis').textContent = bilanz.schnitt
+    ? 'Gerechnet wird von voller Tankfüllung zu voller Tankfüllung — nur dann steht '
+      + 'die verbrauchte Menge fest. Der erste volle Tank zählt als Startpunkt. '
+      + 'Teilbetankungen dazwischen gehen mit ein.' + unplausibelHinweis(bilanz)
+    : fehlenderGrund(bilanz);
+
+  renderVerbrauchsKennzahlen(bilanz);
+
+  const zeigbar = bilanz.reihe.filter((messung) => messung.plausibel);
+  $('#verbrauch-diagramm').hidden = zeigbar.length < 2;
+  $('#preis-diagramm').hidden = !zeigbar.some((messung) => messung.preisJeLiter) || zeigbar.length < 2;
+  renderVerbrauchsDiagramme();
+  renderVerbrauchsTabelle(bilanz);
+}
+
+function renderVerbrauchsKennzahlen(bilanz) {
+  const halter = $('#verbrauch-kennzahlen');
+  halter.textContent = '';
+
+  const felder = [];
+  if (bilanz.letzter) felder.push(['Zuletzt', `${verbrauchZahl(bilanz.letzter.verbrauch)} L/100 km`]);
+  if (bilanz.bester) felder.push(['Bester Wert', `${verbrauchZahl(bilanz.bester.verbrauch)} L/100 km`]);
+  if (bilanz.schlechtester) felder.push(['Schlechtester', `${verbrauchZahl(bilanz.schlechtester.verbrauch)} L/100 km`]);
+  if (bilanz.preisJeLiter) felder.push(['Ø Preis je Liter', `${spritZahl(bilanz.preisJeLiter)} €`]);
+  if (bilanz.kostenJe100) felder.push(['Sprit je 100 km', euro(Math.round(bilanz.kostenJe100))]);
+  if (bilanz.literGesamt) felder.push(['Getankt gesamt', liter(bilanz.literGesamt)]);
+  if (bilanz.kostenGesamt) felder.push(['Spritkosten', euro(bilanz.kostenGesamt)]);
+
+  for (const [label, text] of felder) {
+    halter.append(el('div', { class: 'kennzahl' },
+      el('span', { class: 'label', text: label }),
+      el('div', { class: 'kennzahl-wert' }, zahl(text)),
+    ));
+  }
+}
+
+function renderVerbrauchsDiagramme() {
+  // Unplausible Messungen würden die Skala sprengen und die Kurve
+  // unlesbar machen — sie stehen in der Tabelle, nicht im Bild.
+  const reihe = letzteBilanz ? letzteBilanz.reihe.filter((messung) => messung.plausibel) : [];
+  if (reihe.length < 2) return;
+
+  const halterVerbrauch = $('#halter-verbrauch');
+  const breite = halterVerbrauch.clientWidth;
+  if (!breite) return;
+
+  const fertig = messe('ui', 'Verbrauchsdiagramme gezeichnet');
+
+  halterVerbrauch.textContent = '';
+  halterVerbrauch.append(zeitreihe(
+    reihe.map((messung) => ({ datum: messung.datum, wert: messung.verbrauch, messung })),
+    breite,
+    {
+      formatiere: (wert) => verbrauchZahl(wert),
+      beschriftung: 'Verbrauch je Tankfüllung in Litern auf 100 Kilometer',
+      beiAuswahl: (ort) => {
+        $('#lese-verbrauch').textContent = ort
+          ? `${formatDatum(ort.datum, { kurz: true })} · ${verbrauchZahl(ort.wert)} L/100 km · ${km(ort.messung.km)} km`
+          : 'Antippen für die einzelne Messung';
+      },
+    },
+  ));
+
+  const mitPreis = reihe.filter((messung) => messung.preisJeLiter);
+  const halterPreis = $('#halter-preis');
+  if (mitPreis.length > 1 && halterPreis.clientWidth) {
+    halterPreis.textContent = '';
+    halterPreis.append(zeitreihe(
+      mitPreis.map((messung) => ({ datum: messung.datum, wert: messung.preisJeLiter / 100, messung })),
+      halterPreis.clientWidth,
+      {
+        formatiere: (wert) => new Intl.NumberFormat('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(wert),
+        beschriftung: 'Preis je Liter über die Zeit',
+        beiAuswahl: (ort) => {
+          $('#lese-preis').textContent = ort
+            ? `${formatDatum(ort.datum, { kurz: true })} · ${spritZahl(ort.messung.preisJeLiter)} €/L`
+            : 'Antippen für den Preis der Tankfüllung';
+        },
+      },
+    ));
+  }
+
+  fertig({ messungen: reihe.length, ausgelassen: letzteBilanz.unplausibel });
+}
+
+function renderVerbrauchsTabelle(bilanz) {
+  const halter = $('#verbrauch-tabelle');
+  halter.textContent = '';
+  if (!bilanz.reihe.length) return;
+
+  const koerper = el('tbody');
+  for (const messung of bilanz.reihe.slice().reverse()) {
+    koerper.append(el('tr', { class: messung.plausibel ? '' : 'ausgelassen' },
+      el('td', {}, zahl(formatDatum(messung.datum, { kurz: true }))),
+      el('td', { class: 'zahl' }, zahl(km(messung.km))),
+      el('td', { class: 'zahl' }, zahl(liter(messung.liter).replace(' L', ''))),
+      el('td', { class: 'zahl' },
+        zahl(verbrauchZahl(messung.verbrauch)),
+        // Form statt Farbe allein: Das Sternchen sagt es auch in Graustufen.
+        messung.plausibel ? null : el('span', { class: 'marke', title: 'nicht eingerechnet', text: ' *' })),
+    ));
+  }
+
+  halter.append(el('table', { class: 'dg-tabelle' },
+    el('thead', {}, el('tr', {},
+      el('th', { text: 'Datum' }),
+      el('th', { class: 'zahl', text: 'km' }),
+      el('th', { class: 'zahl', text: 'Liter' }),
+      el('th', { class: 'zahl', text: 'L/100' }),
+    )),
+    koerper,
+  ));
 }
 
 /* ── Eintrag bearbeiten ──────────────────────────────────── */
@@ -605,10 +971,16 @@ function oeffneTafel(id) {
   $('#b-datum').value = eintrag.datum;
   $('#b-km').value = String(eintrag.km);
   $('#b-text').value = eintrag.text;
-  $('#b-kosten').value = eintrag.kosten ? (eintrag.kosten / 100).toFixed(2).replace('.', ',') : '';
+  const betrag = eintrag.kosten ? (eintrag.kosten / 100).toFixed(2).replace('.', ',') : '';
+  $('#b-kosten').value = betrag;
+  $('#b-tank-betrag').value = betrag;
+  $('#b-liter').value = eintrag.liter ? (eintrag.liter / 1000).toFixed(2).replace('.', ',') : '';
+  $('#b-voll').checked = eintrag.voll !== false;
   $('#b-werkstatt').value = eintrag.werkstatt;
   $('#b-notiz').value = eintrag.notiz;
   $('#tafel-fehler').hidden = true;
+  zeigeTankfelder(false);
+  zeigeTafelBelege(eintrag);
 
   for (const chip of $$('#b-arten .chip')) {
     chip.setAttribute('aria-pressed', String(chip.dataset.art === eintrag.art));
@@ -633,7 +1005,9 @@ function sichereTafel() {
     km: toKm($('#b-km').value),
     art: tafelArt,
     text: $('#b-text').value,
-    kosten: $('#b-kosten').value.trim() ? toCents($('#b-kosten').value) : null,
+    kosten: betragAus(false),
+    liter: tafelArt === 'tanken' ? toMilliliter($('#b-liter').value) : null,
+    voll: $('#b-voll').checked,
     werkstatt: $('#b-werkstatt').value,
     notiz: $('#b-notiz').value,
     geaendert: Date.now(),
@@ -660,9 +1034,10 @@ function loescheTafel() {
   if (!eintrag) return;
   if (!window.confirm(`Eintrag vom ${formatDatum(eintrag.datum)} löschen?`)) return;
 
+  for (const belegId of eintrag.belege) belege.loesche(belegId).catch(() => {});
   eintraege = eintraege.filter((kandidat) => kandidat.id !== tafelId);
   sichere();
-  log('eintrag', 'Eintrag gelöscht', { id: tafelId });
+  log('eintrag', 'Eintrag gelöscht', { id: tafelId, belege: eintrag.belege.length });
   schliesseTafel();
   melde('Eintrag gelöscht.');
   zeichneAlles();
@@ -682,6 +1057,7 @@ const SCHALTER = {
   '#e-haptik': 'haptik',
   '#e-pdf-kosten': 'pdfKosten',
   '#e-pdf-notizen': 'pdfNotizen',
+  '#e-pdf-belege': 'pdfBelege',
   '#e-debug': 'debug',
 };
 
@@ -701,10 +1077,10 @@ function verdrahteEinstellungen() {
   }
   $('#e-format').addEventListener('change', (event) => aendere({ pdfFormat: event.target.value }));
 
-  $('#btn-pdf-druck').addEventListener('click', () => {
+  $('#btn-pdf-druck').addEventListener('click', async () => {
     if (!eintraege.length) return melde('Noch nichts einzutragen ins PDF.');
     try {
-      const ergebnis = baueLetztePDF({ druck: true });
+      const ergebnis = await baueLetztePDF({ druck: true });
       ladeDatei(ergebnis.blob, dateiname({ druck: true }));
       melde(`Druckfassung auf ${plural(ergebnis.seiten, 'Seite', 'Seiten')}.`);
     } catch (error) {
@@ -724,10 +1100,24 @@ function verdrahteEinstellungen() {
     }
   });
 
-  $('#btn-export').addEventListener('click', () => {
-    const blob = new Blob([alsJSON()], { type: 'application/json' });
-    ladeDatei(blob, `Bordbuch-Sicherung-${heuteISO()}.json`);
-    melde('Sicherung gespeichert.');
+  $('#btn-export').addEventListener('click', async () => {
+    const knopf = $('#btn-export');
+    knopf.disabled = true;
+    try {
+      /* Die Belege wandern als Base64 mit in die Datei. Das macht sie
+         deutlich größer — dafür ist die Sicherung dann vollständig, und
+         genau darum geht es. */
+      const daten = JSON.parse(alsJSON());
+      daten.belege = await belege.exportierbar();
+      const blob = new Blob([JSON.stringify(daten, null, 2)], { type: 'application/json' });
+      ladeDatei(blob, `Bordbuch-Sicherung-${heuteISO()}.json`);
+      melde(`Sicherung gespeichert (${(blob.size / 1024 / 1024).toFixed(2)} MB).`);
+    } catch (error) {
+      fehler('daten', 'Sicherung fehlgeschlagen', error);
+      melde('Die Sicherung ließ sich nicht erzeugen.');
+    } finally {
+      knopf.disabled = false;
+    }
   });
   $('#btn-import').addEventListener('click', () => $('#datei-import').click());
   $('#datei-import').addEventListener('change', importiere);
@@ -735,6 +1125,7 @@ function verdrahteEinstellungen() {
   $('#btn-alles-loeschen').addEventListener('click', () => {
     if (!window.confirm('Wirklich alle Einträge und Einstellungen löschen? Das lässt sich nicht rückgängig machen.')) return;
     alleDatenLoeschen();
+    belege.alleLoeschen().catch(() => {});
     eintraege = [];
     einstellungen = ladeEinstellungen();
     setzeFlags(einstellungen);
@@ -822,14 +1213,16 @@ function baueDebugBereiche() {
   }
 }
 
-function zeigeSpeicher() {
+async function zeigeSpeicher() {
   const info = speicherInfo();
+  const ablage = await belege.belegt();
   const karte = $('#speicher-status');
   karte.textContent = '';
   const zeilen = [
     ['Einträge', String(info.anzahl)],
     ['Davon Testdaten', String(eintraege.filter(istDemo).length)],
-    ['Belegt', `${(info.bytesGesamt / 1024).toFixed(1)} KB`],
+    ['Belege', `${ablage.anzahl} · ${(ablage.bytes / 1024 / 1024).toFixed(2)} MB`],
+    ['Einträge belegen', `${(info.bytesGesamt / 1024).toFixed(1)} KB`],
     ['Fassung', BUILD],
   ];
   for (const [label, wert] of zeilen) {
@@ -922,6 +1315,7 @@ async function importiere(event) {
       const bekannt = new Set(eintraege.map((eintrag) => eintrag.id));
       eintraege = [...eintraege, ...gelesen.filter((eintrag) => !bekannt.has(eintrag.id))];
     }
+    if (Array.isArray(daten.belege)) await belege.importiere(daten.belege);
     if (daten.einstellungen) {
       einstellungen = speichereEinstellungen(daten.einstellungen);
       setzeFlags(einstellungen);

@@ -5,7 +5,7 @@
    und BUILD in assets/js/fassung.js mit; der Selbsttest prüft, dass
    beide zusammenpassen. */
 
-const CACHE = 'bordbuch-v1';
+const CACHE = 'bordbuch-v2';
 
 const SHELL = [
   './',
@@ -21,6 +21,8 @@ const SHELL = [
   'assets/js/diagramm.js',
   'assets/js/pdf.js',
   'assets/js/demo.js',
+  'assets/js/verbrauch.js',
+  'assets/js/belege.js',
   'assets/js/selbsttest.js',
   'assets/js/fassung.js',
   'assets/icons/icon-192.png',

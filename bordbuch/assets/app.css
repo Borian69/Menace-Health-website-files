@@ -535,6 +535,7 @@ form { margin-bottom: var(--s5); }
 }
 .kennzahl-wert { font-size: 20px; font-weight: 600; margin-top: 4px; }
 .kennzahl-wert.gross { font-size: 28px; margin: 6px 0; }
+#verbrauch-karte { margin-bottom: var(--s1); }
 .kennzahl-wert .n { font-size: .93em; }
 
 /* ── Diagramme ───────────────────────────────────────────── */
@@ -776,3 +777,90 @@ form { margin-bottom: var(--s5); }
     transition-duration: .001ms !important;
   }
 }
+
+/* ── Tanken und Belege ───────────────────────────────────── */
+
+.tankblock {
+  padding: var(--s2);
+  margin-bottom: var(--s2);
+  border: var(--border) solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.tankblock .field:last-of-type { margin-bottom: 0; }
+.tankblock .schalter { padding-bottom: 0; }
+
+.btn.schmal { padding: 9px 14px; font-size: 13.5px; }
+
+.belegzeile { display: flex; flex-wrap: wrap; gap: var(--s1); margin-bottom: var(--s1); }
+.belegzeile:empty { display: none; }
+
+/* Ein Beleg ist ein Dokument, kein Bild — deshalb bleibt er rechteckig
+   und bekommt eine Linie statt einer weichen Kachel. */
+.beleg-daumen {
+  position: relative;
+  width: 64px; height: 84px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-2);
+  border: var(--border) solid var(--line-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.beleg-daumen img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.beleg-daumen:focus-visible { outline: 2px solid var(--brass-line); outline-offset: 2px; }
+.beleg-laedt {
+  display: grid; place-items: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--muted);
+}
+
+.eintrag-belege { display: flex; gap: 4px; margin-top: 6px; }
+.eintrag-belege i {
+  width: 14px; height: 18px;
+  border: var(--border) solid var(--line-strong);
+  border-radius: 1px;
+  display: block;
+}
+
+/* ── Beleg ansehen ───────────────────────────────────────── */
+
+.betrachter {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
+  padding: calc(var(--safe-t) + var(--s2)) var(--rand) calc(var(--safe-b) + var(--s3));
+  background: var(--ground);
+}
+.betrachter-kopf {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+}
+#betrachter-bild {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  border: var(--border) solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.betrachter .btn { margin-bottom: 0; }
+
+/* ── Vier Umschalter statt drei ──────────────────────────── */
+
+.segment.vier { grid-template-columns: repeat(4, 1fr); }
+.segment.vier button { font-size: 10px; letter-spacing: .06em; padding: 9px 2px; }
+
+body[data-ansicht="verbrauch"] .ansicht:not(#ansicht-verbrauch) { display: none; }
+
+.dg-fadenkreuz { stroke: var(--line-strong); stroke-width: 1; }
+
+/* Eine Messung, die nicht in den Schnitt eingeht — mit Sternchen, nicht
+   nur mit Farbe: Bedeutung darf nie allein an der Farbe hängen. */
+.dg-tabelle tr.ausgelassen td { color: var(--muted); }
+.dg-tabelle .marke { color: var(--warning); }

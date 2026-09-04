@@ -22,6 +22,7 @@ export const VORGABEN = {
 
   pdfKosten:   true,
   pdfNotizen:  true,
+  pdfBelege:   true,
   pdfFormat:   'a4',
 
   /* Diagnose. Der Hauptschalter ist aus; die Bereiche stehen auf an,
@@ -106,6 +107,7 @@ export function ausJSON(text) {
   return {
     eintraege: daten.eintraege,
     einstellungen: daten.einstellungen && typeof daten.einstellungen === 'object' ? daten.einstellungen : null,
+    belege: Array.isArray(daten.belege) ? daten.belege : [],
   };
 }
 

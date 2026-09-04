@@ -5,11 +5,13 @@
    an — bis auf einen Probeschlüssel im Speicher, der sofort wieder
    entfernt wird. */
 
-import { toKm, toCents, istISO, tageZwischen, plusTage, isoVon, formatDatum } from './util.js';
+import { toKm, toCents, toMilliliter, istISO, tageZwischen, plusTage, isoVon, formatDatum, liter } from './util.js';
 import { normalisiere, sortiere, statistik, monateFuerJahr, ausreisser, nachTag, ARTEN } from './eintraege.js';
 import { gitter } from './kalender.js';
 import { balken, kurve } from './diagramm.js';
 import { erzeugePDF, testSeite, _intern } from './pdf.js';
+import { messungen, verbrauchsBilanz } from './verbrauch.js';
+import * as belege from './belege.js';
 import { ladeEinstellungen, speicherInfo } from './store.js';
 import { log, fehler } from './debug.js';
 import { BUILD } from './fassung.js';
@@ -132,6 +134,85 @@ const TESTS = [
     },
   },
   {
+    name: 'Verbrauch rechnen',
+    bereich: 'auswertung',
+    async lauf() {
+      pruefe(toMilliliter('45,67') === 45670, 'Literzahl falsch eingelesen.');
+
+      /* Von voll zu voll: 1.000 km, 70 Liter — das sind glatte 7,0 L.
+         Die erste volle Füllung zählt nur als Startpunkt. */
+      const einfach = [
+        { datum: '2026-01-01', km: 100000, art: 'tanken', liter: 50000, voll: true, kosten: 8500 },
+        { datum: '2026-02-01', km: 101000, art: 'tanken', liter: 70000, voll: true, kosten: 12250 },
+      ].map(normalisiere);
+
+      const reihe = messungen(einfach);
+      pruefe(reihe.length === 1, `Erwartet 1 Messung, bekommen ${reihe.length}.`);
+      pruefe(Math.abs(reihe[0].verbrauch - 7) < 0.001, `Verbrauch falsch: ${reihe[0].verbrauch}`);
+      pruefe(Math.abs(reihe[0].preisJeLiter - 175) < 0.01, `Preis je Liter falsch: ${reihe[0].preisJeLiter}`);
+
+      // Mit Teilbetankung dazwischen: 30 + 40 Liter auf 1.000 km = 7,0 L.
+      const mitTeil = [
+        { datum: '2026-01-01', km: 100000, art: 'tanken', liter: 50000, voll: true },
+        { datum: '2026-01-15', km: 100400, art: 'tanken', liter: 30000, voll: false },
+        { datum: '2026-02-01', km: 101000, art: 'tanken', liter: 40000, voll: true },
+      ].map(normalisiere);
+      const zwei = messungen(mitTeil);
+      pruefe(zwei.length === 1, 'Die Teilbetankung darf keine eigene Messung erzeugen.');
+      pruefe(Math.abs(zwei[0].verbrauch - 7) < 0.001, `Verbrauch mit Teilbetankung falsch: ${zwei[0].verbrauch}`);
+      pruefe(zwei[0].tankungen === 2, 'Beide Tankungen müssen in die Messung eingehen.');
+
+      /* Eine vergessene Tankfüllung erzeugt eine Messung über 12.000 km
+         mit 45 Litern — 0,4 L/100 km. Die darf den Schnitt nicht ziehen. */
+      const mitLuecke = [
+        ...mitTeil,
+        normalisiere({ datum: '2026-08-01', km: 113000, art: 'tanken', liter: 45000, voll: true }),
+      ];
+      const geprueft = verbrauchsBilanz(mitLuecke);
+      pruefe(geprueft.unplausibel === 1, `Erwartet 1 unplausible Messung, bekommen ${geprueft.unplausibel}.`);
+      pruefe(Math.abs(geprueft.schnitt - 7) < 0.001, `Der Ausreißer verfälscht den Schnitt: ${geprueft.schnitt}`);
+      pruefe(geprueft.reihe.length === 2, 'Die unplausible Messung muss in der Tabelle sichtbar bleiben.');
+
+      // Ein einzelner voller Tank ergibt noch kein Ergebnis.
+      const einzeln = verbrauchsBilanz([normalisiere({ datum: '2026-01-01', km: 100000, art: 'tanken', liter: 50000, voll: true })]);
+      pruefe(einzeln.schnitt === null, 'Aus einer Tankfüllung darf kein Verbrauch entstehen.');
+      pruefe(einzeln.literGesamt === 50000, 'Getankte Menge fehlt in der Bilanz.');
+
+      return `${liter(zwei[0].liter)} auf ${zwei[0].km} km`;
+    },
+  },
+  {
+    name: 'Belege ablegen',
+    bereich: 'daten',
+    async lauf() {
+      if (!('indexedDB' in window)) return 'IndexedDB in diesem Browser nicht verfügbar';
+
+      // Ein winziges Bild erzeugen, damit der Test keine Datei braucht.
+      const flaeche = document.createElement('canvas');
+      flaeche.width = 40;
+      flaeche.height = 60;
+      const stift = flaeche.getContext('2d');
+      stift.fillStyle = '#CCCCCC';
+      stift.fillRect(0, 0, 40, 60);
+      const blob = await new Promise((fertig) => flaeche.toBlob(fertig, 'image/png'));
+
+      const beleg = await belege.lege(blob, 'selbsttest');
+      pruefe(beleg.bild.size > 0, 'Der abgelegte Beleg ist leer.');
+      pruefe(beleg.breite === 40 && beleg.hoehe === 60, `Maße falsch: ${beleg.breite}×${beleg.hoehe}`);
+
+      const zurueck = await belege.hole(beleg.id);
+      pruefe(zurueck && zurueck.id === beleg.id, 'Beleg nicht wiedergefunden.');
+
+      const bytes = await belege.alsBytes(beleg.id);
+      pruefe(bytes.bytes[0] === 0xff && bytes.bytes[1] === 0xd8, 'Gespeichertes Bild ist kein JPEG.');
+
+      await belege.loesche(beleg.id);
+      pruefe(!(await belege.hole(beleg.id)), 'Beleg ließ sich nicht löschen.');
+
+      return `${beleg.breite}×${beleg.hoehe}, ${beleg.bytes} Bytes als JPEG`;
+    },
+  },
+  {
     name: 'Kalender aufbauen',
     bereich: 'kalender',
     async lauf() {
@@ -206,9 +287,26 @@ const TESTS = [
         statistik: statistik(viele),
       });
       pruefe(gross.seiten > 1, 'Kein Seitenumbruch bei 90 Einträgen.');
+
+      /* Ein Beleg muss als JPEG in der Datei landen — mit /DCTDecode und
+         einer eigenen Seite. */
+      const mitBeleg = normalisiere({
+        datum: '2026-01-01', km: 100000, art: 'reparatur', text: 'Mit Beleg', belege: ['b1'],
+      });
+      const einJpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xdb, 0x00, 0x43, 0x00, 0xff, 0xd9]);
+      const mitBild = erzeugePDF({
+        eintraege: [mitBeleg],
+        einstellungen: ladeEinstellungen(),
+        statistik: statistik([mitBeleg]),
+        belege: [{ id: 'b1', eintragId: mitBeleg.id, breite: 800, hoehe: 1200, bytes: einJpeg }],
+      });
+      const roh = await mitBild.blob.text();
+      pruefe(roh.includes('/DCTDecode'), 'Das Bild wurde nicht als JPEG eingebettet.');
+      pruefe(roh.includes('/Im1 Do'), 'Das Bild wird auf keiner Seite gezeichnet.');
+      pruefe(mitBild.seiten === 2, `Erwartet 2 Seiten (Tabelle + Beleg), bekommen ${mitBild.seiten}.`);
       const ende = new Uint8Array(await gross.blob.slice(-6).arrayBuffer());
       pruefe(String.fromCharCode(...ende).includes('%%EOF'), 'Datei endet nicht auf %%EOF.');
-      return `Testseite ${(probe.bytes / 1024).toFixed(1)} KB · 90 Einträge auf ${gross.seiten} Seiten`;
+      return `Testseite ${(probe.bytes / 1024).toFixed(1)} KB · 90 Einträge auf ${gross.seiten} Seiten · Beleg eingebettet`;
     },
   },
   {

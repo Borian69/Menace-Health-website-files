@@ -60,15 +60,45 @@
         <div class="chips" id="arten-chips"></div>
       </div>
 
+      <!-- Erscheint nur beim Tanken: ohne Liter kein Verbrauch. -->
+      <div class="tankblock" id="tank-felder" hidden>
+        <div class="feld-reihe">
+          <div class="field">
+            <label for="f-liter">Getankt (Liter)</label>
+            <input type="text" id="f-liter" inputmode="decimal" autocomplete="off" placeholder="45,67">
+          </div>
+          <div class="field">
+            <label for="f-tank-betrag">Bezahlt (€)</label>
+            <input type="text" id="f-tank-betrag" inputmode="decimal" autocomplete="off" placeholder="79,90">
+          </div>
+        </div>
+        <label class="schalter">
+          <input type="checkbox" id="f-voll" checked>
+          <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+          <span class="schalter-text">Vollgetankt
+            <small>Nur zwischen zwei vollen Tanks steht fest, wie viel wirklich
+              verbraucht wurde. Teilbetankungen dazwischen zählen mit.</small></span>
+        </label>
+      </div>
+
       <div class="field">
         <label for="f-text">Beschreibung</label>
         <input type="text" id="f-text" autocomplete="off" placeholder="Was wurde gemacht?">
       </div>
 
+      <div class="field">
+        <label>Beleg</label>
+        <div class="belegzeile" id="f-belege"></div>
+        <button type="button" class="btn btn-ghost schmal" id="btn-beleg">
+          <span>Beleg fotografieren oder wählen</span>
+        </button>
+        <input type="file" id="datei-beleg" accept="image/*" hidden>
+      </div>
+
       <details class="mehr" id="mehr-angaben">
         <summary>Kosten, Werkstatt, Notiz</summary>
         <div class="feld-reihe">
-          <div class="field">
+          <div class="field" id="feld-kosten">
             <label for="f-kosten">Kosten (€)</label>
             <input type="text" id="f-kosten" inputmode="decimal" autocomplete="off" placeholder="89,90">
           </div>
@@ -107,10 +137,11 @@
 <!-- ══════════════════ VERLAUF ══════════════════ -->
 <section class="pane" id="pane-verlauf">
 
-  <div class="segment" role="tablist" aria-label="Ansicht">
+  <div class="segment vier" role="tablist" aria-label="Ansicht">
     <button role="tab" type="button" data-ansicht="liste" aria-selected="true">Liste</button>
     <button role="tab" type="button" data-ansicht="kalender" aria-selected="false">Kalender</button>
-    <button role="tab" type="button" data-ansicht="verlauf" aria-selected="false">Verlauf</button>
+    <button role="tab" type="button" data-ansicht="verlauf" aria-selected="false">Kilometer</button>
+    <button role="tab" type="button" data-ansicht="verbrauch" aria-selected="false">Verbrauch</button>
   </div>
 
   <div class="scroll">
@@ -185,6 +216,37 @@
       </p>
 
       <div class="tabellenrahmen" id="jahr-tabelle"></div>
+    </div>
+
+    <!-- ── Verbrauch ── -->
+    <div class="ansicht" id="ansicht-verbrauch" hidden>
+      <div class="card" id="verbrauch-karte">
+        <span class="label">Tatsächlicher Verbrauch</span>
+        <div class="kennzahl-wert gross" id="verbrauch-wert">—</div>
+        <span class="hemd-meta muted" id="verbrauch-meta"></span>
+      </div>
+
+      <div class="kennzahlen" id="verbrauch-kennzahlen"></div>
+
+      <figure class="diagramm" id="verbrauch-diagramm" hidden>
+        <figcaption>
+          <span class="label">Verbrauch je Tankfüllung</span>
+          <span class="dg-lesehilfe" id="lese-verbrauch">Antippen für die einzelne Messung</span>
+        </figcaption>
+        <div class="dg-halter" id="halter-verbrauch"></div>
+      </figure>
+
+      <figure class="diagramm" id="preis-diagramm" hidden>
+        <figcaption>
+          <span class="label">Preis je Liter</span>
+          <span class="dg-lesehilfe" id="lese-preis">Antippen für den Preis der Tankfüllung</span>
+        </figcaption>
+        <div class="dg-halter" id="halter-preis"></div>
+      </figure>
+
+      <p class="fussnote" id="verbrauch-hinweis"></p>
+
+      <div class="tabellenrahmen" id="verbrauch-tabelle"></div>
     </div>
 
     <button type="button" class="btn btn-primary" id="btn-pdf">Alles als PDF sichern</button>
@@ -279,6 +341,12 @@
         <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
         <span class="schalter-text">Werkstatt und Notiz ins PDF</span>
       </label>
+      <label class="schalter">
+        <input type="checkbox" id="e-pdf-belege">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Belege anhängen
+          <small>Je Beleg eine Seite am Ende, mit der Zeile des Eintrags darüber.</small></span>
+      </label>
       <button type="button" class="btn btn-ghost" id="btn-pdf-druck">Druckfassung sichern</button>
       <p class="hinweis">Die Druckfassung trägt keine Hintergrundfläche — Weiß ist
         dort kein Farbauftrag. Inhalt und Seitenzahlen sind identisch.</p>
@@ -360,12 +428,37 @@
       <label>Arbeit</label>
       <div class="chips" id="b-arten"></div>
     </div>
+    <div class="tankblock" id="b-tank-felder" hidden>
+      <div class="feld-reihe">
+        <div class="field">
+          <label for="b-liter">Getankt (Liter)</label>
+          <input type="text" id="b-liter" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="b-tank-betrag">Bezahlt (€)</label>
+          <input type="text" id="b-tank-betrag" inputmode="decimal" autocomplete="off">
+        </div>
+      </div>
+      <label class="schalter">
+        <input type="checkbox" id="b-voll">
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Vollgetankt</span>
+      </label>
+    </div>
+
     <div class="field">
       <label for="b-text">Beschreibung</label>
       <input type="text" id="b-text" autocomplete="off">
     </div>
+
+    <div class="field">
+      <label>Belege</label>
+      <div class="belegzeile" id="b-belege"></div>
+      <button type="button" class="btn btn-ghost schmal" id="btn-b-beleg">Beleg hinzufügen</button>
+      <input type="file" id="datei-b-beleg" accept="image/*" hidden>
+    </div>
     <div class="feld-reihe">
-      <div class="field">
+      <div class="field" id="b-feld-kosten">
         <label for="b-kosten">Kosten (€)</label>
         <input type="text" id="b-kosten" inputmode="decimal" autocomplete="off">
       </div>
@@ -389,6 +482,18 @@
       </div>
     </div>
   </div>
+</div>
+
+<!-- ══════════════════ BELEG ANSEHEN ══════════════════ -->
+<div class="blende betrachter" id="betrachter" hidden>
+  <div class="betrachter-kopf">
+    <span class="label" id="betrachter-titel"></span>
+    <button class="icon-btn" id="btn-betrachter-zu" aria-label="Schließen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <img id="betrachter-bild" alt="Beleg">
+  <button type="button" class="btn btn-ghost gefahr" id="btn-beleg-loeschen">Diesen Beleg löschen</button>
 </div>
 
 <div id="toast-halter" aria-live="polite"></div>

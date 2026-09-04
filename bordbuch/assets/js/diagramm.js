@@ -8,7 +8,7 @@
    Farben stehen ausschließlich im Stylesheet (Klassen dg-*). Hier wird
    nur Geometrie gerechnet. */
 
-import { el, km, MONATE_KURZ } from './util.js';
+import { el, km, MONATE_KURZ, alsDate, formatDatum } from './util.js';
 import { log, aktiv } from './debug.js';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -40,7 +40,7 @@ const achsenText = (wert) => (wert >= 10000 ? `${tausender.format(wert / 1000)}k
 const RAND = { oben: 22, unten: 26, links: 46, rechts: 10 };
 
 /** Gemeinsames Gerüst: Fläche, Gitter, Achsenbeschriftung. */
-function geruest(breite, hoehe, { obergrenze, schritt, linien }) {
+function geruest(breite, hoehe, { obergrenze, schritt, linien }, { monate = true, formatiere = achsenText } = {}) {
   const svg = svgEl('svg', {
     viewBox: `0 0 ${breite} ${hoehe}`,
     width: '100%',
@@ -66,13 +66,13 @@ function geruest(breite, hoehe, { obergrenze, schritt, linien }) {
       x1: flaeche.x, y1: y, x2: flaeche.x + flaeche.breite, y2: y,
     }));
     const beschriftung = svgEl('text', { class: 'dg-tick', x: flaeche.x - 8, y: y + 3.5, 'text-anchor': 'end' });
-    beschriftung.textContent = achsenText(wert);
+    beschriftung.textContent = formatiere(wert);
     svg.append(beschriftung);
   }
 
-  // Monatsbuchstaben unten
+  // Monatsbuchstaben unten — nur die Jahresdiagramme haben ein Monatsraster.
   const spalte = flaeche.breite / 12;
-  for (let monat = 0; monat < 12; monat += 1) {
+  for (let monat = 0; monate && monat < 12; monat += 1) {
     const text = svgEl('text', {
       class: 'dg-tick',
       x: flaeche.x + spalte * (monat + 0.5),
@@ -285,4 +285,119 @@ export function tabelle(daten) {
     )),
     koerper,
   );
+}
+
+/* ── Zeitreihe: ein Wert je Messung über die Zeit ────────────
+   Für den Verbrauch taugt das Monatsraster der beiden Jahresdiagramme
+   nicht: Getankt wird unregelmäßig, und jede Messung gehört an ihren Tag.
+   Die X-Achse ist deshalb der echte Zeitstrahl zwischen erster und
+   letzter Messung, nicht eine Reihe gleich breiter Fächer. */
+
+export function zeitreihe(punkte, breite, {
+  formatiere = (wert) => km(wert),
+  beiAuswahl,
+  hoehe = 190,
+  beschriftung = '',
+} = {}) {
+  const werte = punkte.map((punkt) => punkt.wert);
+  const masstab = skala(Math.max(...werte, 0));
+  const { svg, flaeche, yVon } = geruest(breite, hoehe, masstab, { monate: false, formatiere });
+  svg.setAttribute('aria-label', beschriftung);
+
+  const zeiten = punkte.map((punkt) => alsDate(punkt.datum).getTime());
+  const von = Math.min(...zeiten);
+  const bis = Math.max(...zeiten);
+  const spanne = bis - von;
+
+  // Eine einzelne Messung hat keine Strecke — sie steht in der Mitte.
+  const xVon = (zeit) => (spanne > 0
+    ? flaeche.x + ((zeit - von) / spanne) * flaeche.breite
+    : flaeche.x + flaeche.breite / 2);
+
+  const orte = punkte.map((punkt, i) => ({
+    ...punkt,
+    x: xVon(zeiten[i]),
+    y: yVon(punkt.wert),
+    index: i,
+  }));
+
+  if (orte.length > 1) {
+    const pfad = orte.map((ort, i) => `${i === 0 ? 'M' : 'L'}${ort.x.toFixed(1)} ${ort.y.toFixed(1)}`).join(' ');
+    svg.append(svgEl('path', { class: 'dg-linie', d: pfad }));
+  }
+
+  for (const ort of orte) {
+    svg.append(svgEl('circle', { class: 'dg-punkt', cx: ort.x, cy: ort.y, r: orte.length > 24 ? 2.5 : 4 }));
+  }
+
+  // Der jüngste Wert steht als Zahl im Bild — er ist der, auf den es ankommt.
+  const letzter = orte[orte.length - 1];
+  if (letzter) {
+    const text = svgEl('text', {
+      class: 'dg-wert',
+      x: Math.min(letzter.x, flaeche.x + flaeche.breite),
+      y: Math.max(letzter.y - 11, 12),
+      'text-anchor': letzter.x > flaeche.x + flaeche.breite * 0.7 ? 'end' : 'middle',
+    });
+    text.textContent = formatiere(letzter.wert);
+    svg.append(text);
+  }
+
+  // Zeitmarken: erste und letzte Messung, bei genug Platz eine in der Mitte.
+  const marken = orte.length > 2 ? [orte[0], orte[Math.floor(orte.length / 2)], letzter] : [orte[0], letzter];
+  const gesehen = new Set();
+  for (const [i, ort] of marken.filter(Boolean).entries()) {
+    if (!ort || gesehen.has(ort.index)) continue;
+    gesehen.add(ort.index);
+    const text = svgEl('text', {
+      class: 'dg-tick',
+      x: ort.x,
+      y: hoehe - 9,
+      'text-anchor': i === 0 ? 'start' : i === marken.length - 1 ? 'end' : 'middle',
+    });
+    text.textContent = formatDatum(ort.datum, { kurz: true }).slice(3);   // MM.JJJJ
+    svg.append(text);
+  }
+
+  if (beiAuswahl) verdrahteReihe(svg, orte, flaeche, beiAuswahl);
+  log('diagramm', 'Zeitreihe gezeichnet', { punkte: orte.length, ...masstab });
+  return svg;
+}
+
+function verdrahteReihe(svg, orte, flaeche, beiAuswahl) {
+  const zeiger = svgEl('line', {
+    class: 'dg-fadenkreuz',
+    x1: 0, y1: flaeche.y, x2: 0, y2: flaeche.y + flaeche.hoehe,
+    opacity: '0',
+  });
+  svg.append(zeiger);
+
+  const naechster = (event) => {
+    const kasten = svg.getBoundingClientRect();
+    const massstab = svg.viewBox.baseVal.width / kasten.width || 1;
+    const x = (event.clientX - kasten.left) * massstab;
+    let treffer = null;
+    let abstand = Infinity;
+    for (const ort of orte) {
+      const weite = Math.abs(ort.x - x);
+      if (weite < abstand) { abstand = weite; treffer = ort; }
+    }
+    return treffer;
+  };
+
+  const zeige = (event) => {
+    const ort = naechster(event);
+    if (!ort) return;
+    zeiger.setAttribute('x1', ort.x);
+    zeiger.setAttribute('x2', ort.x);
+    zeiger.setAttribute('opacity', '1');
+    beiAuswahl(ort);
+  };
+
+  svg.addEventListener('pointermove', zeige);
+  svg.addEventListener('pointerdown', zeige);
+  svg.addEventListener('pointerleave', () => {
+    zeiger.setAttribute('opacity', '0');
+    beiAuswahl(null);
+  });
 }

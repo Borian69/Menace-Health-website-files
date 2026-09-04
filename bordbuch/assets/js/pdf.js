@@ -11,7 +11,7 @@
    werden können. Ihre Ziffern sind alle gleich breit, Zahlenspalten
    stehen also von selbst in einer Flucht. */
 
-import { euro, km, formatDatum } from './util.js';
+import { euro, km, liter, verbrauchZahl, spritZahl, formatDatum } from './util.js';
 import { artVon } from './eintraege.js';
 import { log, fehler } from './debug.js';
 
@@ -157,6 +157,16 @@ class Seite {
     return this;
   }
 
+  /** Ein eingebettetes Bild platzieren. Die Maße kommen aus der
+      Belegablage — ein JPEG verrät sie nur über seine Marker. */
+  bild(name, x, y, breite, hoehe) {
+    this.ops.push('q');
+    this.ops.push(`${breite.toFixed(2)} 0 0 ${hoehe.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm`);
+    this.ops.push(`/${name} Do`);
+    this.ops.push('Q');
+    return this;
+  }
+
   /** Versal-Label im Stil der Mono-Beschriftungen der Oberfläche. */
   label(inhalt, x, y, { farbe = FARBE.leise, align = 'links', groesse = 7.5 } = {}) {
     return this.text(inhalt, x, y, { groesse, farbe, sperrung: groesse * 0.14, align, versal: true, fett: true });
@@ -174,6 +184,16 @@ class Dokument {
     this.hoehe = masse.hoehe;
     this.druck = druck;
     this.seiten = [];
+    this.bilder = [];
+  }
+
+  /* Ein JPEG wandert unverändert in die Datei: /DCTDecode heißt „das ist
+     schon ein JPEG, entpacke es beim Anzeigen“. Neu kodiert wird nichts,
+     die Datei bleibt so groß wie das Foto. */
+  bildEinfuegen(bytes, breite, hoehe) {
+    const name = `Im${this.bilder.length + 1}`;
+    this.bilder.push({ name, bytes, breite, hoehe });
+    return name;
   }
 
   neueSeite() {
@@ -197,42 +217,53 @@ class Dokument {
 
   /** Alles zu einer Datei zusammensetzen. Ergebnis ist ein Blob. */
   alsBlob() {
+    /* Die Nummern werden vorab vergeben: Ein Seitenobjekt muss auf
+       Schriften und Bilder zeigen, die im Datenstrom erst später
+       kommen. Vorher wurde das nachträglich hineingeflickt — mit
+       Bildern in der Datei ist das zu wackelig. */
     const objekte = [];
-    const füge = (inhalt) => { objekte.push(inhalt); return objekte.length; };
+    const platzhalter = () => { objekte.push(null); return objekte.length; };
+    const setze = (nummer, inhalt) => { objekte[nummer - 1] = inhalt; };
 
-    // 1 Katalog, 2 Seitenbaum, dann je Seite ein Seiten- und ein
-    // Inhaltsobjekt, zuletzt die beiden Schriften.
-    const katalogNr = füge(null);
-    const baumNr = füge(null);
+    const katalogNr = platzhalter();
+    const baumNr = platzhalter();
+    const schriftNormalNr = platzhalter();
+    const schriftFettNr = platzhalter();
+
+    const bildNummern = this.bilder.map(() => platzhalter());
+    this.bilder.forEach((bild, i) => {
+      setze(bildNummern[i],
+        `<< /Type /XObject /Subtype /Image /Width ${bild.breite} /Height ${bild.hoehe}`
+        + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode'
+        + ` /Length ${bild.bytes.length} >>\nstream\n${alsZeichen(bild.bytes)}\nendstream`);
+    });
+
+    const xobjekte = this.bilder.length
+      ? ` /XObject << ${this.bilder.map((bild, i) => `/${bild.name} ${bildNummern[i]} 0 R`).join(' ')} >>`
+      : '';
 
     const seitenNummern = [];
     for (const seite of this.seiten) {
       const inhalt = seite.inhalt();
-      const stromNr = füge(`<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
-      const seitenNr = füge(
+      const stromNr = platzhalter();
+      setze(stromNr, `<< /Length ${inhalt.length} >>\nstream\n${inhalt}\nendstream`);
+
+      const seitenNr = platzhalter();
+      setze(seitenNr,
         `<< /Type /Page /Parent ${baumNr} 0 R /MediaBox [0 0 ${this.breite.toFixed(2)} ${this.hoehe.toFixed(2)}]`
-        + ` /Resources << /Font << /F1 ${objekte.length + 2} 0 R /F2 ${objekte.length + 3} 0 R >> >>`
-        + ` /Contents ${stromNr} 0 R >>`,
-      );
+        + ` /Resources << /Font << /F1 ${schriftNormalNr} 0 R /F2 ${schriftFettNr} 0 R >>${xobjekte} >>`
+        + ` /Contents ${stromNr} 0 R >>`);
       seitenNummern.push(seitenNr);
     }
 
-    const schriftNormalNr = füge('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
-    const schriftFettNr = füge('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    setze(schriftNormalNr, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+    setze(schriftFettNr, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+    setze(katalogNr, `<< /Type /Catalog /Pages ${baumNr} 0 R >>`);
+    setze(baumNr, `<< /Type /Pages /Count ${seitenNummern.length}`
+      + ` /Kids [${seitenNummern.map((nummer) => `${nummer} 0 R`).join(' ')}] >>`);
 
-    // Die Seitenobjekte verweisen auf die Schriften über ihre laufende
-    // Nummer; die steht erst jetzt fest, also werden sie nachgezogen.
-    seitenNummern.forEach((nummer) => {
-      objekte[nummer - 1] = objekte[nummer - 1]
-        .replace(/\/F1 \d+ 0 R/, `/F1 ${schriftNormalNr} 0 R`)
-        .replace(/\/F2 \d+ 0 R/, `/F2 ${schriftFettNr} 0 R`);
-    });
-
-    objekte[katalogNr - 1] = `<< /Type /Catalog /Pages ${baumNr} 0 R >>`;
-    objekte[baumNr - 1] = `<< /Type /Pages /Count ${seitenNummern.length}`
-      + ` /Kids [${seitenNummern.map((nummer) => `${nummer} 0 R`).join(' ')}] >>`;
-
-    const infoNr = füge(`<< /Title (Bordbuch) /Creator (Bordbuch) /Producer (Bordbuch) /CreationDate (${pdfDatum(new Date())}) >>`);
+    const infoNr = platzhalter();
+    setze(infoNr, `<< /Title (Bordbuch) /Creator (Bordbuch) /Producer (Bordbuch) /CreationDate (${pdfDatum(new Date())}) >>`);
 
     let datei = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
     const versaetze = [];
@@ -247,12 +278,24 @@ class Dokument {
     datei += `trailer\n<< /Size ${objekte.length + 1} /Root ${katalogNr} 0 R /Info ${infoNr} 0 R >>\n`;
     datei += `startxref\n${xrefStart}\n%%EOF\n`;
 
-    // Jedes Zeichen der Zeichenkette ist genau ein Byte — dafür sorgt
-    // winAnsi() weiter oben.
+    // Jedes Zeichen der Zeichenkette ist genau ein Byte — dafür sorgen
+    // winAnsi() und alsZeichen() weiter oben.
     const bytes = new Uint8Array(datei.length);
     for (let i = 0; i < datei.length; i += 1) bytes[i] = datei.charCodeAt(i) & 0xff;
     return new Blob([bytes], { type: 'application/pdf' });
   }
+}
+
+/* Bytes als Zeichenkette, ein Zeichen je Byte. In Häppchen, weil
+   String.fromCharCode mit einem ganzen Foto auf einmal den Stapel
+   sprengt. */
+function alsZeichen(bytes) {
+  let raus = '';
+  const schritt = 8192;
+  for (let i = 0; i < bytes.length; i += schritt) {
+    raus += String.fromCharCode.apply(null, bytes.subarray(i, i + schritt));
+  }
+  return raus;
 }
 
 const pdfDatum = (datum) => {
@@ -292,7 +335,7 @@ function umbrich(text, groesse, maxBreite, { fett = false } = {}) {
 
 /* ── Das Bordbuch als Dokument ───────────────────────────── */
 
-export function erzeugePDF({ eintraege, einstellungen, statistik, druck = false }) {
+export function erzeugePDF({ eintraege, einstellungen, statistik, bilanz = null, belege = [], druck = false }) {
   const dok = new Dokument(einstellungen.pdfFormat, { druck });
   const mitKosten = einstellungen.pdfKosten !== false;
   const mitNotizen = einstellungen.pdfNotizen !== false;
@@ -308,7 +351,7 @@ export function erzeugePDF({ eintraege, einstellungen, statistik, druck = false 
 
   let seite = dok.neueSeite();
   kopfzeile(seite, dok, einstellungen);
-  seite.y = kennzahlen(seite, dok, statistik, einstellungen);
+  seite.y = kennzahlen(seite, dok, statistik, einstellungen, bilanz);
   seite.y = tabellenKopf(seite, dok, spalte, mitKosten);
 
   const unterkante = RAND + 26;
@@ -319,6 +362,14 @@ export function erzeugePDF({ eintraege, einstellungen, statistik, druck = false 
     const zeilen = umbrich(beschreibung, 9.5, arbeitBreite);
 
     const zusatz = [];
+    /* Die Tankangaben stehen immer dabei — sie sind der Beleg für die
+       Verbrauchsrechnung und gehören damit ins Dokument, nicht in die
+       abschaltbaren Notizen. */
+    if (eintrag.art === 'tanken' && eintrag.liter) {
+      const teile = [liter(eintrag.liter), eintrag.voll ? 'vollgetankt' : 'Teilbetankung'];
+      if (eintrag.kosten) teile.push(`${spritZahl((eintrag.kosten / (eintrag.liter / 1000)))} €/L`);
+      zusatz.push(...umbrich(teile.join(' · '), 8, arbeitBreite));
+    }
     if (mitNotizen) {
       if (eintrag.werkstatt) zusatz.push(...umbrich(eintrag.werkstatt, 8, arbeitBreite));
       if (eintrag.notiz) zusatz.push(...umbrich(eintrag.notiz, 8, arbeitBreite));
@@ -357,6 +408,7 @@ export function erzeugePDF({ eintraege, einstellungen, statistik, druck = false 
   }
 
   schlussNotiz(seite, dok, statistik, eintraege.length);
+  belegAnhang(dok, eintraege, belege);
   dok.fussNoten(`Moch \xB7 Studios \xB7 Bordbuch`);
 
   const blob = dok.alsBlob();
@@ -386,7 +438,7 @@ function kopfzeile(seite, dok, einstellungen) {
   seite.y = oben - (einstellungen.fin ? 106 : 96);
 }
 
-function kennzahlen(seite, dok, statistik, einstellungen) {
+function kennzahlen(seite, dok, statistik, einstellungen, bilanz) {
   const y = seite.y;
   const hoehe = 62;
 
@@ -401,6 +453,9 @@ function kennzahlen(seite, dok, statistik, einstellungen) {
       ? `${formatDatum(statistik.erster.datum, { kurz: true })} – ${formatDatum(statistik.letzter.datum, { kurz: true })}`
       : '—'],
   ];
+  if (bilanz && bilanz.schnitt) {
+    werte.push(['Verbrauch', `${verbrauchZahl(bilanz.schnitt)} L/100 km`]);
+  }
   if (einstellungen.pdfKosten !== false && statistik.kosten) {
     werte.push(['Kosten gesamt', euro(statistik.kosten)]);
   }
@@ -448,6 +503,51 @@ function schlussNotiz(seite, dok, statistik, anzahl) {
     seite.text(zeile, RAND, textY, { groesse: 8.5, farbe: FARBE.leise });
     textY -= 11;
   }
+}
+
+/* ── Anhang: die Belege ─────────────────────────────────────
+   Eine Seite je Beleg, mit der Zeile des zugehörigen Eintrags darüber.
+   Genau das macht aus der Liste einen Nachweis: Wer den Wagen kauft,
+   sieht die Rechnung neben dem Eintrag und muss nichts glauben. */
+
+function belegAnhang(dok, eintraege, belege) {
+  if (!belege.length) return;
+
+  const nachId = new Map(eintraege.map((eintrag) => [eintrag.id, eintrag]));
+
+  for (const beleg of belege) {
+    const eintrag = nachId.get(beleg.eintragId);
+    if (!eintrag) continue;
+
+    const seite = dok.neueSeite();
+    const oben = dok.hoehe - RAND;
+
+    seite.label('Beleg', RAND, oben - 10, { farbe: FARBE.walnuss, groesse: 9 });
+    seite.linie(RAND, oben - 20, dok.breite - RAND, oben - 20, FARBE.messing);
+
+    const kopf = `${formatDatum(eintrag.datum)} \xB7 ${km(eintrag.km)} km \xB7 ${artVon(eintrag.art).label}`;
+    seite.text(kopf, RAND, oben - 40, { groesse: 11, farbe: FARBE.text });
+    if (eintrag.text) {
+      seite.text(umbrich(eintrag.text, 9.5, dok.inhaltsbreite)[0], RAND, oben - 56, { groesse: 9.5, farbe: FARBE.leise });
+    }
+
+    // Das Bild bekommt den Rest der Seite und behält sein Seitenverhältnis.
+    const kastenOben = oben - 74;
+    const kastenUnten = RAND + 26;
+    const maxBreite = dok.inhaltsbreite;
+    const maxHoehe = kastenOben - kastenUnten;
+    const faktor = Math.min(maxBreite / beleg.breite, maxHoehe / beleg.hoehe);
+    const breite = beleg.breite * faktor;
+    const hoehe = beleg.hoehe * faktor;
+    const x = RAND + (maxBreite - breite) / 2;
+    const y = kastenUnten + (maxHoehe - hoehe) / 2;
+
+    const name = dok.bildEinfuegen(beleg.bytes, beleg.breite, beleg.hoehe);
+    seite.bild(name, x, y, breite, hoehe);
+    rahmen(seite, x, y, breite, hoehe);
+  }
+
+  log('pdf', 'Belege angehängt', { anzahl: belege.length });
 }
 
 /** Kurze Testseite für die Einstellungen: prüft Schrift, Umlaute,
