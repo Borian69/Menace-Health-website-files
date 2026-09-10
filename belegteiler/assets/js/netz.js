@@ -1,20 +1,14 @@
-/* Netzanfragen, die das Sperren des Displays überstehen.
+/* Netzanfragen der Erkennung.
 
-   Geht das Handy in den Standby oder wandert die Seite in den
-   Hintergrund, friert der Browser sie ein. Eine Anfrage, die aus der
-   Seite heraus läuft, hängt dann fest: Die Antwort mag längst da sein,
-   aber der Code, der sie entgegennimmt, läuft nicht mehr. Für eine
-   Erkennung, die zwanzig Sekunden dauert, reicht ein kurzer Blick zur
-   Seite — und der Vorgang steht.
+   Gefragt wird direkt. Der Umweg über den Service Worker steckt weiter
+   hier drin, ist aber ab Werk aus — die ausführliche Begründung steht
+   an anfrage(). Kurz: Er sollte das Sperren des Displays überbrücken
+   und hat stattdessen jede Erkennung nach 90 Sekunden stumm sterben
+   lassen, weil der Browser den Worker mitten in der Anfrage beendet.
 
-   Ein Service Worker gehört nicht zur Seite und hat das Problem nicht.
-   Läuft einer, bekommt er die Anfrage; `event.waitUntil` hält ihn so
-   lange am Leben. Das Ergebnis legt er haltbar ab, bevor er es meldet.
-   Damit findet die Seite es auch dann noch, wenn sie zwischendurch
-   ganz verworfen und neu aufgebaut wurde.
-
-   Bleibt der Umweg aus irgendeinem Grund stumm, wird direkt gefragt.
-   Langsamer, aber nie ein Totalausfall. */
+   Was der Umweg leisten sollte, leistet heute die Warteschlange: Die
+   Aufnahme liegt sicher, und die App nimmt sie nach einem Neustart von
+   selbst wieder auf. */
 
 let laufendeNummer = 0;
 const offen = new Map();   // id -> { resolve, reject }
@@ -41,6 +35,11 @@ if ('serviceWorker' in navigator) {
 }
 
 const nutzbar = () => Boolean(navigator.serviceWorker?.controller);
+
+/* Umschaltbar, damit der Weg prüfbar bleibt statt nur ausgebaut zu sein.
+   Ab Werk aus — siehe die Begründung an anfrage(). */
+let ueberWorkerErlaubt = false;
+export const workerWegSetzen = (an) => { ueberWorkerErlaubt = Boolean(an); };
 
 /* Kommt gar nichts zurück, darf die App nicht ewig warten. Der Worker
    kann zwischendurch ersetzt oder beendet worden sein, dann läuft die
@@ -112,7 +111,11 @@ function verbindungsfehler({ grund, weg, url, init, begonnen }) {
    Mobilfunk — die Verbindung steht formal noch, es fliesst nur nichts
    mehr. Nach dieser Frist gilt der Anlauf als gescheitert und der
    nächste darf ran. */
-export const ANFRAGE_FRIST = 90_000;
+/* Ohne den Worker-Umweg braucht es keine grosszügige Frist mehr: Der
+   direkte Weg antwortet oder scheitert, er verschwindet nicht. 60
+   Sekunden lassen einem langsamen Gratis-Modell Luft und halten die
+   Wartezeit im Erträglichen — zumal die Anläufe parallel laufen. */
+export const ANFRAGE_FRIST = 60_000;
 
 /** Bricht ab, wenn zu lange nichts kommt — und sagt, dass es die Frist war. */
 function mitFrist(signal) {
@@ -159,8 +162,28 @@ async function direkt(url, init, signal, weg = 'direkt') {
  * @returns {Promise<{ok:boolean, status:number, retryAfter:number, payload:any}>}
  * @throws Error mit name 'AbortError' beim Abbruch, sonst mit lesbarem Text
  */
+/* Der Umweg über den Service Worker ist ab Werk aus.
+
+   Er kam dazu, damit eine Erkennung das Sperren des Displays übersteht.
+   Gemessen auf dem Gerät richtet er aber genau das Gegenteil an: Drei
+   Anläufe mit drei verschiedenen Modellen — darunter ein schnelles,
+   bezahltes — endeten alle exakt an derselben 90-Sekunden-Frist, Weg
+   „Service Worker", Gerät online, Anfrage 1,66 MB. Drei Modelle
+   scheitern nicht zufällig gleichzeitig auf dieselbe Art; der
+   gemeinsame Nenner war der Weg.
+
+   Die Ursache liegt in der Lebensdauer: Ein Service Worker wird vom
+   Browser beendet, wenn er ihn für untätig hält, und `waitUntil` hält
+   ihn nur begrenzt. Wird er mitten in der Anfrage beendet, stirbt die
+   fetch stumm — keine Antwort, kein Fehler, nur Stille bis zur Frist.
+   Eine Erkennung, die zwanzig Sekunden dauern darf, ist damit genau
+   der Fall, den er nicht überlebt.
+
+   Der direkte Weg hat das Problem nicht. Das Sperren des Displays fängt
+   inzwischen etwas anderes ab: Die Aufnahme liegt in der Warteschlange,
+   und die App nimmt sie nach einem Neustart von selbst wieder auf. */
 export async function anfrage(url, init, signal) {
-  if (nutzbar()) {
+  if (nutzbar() && ueberWorkerErlaubt) {
     const begonnen = Date.now();
     const antwort = await ueberWorker(url, init, signal);
 
