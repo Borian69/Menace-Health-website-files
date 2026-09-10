@@ -367,128 +367,73 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
      Gratis-Modells abgelaufen sind; es rennt einfach mit. Damit
      bestimmt der schnellste Anlauf die Wartezeit, nicht die Summe
      aller. */
-  const VORSPRUNG = 10_000;
+  /* Ein Modell nach dem anderen, nicht drei gleichzeitig.
 
-  const steuerung = new AbortController();
-  const durchreichen = () => steuerung.abort(signal.reason);
-  signal?.addEventListener('abort', durchreichen, { once: true });
-  const abgebrochen = () => Boolean(signal?.aborted);
+     Zwischendurch liefen die Anläufe versetzt nebeneinander, um die
+     Wartezeit zu drücken. Das war die Antwort auf ein Problem, das
+     woanders lag: Die Anfragen starben im Service Worker, nicht am
+     Tempo der Modelle. Seit sie wieder direkt gehen, kostet die
+     Gleichzeitigkeit nur — sie schickt dasselbe Foto bis zu dreimal
+     los, wo einmal genügt.
 
-  let genugGefunden;
-  const treffer = new Promise((r) => { genugGefunden = r; });
+     Also der Reihe nach, wie in v8. Ein Anlauf, der scheitert, kostet
+     den nächsten nicht mehr den Start: Der Fehler gilt dem Anlauf,
+     nicht dem Scan. */
+  for (const [nummer, model] of versuche.entries()) {
+    if (nummer > 0) await sleep(600, signal);   // kurz Luft holen
 
-  /* Abgeblasene Anläufe laufen noch kurz aus. Ihre Meldungen dürfen die
-     Anzeige nicht mehr umschreiben — sonst steht am Ende „Anlauf 3",
-     obwohl längst Anlauf 1 gewonnen hat. */
-  let stumm = false;
-  const sagen = (nachricht) => { if (!stumm) melden(nachricht); };
-
-  /* Der Vorsprung ist eine Frist fürs Schweigen, kein Fahrplan: Solange
-     ein Anlauf noch läuft, wartet der nächste ab. Ist er schon
-     gescheitert, hat Warten keinen Sinn mehr — dann geht es sofort
-     weiter. Sonst hätte ein Modell, das nach einer Sekunde mit „ich
-     kann das nicht" antwortet, trotzdem neun Sekunden Stillstand
-     erzeugt. */
-  let erledigt = 0;
-  const wartende = new Set();
-  const abhaken = () => { erledigt += 1; for (const wecken of [...wartende]) wecken(); };
-  const vorherGescheitert = (nummer) => new Promise((fertig) => {
-    const pruefen = () => { if (erledigt >= nummer) { wartende.delete(pruefen); fertig(); } };
-    wartende.add(pruefen);
-    pruefen();
-  });
-
-  const anlauf = async (model, nummer) => {
-    // Versetzt starten, damit ein schneller erster Anlauf allein bleibt.
-    if (nummer > 0) {
-      const schlaf = sleep(VORSPRUNG * nummer, steuerung.signal);
-      schlaf.catch(() => {});   // ein Abbruch hier gilt nicht als unbehandelt
-      try { await Promise.race([schlaf, vorherGescheitert(nummer)]); } catch { return; }
-      if (steuerung.signal.aborted) return;
-    }
-    const meldenMitNummer = (n) => sagen({ ...n, anlauf: nummer + 1, model: n.model || model });
+    const sagen = (n) => melden({ ...n, anlauf: nummer + 1, model: n.model || model });
     sagen({ phase: 'anlauf', anlauf: nummer + 1, von: versuche.length, model });
-    /* Wirft der Aufruf, ist der Anlauf gescheitert — nicht der Scan.
-       Genau das war hier der Fehler: Die Schleife fing nichts ab, also
-       flog ein Netzaussetzer, ein leeres Kontingent oder ein zickender
-       Anbieter an allen weiteren Anläufen vorbei nach draussen. Die
-       zweite Chance und das Ausweichmodell, die hier ausdrücklich
-       aufgereiht sind, kamen nie zum Zug: Gemessen wurde genau eine
-       Anfrage, wo drei vorgesehen waren.
 
-       Ein Abbruch durch den Nutzer ist etwas anderes und geht durch. */
     let eigenes;
     try {
       eigenes = await call({
-      settings,
-      model,
-      system: SYSTEM_PROMPT,
-      /* Ohne Richtungsangabe: Geteilt wird entlang der langen Kante,
-         bei einem Hochformat also quer und bei einem Querformat
-         längs. „Aufeinanderfolgend" stimmt in beiden Fällen, „von oben
-         nach unten" stimmte nur im einen — und eine falsche Angabe
-         bringt kleine Modelle zuverlässig durcheinander. */
-      text: parts.length > 1
-        ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten. Sie gehören in dieser Reihenfolge zusammen; ein Bon kann über zwei Abschnitte reichen. Die Abschnitte sind für die Lesbarkeit in Graustufen umgewandelt. Erfasse jeden Kassenbon vollständig, aber keinen doppelt.`
-        : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
-      images: parts,
-      tool: SCAN_TOOL,
-      signal: steuerung.signal,
-      melden: meldenMitNummer,
+        settings,
+        model,
+        system: SYSTEM_PROMPT,
+        /* Ohne Richtungsangabe: Geteilt wird entlang der langen Kante,
+           bei einem Hochformat also quer und bei einem Querformat
+           längs. „Aufeinanderfolgend" stimmt in beiden Fällen, „von oben
+           nach unten" stimmte nur im einen — und eine falsche Angabe
+           bringt kleine Modelle zuverlässig durcheinander. */
+        text: parts.length > 1
+          ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten. Sie gehören in dieser Reihenfolge zusammen; ein Bon kann über zwei Abschnitte reichen. Die Abschnitte sind für die Lesbarkeit in Graustufen umgewandelt. Erfasse jeden Kassenbon vollständig, aber keinen doppelt.`
+          : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
+        images: parts,
+        tool: SCAN_TOOL,
+        signal,
+        melden: sagen,
       });
     } catch (error) {
-      // Von aussen abgebrochen: nichts mehr zu melden.
-      if (error.name === 'AbortError') { if (abgebrochen()) throw error; return; }
+      if (error.name === 'AbortError') throw error;
       letzterFehler = error;
       gruende.push(`${nummer + 1}. ${model}: ${error.diagnose?.grund || error.message}`);
+      sagen({ phase: 'anlaufEnde', stand: kurz(error) });
       /* Ein abgelehnter Schlüssel oder ein Modell, das es nicht gibt,
          wird auch beim dritten Anlauf nicht besser — und das
-         Ausweichmodell hat call() da bereits durchprobiert. Also sofort
-         Schluss, statt den Nutzer zwanzig Sekunden auf eine Nachricht
-         warten zu lassen, die schon feststeht. */
-      meldenMitNummer({ phase: 'anlaufEnde', stand: kurz(error) });
-      if (error.wiederholbar === false) { steuerung.abort(); genugGefunden(); return; }
-      abhaken();
-      return;
+         Ausweichmodell hat call() da bereits durchprobiert. */
+      if (error.wiederholbar === false) break;
+      continue;
     }
+
     // Für die Fehlermeldung, falls am Ende gar nichts brauchbar ist.
     result = eigenes;
     const gelesen = (eigenes.args?.receipts || []).filter((receipt) => receipt?.items?.length);
     if (!gelesen.length) {
       gruende.push(`${nummer + 1}. ${model}: nichts erfasst`);
-      meldenMitNummer({ phase: 'anlaufEnde', stand: 'nichts erfasst' });
-      abhaken();
-      return;
+      sagen({ phase: 'anlaufEnde', stand: 'nichts erfasst' });
+      continue;
     }
 
     const luecke = fehlbetrag(gelesen);
     if (!bester || luecke.cent < bester.luecke.cent) {
       bester = { result: eigenes, receipts: gelesen, model, luecke };
     }
-    /* Passt die Summe zur gedruckten Endsumme, ist nichts mehr zu
-       holen — die übrigen Anläufe werden abgeblasen, statt Zeit und
-       Geld für ein Ergebnis auszugeben, das ohnehin nicht gewinnt. */
-    meldenMitNummer({ phase: 'anlaufEnde', stand: 'fertig' });
-    if (luecke.cent <= TOLERANZ) {
-      steuerung.abort();
-      genugGefunden();
-      return;
-    }
-    /* Brauchbar, aber die Summe passt nicht zur gedruckten Endsumme —
-       meist fehlt eine Zeile. Genau dafür gibt es die weiteren Anläufe,
-       also darf der nächste sofort ran. Am Ende gewinnt der Versuch mit
-       der kleinsten Abweichung. */
-    abhaken();
-  };
+    sagen({ phase: 'anlaufEnde', stand: 'fertig' });
 
-  await Promise.race([
-    Promise.allSettled(versuche.map(anlauf)),
-    treffer,
-  ]);
-  stumm = true;
-  signal?.removeEventListener('abort', durchreichen);
-  if (abgebrochen()) throw new DOMException('abgebrochen', 'AbortError');
-  steuerung.abort();   // was noch läuft, wird nicht mehr gebraucht
+    // Passt die Summe zur gedruckten Endsumme, ist nichts mehr zu holen.
+    if (luecke.cent <= TOLERANZ) break;
+  }
 
   if (bester) {
     ({ result, receipts } = bester);

@@ -399,11 +399,10 @@ function scanFortschritt(nachricht) {
 
   if (phase === 'anlaufEnde') return;
   if (phase === 'anlauf') {
-    // Die Anläufe laufen nebeneinander — also zählen, wie viele
-    // gerade unterwegs sind, statt sie als Abfolge darzustellen.
-    scanPhase = nachricht.anlauf > 1 ? `${nachricht.anlauf} Anläufe gleichzeitig` : '';
+    // Ein Anlauf nach dem anderen — also auch so benannt.
+    scanPhase = nachricht.anlauf > 1 ? `Anlauf ${nachricht.anlauf} von ${nachricht.von}` : '';
     $('#scan-substep').textContent = nachricht.anlauf > 1
-      ? `Es dauert — ${modelLabel(nachricht.model)} läuft jetzt zusätzlich mit.`
+      ? `Der vorige Anlauf kam nicht durch — jetzt mit ${modelLabel(nachricht.model)}.`
       : `${modelLabel(nachricht.model)} liest den Beleg.`;
   } else if (phase === 'senden') {
     $('#scan-step').textContent = 'Foto wird übertragen …';
@@ -1342,7 +1341,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v29';
+const BUILD = 'v30';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

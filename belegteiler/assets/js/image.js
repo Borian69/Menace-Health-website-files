@@ -18,7 +18,12 @@
    leidet — selbst die winzige Signaturzeile bleibt lesbar. Die Zahlen
    sind gemessen, nicht geschätzt; darunter fängt die Schrift an
    auszufransen. */
-const MAX_EDGE = 1600;   // Kantenlänge je Abschnitt
+const MAX_EDGE = 1600;   // Kantenlänge je Abschnitt, wenn geteilt wird
+/* Bleibt es bei einem einzigen Bild, darf es grösser sein: Die
+   Datenmenge ist dieselbe wie bei zwei Abschnitten zu 1600, die
+   Aufgabe fürs Modell aber ungleich einfacher — ein Bild statt zwei,
+   die es erst zusammensetzen muss. */
+const EINZEL_EDGE = 2000;
 const QUALITY  = 0.72;
 const OVERLAP  = 0.08;   // Anteil, um den sich zwei Abschnitte überlappen
 
@@ -70,11 +75,30 @@ const MAX_TEILE = 4;   // darüber wird die Anfrage unnötig teuer
    und die Anfrage wurde nicht kleiner, sondern nur teurer. Der Schnitt
    richtet sich danach, wie viel Text ein Abschnitt fassen soll; die
    Größe danach, was zur Erkennung reicht. */
-const TEIL_QUELLE = 2000;
+const TEIL_QUELLE = 3000;
 
+/* Geteilt wird, wenn die Form es verlangt — nicht auf Verdacht.
+
+   Zwischendurch entschied allein die Auflösung: `runde(langeKante /
+   2000)`. Ein gewöhnliches Handyfoto (3060 × 4080) ergab damit zwei
+   Abschnitte, wo v8 einen schickte. Für ein kleines Modell ist das ein
+   Unterschied ums Ganze: Statt „hier ist ein Bon" heisst die Aufgabe
+   dann „hier sind zwei überlappende Ausschnitte, setz sie zusammen und
+   zähl nichts doppelt". Genau dort blieben die Antworten leer.
+
+   Also wieder die Regel aus v8 — ein Bon, der deutlich länger als breit
+   ist, wird geteilt — und die Auflösung nur noch als zweiter Auslöser
+   für wirklich grosse Aufnahmen. Ein Foto, das v8 als eines geschickt
+   hätte, wird auch heute als eines geschickt. */
 function aufteilung(width, height) {
-  const langeKante = Math.max(width, height);
-  const teile = Math.max(1, Math.min(MAX_TEILE, Math.round(langeKante / TEIL_QUELLE)));
+  const lang = Math.max(width, height);
+  const kurz = Math.max(1, Math.min(width, height));
+  const verhaeltnis = lang / kurz;
+
+  const nachForm = verhaeltnis > 2.6 ? 3 : verhaeltnis > 1.6 ? 2 : 1;
+  const nachAufloesung = Math.round(lang / TEIL_QUELLE);
+
+  const teile = Math.max(1, Math.min(MAX_TEILE, Math.max(nachForm, nachAufloesung)));
   return { teile, quer: width > height };
 }
 
@@ -156,8 +180,8 @@ function schaerfen(canvas, staerke = 0.6) {
    drei Abschnitten war der Hauptthread damit leicht eine halbe Sekunde
    am Stück belegt, und genau in dieser Zeit sollte die Animation
    anlaufen. toBlob() und FileReader erledigen dasselbe nebenher. */
-async function renderSlice(bitmap, { sx, sy, sw, sh }, aufbereiten) {
-  const scale = Math.min(1, MAX_EDGE / Math.max(sw, sh));
+async function renderSlice(bitmap, { sx, sy, sw, sh }, aufbereiten, kante = MAX_EDGE) {
+  const scale = Math.min(1, kante / Math.max(sw, sh));
   const canvas = document.createElement('canvas');
   canvas.width  = Math.max(1, Math.round(sw * scale));
   canvas.height = Math.max(1, Math.round(sh * scale));
@@ -247,7 +271,8 @@ export async function prepareImage(file, onPreview, { aufbereiten = true } = {})
     const end   = Math.min(achse, laenge * (index + 1) + (index < teile - 1 ? overlap : 0));
     parts.push(await renderSlice(bitmap, quer
       ? { sx: start, sy: 0, sw: end - start, sh: height }
-      : { sx: 0, sy: start, sw: width, sh: end - start }, aufbereiten));
+      : { sx: 0, sy: start, sw: width, sh: end - start },
+      aufbereiten, teile === 1 ? EINZEL_EDGE : MAX_EDGE));
   }
 
   bitmap.close?.();
