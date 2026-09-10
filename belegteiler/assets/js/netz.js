@@ -52,7 +52,7 @@ const nutzbar = () => Boolean(navigator.serviceWorker?.controller);
    hier 90 Sekunden gegen einen Worker ganz ohne Frist — die Seite gab
    also zuerst auf und schob dieselben Megabyte ein zweites Mal
    hinterher, während der erste Upload weiterlief. */
-const WORKER_FRIST = 70_000;
+const WORKER_FRIST = 100_000;
 
 function ueberWorker(url, init, signal) {
   const id = `${Date.now()}-${(laufendeNummer += 1)}`;
@@ -112,7 +112,7 @@ function verbindungsfehler({ grund, weg, url, init, begonnen }) {
    Mobilfunk — die Verbindung steht formal noch, es fliesst nur nichts
    mehr. Nach dieser Frist gilt der Anlauf als gescheitert und der
    nächste darf ran. */
-export const ANFRAGE_FRIST = 60_000;
+export const ANFRAGE_FRIST = 90_000;
 
 /** Bricht ab, wenn zu lange nichts kommt — und sagt, dass es die Frist war. */
 function mitFrist(signal) {

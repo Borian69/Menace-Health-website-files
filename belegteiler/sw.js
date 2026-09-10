@@ -4,7 +4,7 @@
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
 /* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
-const CACHE = 'belegteiler-v24';
+const CACHE = 'belegteiler-v25';
 
 // Getrenntes Fach für fertige Erkennungen, die noch niemand abgeholt hat.
 const ERGEBNISSE = 'belegteiler-ergebnisse';
@@ -75,7 +75,7 @@ self.addEventListener('message', (event) => {
    dieselben Megabyte ein zweites Mal hoch, während der erste Versuch noch
    läuft. Zwei grosse Uploads gleichzeitig sind auf dem Handy genau das,
    was die Verbindung endgültig umbringt. */
-const FRIST = 60_000;
+const FRIST = 90_000;
 
 async function ausfuehren({ id, url, method, headers, body }) {
   laufend.add(id);
