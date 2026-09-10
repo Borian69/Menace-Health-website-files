@@ -177,6 +177,19 @@ export async function anfrage(url, init, signal) {
       };
     }
 
+    /* Ist dem Worker die Zeit ausgegangen, war nicht der Worker das
+       Problem, sondern die Leitung — und die ist für den direkten Weg
+       dieselbe. Nochmal 90 Sekunden dranzuhängen verdoppelt nur die
+       Wartezeit: Aus einer Frist wurden in der Praxis 180 Sekunden, bis
+       überhaupt eine Fehlermeldung erschien. Also hier Schluss und
+       Bescheid sagen; der nächste Anlauf läuft ohnehin schon parallel. */
+    if (/Zeit abgelaufen/.test(antwort.grund || '')) {
+      throw verbindungsfehler({
+        grund: antwort.grund,
+        weg: 'Service Worker', url, init, begonnen,
+      });
+    }
+
     try {
       return await direkt(url, init, signal, 'direkt nach Worker-Fehlschlag');
     } catch (error) {

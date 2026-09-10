@@ -328,6 +328,26 @@ let scanUhr = null;
 let scanBegonnen = 0;
 let scanPhase = '';
 
+/* Je Anlauf ein Eintrag, damit von aussen sichtbar wird, was wirklich
+   läuft. „3 Anläufe gleichzeitig · 147 s" sagt nämlich noch nicht, ob
+   ein Modell langsam ist, alle drei hängen oder das Ausweichmodell gar
+   nicht dabei ist — und ohne diese Unterscheidung lässt sich der Fehler
+   aus der Ferne nicht einkreisen. */
+const anlaeufe = new Map();   // nummer -> { model, seit, stand }
+
+function anlaeufeZeichnen() {
+  const liste = $('#scan-anlaeufe');
+  liste.hidden = anlaeufe.size === 0;
+  liste.replaceChildren();
+  for (const [nummer, a] of [...anlaeufe.entries()].sort((x, y) => x[0] - y[0])) {
+    const s = Math.round((Date.now() - a.seit) / 1000);
+    liste.append(el('li', { class: `anlauf anlauf-${a.art}` },
+      el('span', { class: 'anlauf-modell', text: modelLabel(a.model) }),
+      el('span', { class: 'anlauf-stand', text: `${a.stand} · ${s} s` }),
+    ));
+  }
+}
+
 function uhrStarten() {
   // Weiterlaufen lassen, wenn schon eine läuft: Der Nutzer will wissen,
   // wie lange der Vorgang dauert, nicht die aktuelle Teilstufe.
@@ -339,6 +359,7 @@ function uhrStarten() {
     const s = Math.round((Date.now() - scanBegonnen) / 1000);
     const lang = s >= 30 ? ' · lange Bons brauchen ihre Zeit' : '';
     $('#scan-uhr').textContent = `${scanPhase}${scanPhase ? ' · ' : ''}${s} s${lang}`;
+    anlaeufeZeichnen();
   };
   tick();
   scanUhr = setInterval(tick, 1000);
@@ -348,13 +369,35 @@ function uhrStoppen() {
   clearInterval(scanUhr);
   scanUhr = null;
   scanPhase = '';
+  anlaeufe.clear();
   $('#scan-uhr').hidden = true;
+  $('#scan-anlaeufe').hidden = true;
+  $('#scan-anlaeufe').replaceChildren();
   $('#btn-scan-stop').hidden = true;
 }
 
 /** Meldungen aus scan.js in einen Satz übersetzen, den man lesen mag. */
 function scanFortschritt(nachricht) {
   const { phase } = nachricht;
+
+  // Zeile des betroffenen Anlaufs mitführen.
+  if (nachricht.anlauf) {
+    const stand = { anlauf: 'startet', senden: 'überträgt', gelesen: 'Modell denkt',
+                    warten: 'wartet', ausweichen: 'wechselt', anlaufEnde: nachricht.stand,
+                    nachschlagen: 'schlägt nach' }[phase];
+    if (stand) {
+      const da = anlaeufe.get(nachricht.anlauf);
+      anlaeufe.set(nachricht.anlauf, {
+        model: nachricht.model || da?.model || '',
+        seit: da?.seit || Date.now(),
+        stand,
+        art: phase === 'anlaufEnde' ? (nachricht.stand === 'fertig' ? 'gut' : 'aus') : 'laeuft',
+      });
+      anlaeufeZeichnen();
+    }
+  }
+
+  if (phase === 'anlaufEnde') return;
   if (phase === 'anlauf') {
     // Die Anläufe laufen nebeneinander — also zählen, wie viele
     // gerade unterwegs sind, statt sie als Abfolge darzustellen.
@@ -364,7 +407,11 @@ function scanFortschritt(nachricht) {
       : `${modelLabel(nachricht.model)} liest den Beleg.`;
   } else if (phase === 'senden') {
     $('#scan-step').textContent = 'Foto wird übertragen …';
-    $('#scan-substep').textContent = `${nachricht.megabyte} MB gehen an die Erkennung.`;
+    /* Sagen, was wirklich rausgeht — die Vorschau im Rahmen ist klein
+       und lädt sonst zu dem Schluss ein, es werde Matsch verschickt. */
+    $('#scan-substep').textContent = nachricht.abschnitte > 1
+      ? `${nachricht.abschnitte} scharfe Abschnitte, zusammen ${nachricht.megabyte} MB.`
+      : `${nachricht.megabyte} MB in voller Schärfe.`;
   } else if (phase === 'gelesen') {
     $('#scan-step').textContent = 'Beleg wird gelesen …';
   } else if (phase === 'warten') {
@@ -1295,7 +1342,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v25';
+const BUILD = 'v28';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
@@ -1350,3 +1397,32 @@ $('#set-mode').value = settings.mode;
 applyMode();
 renderHome();
 registerServiceWorker();
+
+/* Nach dem Start dort weitermachen, wo es aufgehört hat.
+
+   Eine installierte Web-App wird vom System jederzeit weggeräumt, wenn
+   der Speicher knapp wird — beim Zurückkehren startet sie neu. Das
+   Foto überlebt das (es liegt in der Warteschlange), die laufende
+   Anfrage nicht. Bisher lag der Beleg dann als Karte da und wartete auf
+   einen Fingertipp; von aussen sah das aus, als hätte die App
+   abgebrochen und nichts getan.
+
+   Jetzt läuft sie von selbst weiter. Nur für frische Aufnahmen: Was
+   seit einer Viertelstunde liegt, ist meist einer, der schon
+   fehlgeschlagen ist — der bleibt liegen, damit die App nicht bei jedem
+   Öffnen ungefragt Anfragen stellt. */
+const FRISCH = 15 * 60 * 1000;
+
+(async () => {
+  try {
+    const offen = await naechster();
+    if (!offen) return;
+    if (Date.now() - offen.angelegt > FRISCH) return;
+    if (offen.versuche > 0) return;    // schon einmal gescheitert: nicht ungefragt
+    if (!isConfigured(settings)) return;
+
+    auftrag = offen;
+    scanAbort = new AbortController();
+    await versuche(scanAbort.signal);
+  } catch { /* dann eben über die Karte auf dem Startbildschirm */ }
+})();

@@ -219,12 +219,20 @@ export async function prepareImage(file, onPreview, { aufbereiten = true } = {})
 
   // Zuerst die Vorschau: bewusst klein, sie wird nur hinter der
   // Scan-Animation gezeigt — und sie soll sofort da sein.
+  /* Die Vorschau war 420 px breit und sah entsprechend matschig aus.
+     Sie wird nie verschickt — sie steht nur hinter der Scan-Animation —,
+     aber genau daran misst man die App: Wer den unscharfen Fetzen im
+     Rahmen sieht, schliesst auf schlechte Erkennung, obwohl das Modell
+     etwas ganz anderes bekommt (1600 px je Abschnitt, gemessen 25-mal
+     so viele Bildpunkte). Eine Anzeige, die über die eigene Arbeit
+     täuscht, ist ein Fehler für sich. 1000 px kosten nichts — sie gehen
+     ins Gerät, nicht ins Netz. */
   const previewCanvas = document.createElement('canvas');
-  const previewScale = Math.min(1, 420 / Math.max(width, height));
+  const previewScale = Math.min(1, 1000 / Math.max(width, height));
   previewCanvas.width  = Math.max(1, Math.round(width * previewScale));
   previewCanvas.height = Math.max(1, Math.round(height * previewScale));
   previewCanvas.getContext('2d').drawImage(bitmap, 0, 0, previewCanvas.width, previewCanvas.height);
-  const preview = `data:image/jpeg;base64,${await base64(await encode(previewCanvas, 0.7))}`;
+  const preview = `data:image/jpeg;base64,${await base64(await encode(previewCanvas, 0.8))}`;
   onPreview?.(preview);
 
   const { teile, quer } = aufteilung(width, height);
