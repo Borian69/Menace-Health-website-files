@@ -505,6 +505,30 @@ body.scan-failed .folder { opacity: 0; }
 }
 #btn-scan-stop { margin-top: 6px; }
 
+/* Je Anlauf eine Zeile. Sie ist bewusst nüchtern: Sie soll nicht
+   schmücken, sondern eine Frage beantworten — läuft da noch was? */
+.scan-anlaeufe {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  width: 100%;
+  max-width: 30ch;
+  font-family: var(--sans);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+.anlauf {
+  display: flex; justify-content: space-between; gap: 12px;
+  padding: 3px 0;
+  color: var(--faint);
+  border-top: 1px solid var(--line);
+}
+.anlauf:first-child { border-top: 0; }
+.anlauf-modell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.anlauf-stand { flex: none; opacity: .8; }
+.anlauf-gut .anlauf-stand { color: var(--accent-bright); opacity: 1; }
+.anlauf-aus { opacity: .55; }
+
 .spinner {
   width: 26px; height: 26px;
   border-radius: 50%;

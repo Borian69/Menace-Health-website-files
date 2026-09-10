@@ -99,6 +99,10 @@
       <p class="scan-sub" id="scan-substep">Positionen, Preise und Kategorien werden erkannt.</p>
       <!-- Läuft mit, damit nie minutenlang derselbe Bildschirm steht. -->
       <p class="scan-uhr" id="scan-uhr" hidden></p>
+      <!-- Je Anlauf eine Zeile: Modell, Dauer, Stand. Ohne das lässt
+           sich von aussen nicht unterscheiden, ob ein Modell langsam
+           ist, alle hängen oder gar keins läuft. -->
+      <ul class="scan-anlaeufe" id="scan-anlaeufe" hidden></ul>
       <button class="link-btn" id="btn-scan-stop" hidden>Abbrechen</button>
     </div>
 

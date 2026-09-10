@@ -14,13 +14,15 @@ import { categoryIds } from './categories.js';
 import { provider } from './providers.js';
 import { anfrage } from './netz.js';
 
-/* Ein langer Bon mit vierzig Positionen braucht mehrere tausend Token
-   allein für die Antwort. Wird sie abgeschnitten, ist das JSON
-   unvollständig — der häufigste Grund, warum die Erkennung reihenweise
-   scheiterte. An der Modell-Liste von OpenRouter nachgesehen: Alle
-   hinterlegten Modelle erlauben mindestens 16384 Token Antwort, die
-   meisten deutlich mehr. Bei den Gratis-Modellen kostet das nichts. */
-const MAX_TOKENS = 16000;
+/* Zurück auf den Wert, mit dem es früher flott lief. 16000 war
+   Angst vor abgeschnittenen Antworten, nicht Rechnung: Ein Bon mit
+   vierzig Positionen braucht in diesem Schema rund 2500 Token, also
+   liegt 8000 mit dreifachem Sicherheitsabstand darüber. Zu hoch
+   angesetzt ist nicht folgenlos — bei den Gratis-Modellen ist
+   max_tokens eine Reservierung, und wer viel reserviert, wartet
+   länger. Und trunkiert wird ohnehin abgefangen: reparieren() rettet,
+   was vollständig ankam. */
+const MAX_TOKENS = 8000;
 
 /* ── Anweisung für den Bild-Durchgang ────────────────────── */
 
@@ -171,6 +173,15 @@ const CLARIFY_TOOL = {
 
 /* ── Aufruf ──────────────────────────────────────────────── */
 
+/** Ein Fehler in drei Worten — mehr passt nicht in eine Zeile. */
+const kurz = (fehler) => {
+  const grund = fehler?.diagnose?.grund || fehler?.message || 'Fehler';
+  if (/Zeit abgelaufen/.test(grund)) return 'Zeit abgelaufen';
+  if (fehler?.status) return `HTTP ${fehler.status}`;
+  if (/Verbindung|fetch|network/i.test(grund)) return 'keine Verbindung';
+  return grund.slice(0, 24);
+};
+
 const sleep = (ms, signal) => new Promise((resolve, reject) => {
   const timer = setTimeout(resolve, ms);
   signal?.addEventListener('abort', () => { clearTimeout(timer); reject(new DOMException('abgebrochen', 'AbortError')); }, { once: true });
@@ -209,7 +220,7 @@ async function call({ settings, model, system, text, images, tool, signal, attem
   // Läuft ein Service Worker, stellt der die Anfrage — dann überlebt
   // sie das Sperren des Displays. Siehe netz.js.
   const megabyte = (init.body.length / 1024 / 1024).toFixed(1);
-  melden({ phase: 'senden', model, megabyte });
+  melden({ phase: 'senden', model, megabyte, abschnitte: images.length });
   const { ok, status, retryAfter, payload } = await anfrage(url, init, signal);
   melden({ phase: 'gelesen', model });
 
@@ -395,6 +406,7 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
       try { await Promise.race([schlaf, vorherGescheitert(nummer)]); } catch { return; }
       if (steuerung.signal.aborted) return;
     }
+    const meldenMitNummer = (n) => sagen({ ...n, anlauf: nummer + 1, model: n.model || model });
     sagen({ phase: 'anlauf', anlauf: nummer + 1, von: versuche.length, model });
     /* Wirft der Aufruf, ist der Anlauf gescheitert — nicht der Scan.
        Genau das war hier der Fehler: Die Schleife fing nichts ab, also
@@ -422,7 +434,7 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
       images: parts,
       tool: SCAN_TOOL,
       signal: steuerung.signal,
-      melden: sagen,
+      melden: meldenMitNummer,
       });
     } catch (error) {
       // Von aussen abgebrochen: nichts mehr zu melden.
@@ -434,6 +446,7 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
          Ausweichmodell hat call() da bereits durchprobiert. Also sofort
          Schluss, statt den Nutzer zwanzig Sekunden auf eine Nachricht
          warten zu lassen, die schon feststeht. */
+      meldenMitNummer({ phase: 'anlaufEnde', stand: kurz(error) });
       if (error.wiederholbar === false) { steuerung.abort(); genugGefunden(); return; }
       abhaken();
       return;
@@ -443,6 +456,7 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
     const gelesen = (eigenes.args?.receipts || []).filter((receipt) => receipt?.items?.length);
     if (!gelesen.length) {
       gruende.push(`${nummer + 1}. ${model}: nichts erfasst`);
+      meldenMitNummer({ phase: 'anlaufEnde', stand: 'nichts erfasst' });
       abhaken();
       return;
     }
@@ -454,6 +468,7 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
     /* Passt die Summe zur gedruckten Endsumme, ist nichts mehr zu
        holen — die übrigen Anläufe werden abgeblasen, statt Zeit und
        Geld für ein Ergebnis auszugeben, das ohnehin nicht gewinnt. */
+    meldenMitNummer({ phase: 'anlaufEnde', stand: 'fertig' });
     if (luecke.cent <= TOLERANZ) {
       steuerung.abort();
       genugGefunden();
