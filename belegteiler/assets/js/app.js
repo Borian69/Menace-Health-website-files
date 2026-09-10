@@ -955,6 +955,18 @@ function openSettings() {
 function renderBuild() {
   const worker = navigator.serviceWorker?.controller ? 'aus dem Zwischenspeicher bedient' : 'direkt vom Server';
   $('#build-line').textContent = `${BUILD} · ${worker}`;
+  /* Dazu, was auf dem Server liegt — sonst lässt sich von aussen nicht
+     unterscheiden, ob eine Änderung fehlt oder nur nicht angekommen ist. */
+  fetch(`./sw.js?frisch=${Date.now()}`, { cache: 'no-store' })
+    .then((a) => (a.ok ? a.text() : ''))
+    .then((t) => {
+      const live = (/belegteiler-(v\d+)/.exec(t) || [])[1];
+      if (!live) return;
+      $('#build-line').textContent = live === BUILD
+        ? `${BUILD} · aktuell · ${worker}`
+        : `${BUILD} · auf dem Server liegt ${live} · ${worker}`;
+    })
+    .catch(() => {});
 }
 
 function recordUsage(usage) {
@@ -1341,7 +1353,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v30';
+const BUILD = 'v31';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
@@ -1366,11 +1378,49 @@ function registerServiceWorker() {
   }).catch(() => { /* offline-Betrieb ist optional */ });
 }
 
+/* ── Hält das Handy eine alte Fassung fest? ──────────────────
+
+   Das hat Stunden gekostet, meine und seine: Auf dem Server lag längst
+   eine neue Fassung, die installierte App lieferte weiter die alte —
+   und jeder Fehlerbericht beschrieb Code, der so gar nicht mehr
+   existierte. Der Knopf „Neueste Fassung holen" steht zwar in den
+   Einstellungen, aber niemand drückt einen Knopf gegen ein Problem,
+   von dem er nichts weiss.
+
+   Also fragt die App beim Start selbst nach. Die Fassung steht im
+   Service Worker; ein Abruf mit `no-store` umgeht jeden
+   Zwischenspeicher. Weicht sie ab, wird einmal je Fassung automatisch
+   aufgefrischt — die Daten liegen im localStorage und in IndexedDB und
+   überstehen das.
+
+   Der Merker verhindert eine Schleife: Er hält fest, VON welcher
+   Fassung aus aufgefrischt wurde. Klappt es, ist BUILD danach eine
+   andere und die Prüfung läuft normal weiter. Klappt es nicht, wird es
+   in dieser Sitzung nicht endlos wiederholt. */
+const MERKER = 'belegteiler.aufgefrischt.v1';
+
+async function fassungPruefen() {
+  try {
+    if (sessionStorage.getItem(MERKER) === BUILD) return;
+    const antwort = await fetch(`./sw.js?frisch=${Date.now()}`, { cache: 'no-store' });
+    if (!antwort.ok) return;
+    const live = (/belegteiler-(v\d+)/.exec(await antwort.text()) || [])[1];
+    if (!live || live === BUILD) return;
+
+    sessionStorage.setItem(MERKER, BUILD);
+    toast(`Neue Fassung ${live} — wird geholt …`);
+    await new Promise((r) => setTimeout(r, 900));   // damit die Meldung ankommt
+    await forceUpdate({ still: true });
+  } catch { /* offline oder blockiert: dann bleibt es beim Knopf */ }
+}
+
 /** Notweg: Service Worker abmelden, alle Caches leeren, neu laden. */
-async function forceUpdate() {
+async function forceUpdate({ still = false } = {}) {
   const button = $('#btn-update');
-  button.disabled = true;
-  button.textContent = 'Wird geholt …';
+  if (!still) {
+    button.disabled = true;
+    button.textContent = 'Wird geholt …';
+  }
   try {
     const registrations = await navigator.serviceWorker?.getRegistrations?.() ?? [];
     await Promise.all(registrations.map((entry) => entry.unregister()));
@@ -1396,6 +1446,7 @@ $('#set-mode').value = settings.mode;
 applyMode();
 renderHome();
 registerServiceWorker();
+fassungPruefen();
 
 /* Nach dem Start dort weitermachen, wo es aufgehört hat.
 
