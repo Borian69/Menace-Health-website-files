@@ -151,15 +151,24 @@ const openrouter = {
         { role: 'system', content: system },
         { role: 'user', content },
       ],
-      /* Erzwungen, nicht 'auto'. Vorher stand hier die Vermutung, nicht
-         jedes Modell beherrsche tool_choice — an der Modell-Liste von
-         OpenRouter nachgeprüft: alle neun hinterlegten Modelle melden
-         tool_choice als unterstützt. Mit 'auto' antworten kleine
-         Modelle bei einem Bild gern in Prosa statt die Funktion zu
-         rufen, und das sieht dann aus wie „nichts erkannt". */
+      /* 'auto', nicht erzwungen — zurück auf den Stand, mit dem es lief.
+
+         Dazwischen stand hier ein erzwungenes tool_choice, begründet mit
+         der Modell-Liste von OpenRouter: Dort melden alle hinterlegten
+         Modelle tool_choice als unterstützt. Auf dem Gerät sah das
+         anders aus — drei Anläufe, drei Modelle, jedes Mal
+         „Funktionsaufruf kam an: nein" und eine leere Antwort. Eine
+         gemeldete Fähigkeit ist eben nicht dieselbe wie eine gelebte:
+         Kann der Anbieter hinter dem Modell den Aufruf nicht erzwingen,
+         kommt gar nichts zurück statt wenigstens Text.
+
+         Mit 'auto' antwortet das Modell in jedem Fall — ruft es die
+         Funktion, umso besser; tut es das nicht, greift der JSON-Notweg
+         unten (JSON_FALLBACK und extractJson). Zwei Wege sind besser als
+         ein erzwungener, der stumm bleibt. */
       ...(tool ? {
         tools: [{ type: 'function', function: { name: tool.name, description: tool.description, parameters: tool.schema } }],
-        tool_choice: { type: 'function', function: { name: tool.name } },
+        tool_choice: 'auto',
       } : {}),
     };
   },
