@@ -97,6 +97,9 @@
       <div class="spinner" id="scan-spinner" aria-hidden="true"></div>
       <p id="scan-step">Beleg wird gelesen …</p>
       <p class="scan-sub" id="scan-substep">Positionen, Preise und Kategorien werden erkannt.</p>
+      <!-- Läuft mit, damit nie minutenlang derselbe Bildschirm steht. -->
+      <p class="scan-uhr" id="scan-uhr" hidden></p>
+      <button class="link-btn" id="btn-scan-stop" hidden>Abbrechen</button>
     </div>
 
     <!-- Ablage, in die der fertige Beleg wandert -->

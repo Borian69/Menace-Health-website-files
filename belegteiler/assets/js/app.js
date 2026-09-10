@@ -314,6 +314,70 @@ async function handleFiles(fileList) {
   await versuche(signal);
 }
 
+/* ── Was gerade passiert ─────────────────────────────────────
+
+   Vorher stand während der ganzen Erkennung derselbe Satz auf dem
+   Bildschirm: „Beleg wird gelesen …", ohne Uhr, ohne Anlaufzähler, ohne
+   Abbruch — der Abbrechen-Knopf steckte im Fehlerblock und war damit
+   genau dann versteckt, wenn man ihn braucht. Wer drei Minuten davor
+   sass, konnte nicht unterscheiden, ob etwas läuft oder alles steht.
+
+   Jetzt meldet jede Stufe, was sie tut, und eine Uhr läuft sichtbar
+   mit. Ab einer halben Minute wird dazugesagt, dass es dauern darf. */
+let scanUhr = null;
+let scanBegonnen = 0;
+let scanPhase = '';
+
+function uhrStarten() {
+  // Weiterlaufen lassen, wenn schon eine läuft: Der Nutzer will wissen,
+  // wie lange der Vorgang dauert, nicht die aktuelle Teilstufe.
+  if (!scanUhr) scanBegonnen = Date.now();
+  clearInterval(scanUhr);
+  $('#scan-uhr').hidden = false;
+  $('#btn-scan-stop').hidden = false;
+  const tick = () => {
+    const s = Math.round((Date.now() - scanBegonnen) / 1000);
+    const lang = s >= 30 ? ' · dauert bei langen Bons vor' : '';
+    $('#scan-uhr').textContent = `${scanPhase}${scanPhase ? ' · ' : ''}${s} s${lang}`;
+  };
+  tick();
+  scanUhr = setInterval(tick, 1000);
+}
+
+function uhrStoppen() {
+  clearInterval(scanUhr);
+  scanUhr = null;
+  scanPhase = '';
+  $('#scan-uhr').hidden = true;
+  $('#btn-scan-stop').hidden = true;
+}
+
+/** Meldungen aus scan.js in einen Satz übersetzen, den man lesen mag. */
+function scanFortschritt(nachricht) {
+  const { phase } = nachricht;
+  if (phase === 'anlauf') {
+    scanPhase = nachricht.von > 1 && nachricht.anlauf > 1
+      ? `Anlauf ${nachricht.anlauf} von ${nachricht.von}`
+      : '';
+    $('#scan-substep').textContent = nachricht.anlauf > 1
+      ? `Der vorige Anlauf kam nicht durch — jetzt mit ${modelLabel(nachricht.model)}.`
+      : `${modelLabel(nachricht.model)} liest den Beleg.`;
+  } else if (phase === 'senden') {
+    $('#scan-step').textContent = 'Foto wird übertragen …';
+    $('#scan-substep').textContent = `${nachricht.megabyte} MB gehen an die Erkennung.`;
+  } else if (phase === 'gelesen') {
+    $('#scan-step').textContent = 'Beleg wird gelesen …';
+  } else if (phase === 'warten') {
+    $('#scan-step').textContent = 'Kurz warten …';
+    $('#scan-substep').textContent = `Das Modell ist gerade belegt, neuer Versuch in ${nachricht.sekunden} s.`;
+  } else if (phase === 'ausweichen') {
+    $('#scan-substep').textContent = `Wechsel auf ${modelLabel(nachricht.model)}.`;
+  } else if (phase === 'nachschlagen') {
+    $('#scan-step').textContent = 'Unklare Zeilen werden nachgeschlagen …';
+    $('#scan-substep').textContent = `${nachricht.anzahl} ${nachricht.anzahl === 1 ? 'Position wird' : 'Positionen werden'} bestimmt.`;
+  }
+}
+
 /** Einen Anlauf mit dem abgelegten Foto. */
 async function versuche(signal = scanAbort?.signal) {
   if (!auftrag) return;
@@ -329,15 +393,18 @@ async function versuche(signal = scanAbort?.signal) {
       : 'Positionen, Preise und Kategorien werden erkannt.')
     : `Anlauf ${auftrag.versuche + 1} mit derselben Aufnahme.`;
   showView('scan');
+  uhrStarten();
 
   try {
-    const parsed = await scanReceipt(auftrag.parts, settings, signal);
+    const parsed = await scanReceipt(auftrag.parts, settings, signal, scanFortschritt);
+    uhrStoppen();
     if (signal?.aborted) return;
     await vergessen(auftrag.id);
     const fertig = auftrag;
     auftrag = null;
     await uebernehmen(parsed, fertig);
   } catch (error) {
+    uhrStoppen();
     if (error.name === 'AbortError' || signal?.aborted) return;
     auftrag.versuche += 1;
     auftrag.fehler = error.message || '';
@@ -379,6 +446,10 @@ function zeigeScanAnsicht(anzahlBilder) {
     ? `${anzahlBilder} Aufnahmen werden zusammengeführt.`
     : 'Das Bild wird für die Erkennung geschärft.';
   showView('scan');
+  // Die Uhr läuft ab dem ersten Moment — das Aufbereiten grosser Fotos
+  // dauert auf dem Handy selbst schon spürbar.
+  scanPhase = 'Bild wird aufbereitet';
+  uhrStarten();
   pop($('#scan-frame'), 'pull');
 }
 
@@ -1051,6 +1122,17 @@ function wire() {
       toast('Kopieren geht hier nicht — Text markieren und kopieren.');
     }
   });
+  /* Abbrechen während der Erkennung. Bisher gab es das nicht: Der
+     einzige Abbrechen-Knopf sass im Fehlerblock und war damit genau
+     dann versteckt, wenn er gebraucht wurde. Der Beleg bleibt liegen. */
+  $('#btn-scan-stop').addEventListener('click', async () => {
+    scanAbort?.abort();
+    uhrStoppen();
+    await renderWaiting();
+    showView(bill && !bill.done && bill.items.length ? 'review' : 'home');
+    renderHome();
+    toast('Abgebrochen — der Beleg ist gespeichert.');
+  });
   $('#btn-scan-drop').addEventListener('click', wartendenVerwerfen);
   $('#btn-waiting-retry').addEventListener('click', wartendenAufnehmen);
   $('#btn-scan-model').addEventListener('click', openSettings);
@@ -1058,6 +1140,7 @@ function wire() {
      der Warteschlange und wird beim nächsten Öffnen wieder angeboten. */
   $('#btn-scan-back').addEventListener('click', async () => {
     scanAbort?.abort();
+    uhrStoppen();
     uhrenAus();
     auftrag = null;
     await renderWaiting();
@@ -1212,7 +1295,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v23';
+const BUILD = 'v24';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

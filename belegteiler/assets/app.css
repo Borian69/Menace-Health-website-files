@@ -492,6 +492,19 @@ body.scan-failed .folder { opacity: 0; }
 .scan-status p { font-family: var(--serif); font-size: 18px; }
 .scan-sub { font-family: var(--sans) !important; font-size: 13.5px !important; color: var(--faint); max-width: 30ch; }
 
+/* Die mitlaufende Uhr. Bewusst unauffällig, aber immer sichtbar: Sie ist
+   das einzige, woran man erkennt, dass überhaupt etwas passiert. */
+.scan-uhr {
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  letter-spacing: .06em;
+  color: var(--faint);
+  opacity: .75;
+  margin-top: 10px !important;
+  font-variant-numeric: tabular-nums;
+}
+#btn-scan-stop { margin-top: 6px; }
+
 .spinner {
   width: 26px; height: 26px;
   border-radius: 50%;
