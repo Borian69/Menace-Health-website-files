@@ -337,7 +337,7 @@ function uhrStarten() {
   $('#btn-scan-stop').hidden = false;
   const tick = () => {
     const s = Math.round((Date.now() - scanBegonnen) / 1000);
-    const lang = s >= 30 ? ' · dauert bei langen Bons vor' : '';
+    const lang = s >= 30 ? ' · lange Bons brauchen ihre Zeit' : '';
     $('#scan-uhr').textContent = `${scanPhase}${scanPhase ? ' · ' : ''}${s} s${lang}`;
   };
   tick();
@@ -356,11 +356,11 @@ function uhrStoppen() {
 function scanFortschritt(nachricht) {
   const { phase } = nachricht;
   if (phase === 'anlauf') {
-    scanPhase = nachricht.von > 1 && nachricht.anlauf > 1
-      ? `Anlauf ${nachricht.anlauf} von ${nachricht.von}`
-      : '';
+    // Die Anläufe laufen nebeneinander — also zählen, wie viele
+    // gerade unterwegs sind, statt sie als Abfolge darzustellen.
+    scanPhase = nachricht.anlauf > 1 ? `${nachricht.anlauf} Anläufe gleichzeitig` : '';
     $('#scan-substep').textContent = nachricht.anlauf > 1
-      ? `Der vorige Anlauf kam nicht durch — jetzt mit ${modelLabel(nachricht.model)}.`
+      ? `Es dauert — ${modelLabel(nachricht.model)} läuft jetzt zusätzlich mit.`
       : `${modelLabel(nachricht.model)} liest den Beleg.`;
   } else if (phase === 'senden') {
     $('#scan-step').textContent = 'Foto wird übertragen …';
@@ -1295,7 +1295,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v24';
+const BUILD = 'v25';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

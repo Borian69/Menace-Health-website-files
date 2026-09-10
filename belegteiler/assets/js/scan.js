@@ -285,7 +285,14 @@ function fehlbetrag(receipts) {
   const je = [];
 
   for (const receipt of receipts) {
-    const gedruckt = Number(receipt.receipt_total);
+    /* Nicht Number(...) allein prüfen: Number(null) ist 0, nicht NaN.
+       Ein Beleg, dessen Endsumme nicht zu lesen war, galt damit als
+       „Endsumme 0 €" — und die Prüfsumme schlug zwangsläufig fehl.
+       Jeder solche Scan hat still sämtliche Zusatzanläufe ausgelöst,
+       obwohl es gar nichts zu prüfen gab. */
+    const roh = receipt.receipt_total;
+    if (roh === null || roh === undefined || roh === '') continue;
+    const gedruckt = Number(roh);
     if (!Number.isFinite(gedruckt)) continue;      // ohne Endsumme nichts zu prüfen
     geprueft = true;
     const erfasst = receipt.items.reduce((s, item) => s + (Number(item.total_price) || 0), 0);
@@ -336,9 +343,59 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
   let letzterFehler = null;
   const gruende = [];   // je Anlauf einer, für die Diagnose
 
-  for (const [nummer, model] of versuche.entries()) {
-    if (nummer > 0) await sleep(900, signal);   // kurz Luft holen
-    melden({ phase: 'anlauf', anlauf: nummer + 1, von: versuche.length, model });
+  /* Die Anläufe liefen bisher streng nacheinander: erst wenn einer
+     aufgegeben hatte, begann der nächste. Auf dem Handy gemessen waren
+     das drei Anläufe zu je rund 70 Sekunden — 217 Sekunden, bis
+     überhaupt eine Aussage kam, und in der ganzen Zeit lag die Leitung
+     zwischen den Anläufen brach.
+
+     Jetzt starten sie versetzt und laufen nebeneinander. Antwortet der
+     erste zügig, bleibt es bei einer einzigen Anfrage — der Vorsprung
+     sorgt dafür, dass sich das Feld nur auffächert, wenn es hakt. Und
+     das Ausweichmodell muss nicht mehr warten, bis zwei Anläufe des
+     Gratis-Modells abgelaufen sind; es rennt einfach mit. Damit
+     bestimmt der schnellste Anlauf die Wartezeit, nicht die Summe
+     aller. */
+  const VORSPRUNG = 10_000;
+
+  const steuerung = new AbortController();
+  const durchreichen = () => steuerung.abort(signal.reason);
+  signal?.addEventListener('abort', durchreichen, { once: true });
+  const abgebrochen = () => Boolean(signal?.aborted);
+
+  let genugGefunden;
+  const treffer = new Promise((r) => { genugGefunden = r; });
+
+  /* Abgeblasene Anläufe laufen noch kurz aus. Ihre Meldungen dürfen die
+     Anzeige nicht mehr umschreiben — sonst steht am Ende „Anlauf 3",
+     obwohl längst Anlauf 1 gewonnen hat. */
+  let stumm = false;
+  const sagen = (nachricht) => { if (!stumm) melden(nachricht); };
+
+  /* Der Vorsprung ist eine Frist fürs Schweigen, kein Fahrplan: Solange
+     ein Anlauf noch läuft, wartet der nächste ab. Ist er schon
+     gescheitert, hat Warten keinen Sinn mehr — dann geht es sofort
+     weiter. Sonst hätte ein Modell, das nach einer Sekunde mit „ich
+     kann das nicht" antwortet, trotzdem neun Sekunden Stillstand
+     erzeugt. */
+  let erledigt = 0;
+  const wartende = new Set();
+  const abhaken = () => { erledigt += 1; for (const wecken of [...wartende]) wecken(); };
+  const vorherGescheitert = (nummer) => new Promise((fertig) => {
+    const pruefen = () => { if (erledigt >= nummer) { wartende.delete(pruefen); fertig(); } };
+    wartende.add(pruefen);
+    pruefen();
+  });
+
+  const anlauf = async (model, nummer) => {
+    // Versetzt starten, damit ein schneller erster Anlauf allein bleibt.
+    if (nummer > 0) {
+      const schlaf = sleep(VORSPRUNG * nummer, steuerung.signal);
+      schlaf.catch(() => {});   // ein Abbruch hier gilt nicht als unbehandelt
+      try { await Promise.race([schlaf, vorherGescheitert(nummer)]); } catch { return; }
+      if (steuerung.signal.aborted) return;
+    }
+    sagen({ phase: 'anlauf', anlauf: nummer + 1, von: versuche.length, model });
     /* Wirft der Aufruf, ist der Anlauf gescheitert — nicht der Scan.
        Genau das war hier der Fehler: Die Schleife fing nichts ab, also
        flog ein Netzaussetzer, ein leeres Kontingent oder ein zickender
@@ -348,8 +405,9 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
        Anfrage, wo drei vorgesehen waren.
 
        Ein Abbruch durch den Nutzer ist etwas anderes und geht durch. */
+    let eigenes;
     try {
-      result = await call({
+      eigenes = await call({
       settings,
       model,
       system: SYSTEM_PROMPT,
@@ -363,25 +421,59 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
         : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
       images: parts,
       tool: SCAN_TOOL,
-      signal,
-      melden,
+      signal: steuerung.signal,
+      melden: sagen,
       });
     } catch (error) {
-      if (error.name === 'AbortError') throw error;
+      // Von aussen abgebrochen: nichts mehr zu melden.
+      if (error.name === 'AbortError') { if (abgebrochen()) throw error; return; }
       letzterFehler = error;
       gruende.push(`${nummer + 1}. ${model}: ${error.diagnose?.grund || error.message}`);
-      continue;
+      /* Ein abgelehnter Schlüssel oder ein Modell, das es nicht gibt,
+         wird auch beim dritten Anlauf nicht besser — und das
+         Ausweichmodell hat call() da bereits durchprobiert. Also sofort
+         Schluss, statt den Nutzer zwanzig Sekunden auf eine Nachricht
+         warten zu lassen, die schon feststeht. */
+      if (error.wiederholbar === false) { steuerung.abort(); genugGefunden(); return; }
+      abhaken();
+      return;
     }
-    receipts = (result.args?.receipts || []).filter((receipt) => receipt?.items?.length);
-    if (!receipts.length) continue;
+    // Für die Fehlermeldung, falls am Ende gar nichts brauchbar ist.
+    result = eigenes;
+    const gelesen = (eigenes.args?.receipts || []).filter((receipt) => receipt?.items?.length);
+    if (!gelesen.length) {
+      gruende.push(`${nummer + 1}. ${model}: nichts erfasst`);
+      abhaken();
+      return;
+    }
 
-    const luecke = fehlbetrag(receipts);
+    const luecke = fehlbetrag(gelesen);
     if (!bester || luecke.cent < bester.luecke.cent) {
-      bester = { result, receipts, model, luecke };
+      bester = { result: eigenes, receipts: gelesen, model, luecke };
     }
-    // Passt die Summe, ist nichts mehr zu holen.
-    if (luecke.cent <= TOLERANZ) break;
-  }
+    /* Passt die Summe zur gedruckten Endsumme, ist nichts mehr zu
+       holen — die übrigen Anläufe werden abgeblasen, statt Zeit und
+       Geld für ein Ergebnis auszugeben, das ohnehin nicht gewinnt. */
+    if (luecke.cent <= TOLERANZ) {
+      steuerung.abort();
+      genugGefunden();
+      return;
+    }
+    /* Brauchbar, aber die Summe passt nicht zur gedruckten Endsumme —
+       meist fehlt eine Zeile. Genau dafür gibt es die weiteren Anläufe,
+       also darf der nächste sofort ran. Am Ende gewinnt der Versuch mit
+       der kleinsten Abweichung. */
+    abhaken();
+  };
+
+  await Promise.race([
+    Promise.allSettled(versuche.map(anlauf)),
+    treffer,
+  ]);
+  stumm = true;
+  signal?.removeEventListener('abort', durchreichen);
+  if (abgebrochen()) throw new DOMException('abgebrochen', 'AbortError');
+  steuerung.abort();   // was noch läuft, wird nicht mehr gebraucht
 
   if (bester) {
     ({ result, receipts } = bester);
