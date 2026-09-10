@@ -4,7 +4,7 @@
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
 /* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
-const CACHE = 'belegteiler-v21';
+const CACHE = 'belegteiler-v24';
 
 // Getrenntes Fach für fertige Erkennungen, die noch niemand abgeholt hat.
 const ERGEBNISSE = 'belegteiler-ergebnisse';
@@ -70,11 +70,20 @@ self.addEventListener('message', (event) => {
   else if (daten?.type === 'abholen') event.waitUntil(abholen(daten.id, event.source));
 });
 
+/* Muss zu ANFRAGE_FRIST in netz.js passen und unter der Frist liegen, die
+   die Seite dem Worker einräumt: Sonst gibt die Seite zuerst auf und lädt
+   dieselben Megabyte ein zweites Mal hoch, während der erste Versuch noch
+   läuft. Zwei grosse Uploads gleichzeitig sind auf dem Handy genau das,
+   was die Verbindung endgültig umbringt. */
+const FRIST = 60_000;
+
 async function ausfuehren({ id, url, method, headers, body }) {
   laufend.add(id);
   let ergebnis;
+  const steuerung = new AbortController();
+  const zeit = setTimeout(() => steuerung.abort(new DOMException('Zeit abgelaufen', 'TimeoutError')), FRIST);
   try {
-    const antwort = await fetch(url, { method: method || 'POST', headers, body });
+    const antwort = await fetch(url, { method: method || 'POST', headers, body, signal: steuerung.signal });
     ergebnis = {
       id,
       ok: antwort.ok,
@@ -89,8 +98,12 @@ async function ausfuehren({ id, url, method, headers, body }) {
        dann nur "Keine Verbindung" ohne jeden Anhaltspunkt. */
     ergebnis = {
       id, fehler: true, ok: false, status: 0, retryAfter: 0, text: '',
-      grund: `${error?.name || 'Fehler'}: ${error?.message || error}`,
+      grund: steuerung.signal.reason?.name === 'TimeoutError'
+        ? `Zeit abgelaufen nach ${FRIST / 1000} s`
+        : `${error?.name || 'Fehler'}: ${error?.message || error}`,
     };
+  } finally {
+    clearTimeout(zeit);
   }
   laufend.delete(id);
 

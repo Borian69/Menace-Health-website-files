@@ -187,7 +187,7 @@ const MAX_WAIT_SECONDS = 25;
    umgeschaltet, sofern eines hinterlegt ist. */
 const FALLBACK_STATUS = new Set([402, 404, 429, 502, 503, 504]);
 
-async function call({ settings, model, system, text, images, tool, signal, attempt = 1, allowFallback = true }) {
+async function call({ settings, model, system, text, images, tool, signal, attempt = 1, allowFallback = true, melden = () => {} }) {
   const api = provider(settings.provider);
   const key = settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey;
 
@@ -208,7 +208,10 @@ async function call({ settings, model, system, text, images, tool, signal, attem
 
   // Läuft ein Service Worker, stellt der die Anfrage — dann überlebt
   // sie das Sperren des Displays. Siehe netz.js.
+  const megabyte = (init.body.length / 1024 / 1024).toFixed(1);
+  melden({ phase: 'senden', model, megabyte });
   const { ok, status, retryAfter, payload } = await anfrage(url, init, signal);
+  melden({ phase: 'gelesen', model });
 
   if (!ok) {
     const ownLimit = payload?.error?.metadata?.error_type === 'rate_limit_exceeded';
@@ -216,15 +219,18 @@ async function call({ settings, model, system, text, images, tool, signal, attem
     // Einmal nachfassen — aber nicht, wenn wirklich das eigene
     // Kontingent erschöpft ist; da hilft Warten in Sekunden nicht.
     if (attempt === 1 && RETRY_STATUS.has(status) && !ownLimit && retryAfter <= MAX_WAIT_SECONDS) {
-      await sleep(Math.max(1200, retryAfter * 1000), signal);
-      return call({ settings, model, system, text, images, tool, signal, attempt: 2, allowFallback });
+      const wartet = Math.max(1200, retryAfter * 1000);
+      melden({ phase: 'warten', sekunden: Math.round(wartet / 1000) });
+      await sleep(wartet, signal);
+      return call({ settings, model, system, text, images, tool, signal, attempt: 2, allowFallback, melden });
     }
 
     // Zweite Rettungsleine: ein anderes Modell.
     const fallback = (settings.fallbackModel || '').trim();
     if (allowFallback && fallback && fallback !== model && FALLBACK_STATUS.has(status)) {
+      melden({ phase: 'ausweichen', model: fallback });
       const result = await call({
-        settings, model: fallback, system, text, images, tool, signal, allowFallback: false,
+        settings, model: fallback, system, text, images, tool, signal, allowFallback: false, melden,
       });
       return { ...result, switchedFrom: model };
     }
@@ -300,7 +306,7 @@ const fallbackQuery = (store, item) =>
  * Liest einen oder mehrere Belege aus vorbereiteten Bildabschnitten.
  * @param {string[]} parts Base64-JPEGs
  */
-export async function scanReceipt(parts, settings, signal) {
+export async function scanReceipt(parts, settings, signal, melden = () => {}) {
   /* Der zweite Fehlerfall, und der häufigere: Die Anfrage geht durch,
      das Modell antwortet mit 200 — und liefert trotzdem nichts
      Brauchbares. Kleine und kostenlose Modelle vergessen gern den
@@ -327,10 +333,23 @@ export async function scanReceipt(parts, settings, signal) {
   let receipts = [];
   let genutztesModell = settings.model;
   let bester = null;
+  let letzterFehler = null;
+  const gruende = [];   // je Anlauf einer, für die Diagnose
 
   for (const [nummer, model] of versuche.entries()) {
     if (nummer > 0) await sleep(900, signal);   // kurz Luft holen
-    result = await call({
+    melden({ phase: 'anlauf', anlauf: nummer + 1, von: versuche.length, model });
+    /* Wirft der Aufruf, ist der Anlauf gescheitert — nicht der Scan.
+       Genau das war hier der Fehler: Die Schleife fing nichts ab, also
+       flog ein Netzaussetzer, ein leeres Kontingent oder ein zickender
+       Anbieter an allen weiteren Anläufen vorbei nach draussen. Die
+       zweite Chance und das Ausweichmodell, die hier ausdrücklich
+       aufgereiht sind, kamen nie zum Zug: Gemessen wurde genau eine
+       Anfrage, wo drei vorgesehen waren.
+
+       Ein Abbruch durch den Nutzer ist etwas anderes und geht durch. */
+    try {
+      result = await call({
       settings,
       model,
       system: SYSTEM_PROMPT,
@@ -345,7 +364,14 @@ export async function scanReceipt(parts, settings, signal) {
       images: parts,
       tool: SCAN_TOOL,
       signal,
-    });
+      melden,
+      });
+    } catch (error) {
+      if (error.name === 'AbortError') throw error;
+      letzterFehler = error;
+      gruende.push(`${nummer + 1}. ${model}: ${error.diagnose?.grund || error.message}`);
+      continue;
+    }
     receipts = (result.args?.receipts || []).filter((receipt) => receipt?.items?.length);
     if (!receipts.length) continue;
 
@@ -363,6 +389,19 @@ export async function scanReceipt(parts, settings, signal) {
   }
 
   if (!receipts.length) {
+    /* Sind alle Anläufe an der Anfrage selbst gescheitert, ist deren
+       Grund die Wahrheit — „das Modell hat nichts erfasst" wäre schlicht
+       gelogen und schickt die Fehlersuche in die falsche Richtung. */
+    if (letzterFehler) {
+      letzterFehler.diagnose = {
+        ...(letzterFehler.diagnose || {}),
+        versucht: versuche.join(', '),
+        anlaeufe: `${gruende.length} von ${versuche.length}`,
+        proAnlauf: gruende.join(' | '),
+      };
+      throw letzterFehler;
+    }
+
     const d = result?.diagnose || {};
     const hint = result?.text?.trim();
 
@@ -393,7 +432,7 @@ export async function scanReceipt(parts, settings, signal) {
 
   if (settings.resolveUncertain) {
     try {
-      const second = await clarify(receipts, settings, signal);
+      const second = await clarify(receipts, settings, signal, melden);
       cents += second.cents;
       clarified = second.count;
     } catch (error) {
@@ -435,7 +474,7 @@ export async function scanReceipt(parts, settings, signal) {
 }
 
 /** Zweiter Durchgang: unklare Zeilen bestimmen, ohne Bild. */
-async function clarify(receipts, settings, signal) {
+async function clarify(receipts, settings, signal, melden = () => {}) {
   const open = [];
   for (const receipt of receipts) {
     for (const [index, item] of receipt.items.entries()) {
@@ -445,6 +484,7 @@ async function clarify(receipts, settings, signal) {
     }
   }
   if (!open.length) return { cents: 0, count: 0 };
+  melden({ phase: 'nachschlagen', anzahl: open.length });
 
   const lines = open.map(({ id, item, receipt }) => ({
     id,
@@ -462,6 +502,7 @@ async function clarify(receipts, settings, signal) {
     images: [],
     tool: CLARIFY_TOOL,
     signal,
+    melden,
   });
 
   const byId = new Map(open.map((entry) => [entry.id, entry]));

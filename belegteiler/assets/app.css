@@ -492,6 +492,19 @@ body.scan-failed .folder { opacity: 0; }
 .scan-status p { font-family: var(--serif); font-size: 18px; }
 .scan-sub { font-family: var(--sans) !important; font-size: 13.5px !important; color: var(--faint); max-width: 30ch; }
 
+/* Die mitlaufende Uhr. Bewusst unauffällig, aber immer sichtbar: Sie ist
+   das einzige, woran man erkennt, dass überhaupt etwas passiert. */
+.scan-uhr {
+  font-family: var(--sans) !important;
+  font-size: 12px !important;
+  letter-spacing: .06em;
+  color: var(--faint);
+  opacity: .75;
+  margin-top: 10px !important;
+  font-variant-numeric: tabular-nums;
+}
+#btn-scan-stop { margin-top: 6px; }
+
 .spinner {
   width: 26px; height: 26px;
   border-radius: 50%;
@@ -823,6 +836,20 @@ body.scan-failed .scan-status { display: none; }
 }
 .p-pay b { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .16em; color: #A39B84; margin-bottom: 5px; font-weight: 700; }
 
+/* Tageswechsel innerhalb einer Abrechnung */
+.p-day {
+  margin: 22px 0 10px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  font-weight: 700;
+  color: #A39B84;
+  border-bottom: 1px solid var(--paper-line);
+  padding-bottom: 6px;
+}
+.p-day:first-child { margin-top: 0; }
+
 .p-zweck {
   margin-top: 14px;
   font-family: var(--sans);
@@ -840,8 +867,10 @@ body.scan-failed .scan-status { display: none; }
   border: 1px solid var(--line-strong);
   background: var(--surface);
 }
+.zweck-actions { display: flex; gap: 7px; }
 .zweck-head {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  flex-wrap: wrap;
   font-size: 11px; text-transform: uppercase; letter-spacing: .16em; color: var(--faint);
   margin-bottom: 9px;
 }

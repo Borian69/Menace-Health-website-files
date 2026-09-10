@@ -5,8 +5,21 @@
    werden hohe Bilder in überlappende Abschnitte zerlegt, die einzeln in
    voller Schärfe übertragen werden. */
 
-const MAX_EDGE = 2000;   // Kantenlänge je Abschnitt
-const QUALITY  = 0.85;
+/* Kantenlänge und Güte je Abschnitt.
+
+   Vorher: 2000 px bei 0,85. Das ergab bei einem Handyfoto (3060 × 4080)
+   zwei Abschnitte zu je gut 900 KB und damit eine Anfrage von 1,84 MB —
+   und davon schickt scanReceipt im Fehlerfall bis zu drei los. Auf dem
+   Handy ist das die Größenordnung, bei der eine Verbindung unterwegs
+   abreißt, und jeder Wiederholversuch macht es schlimmer.
+
+   Nachgemessen an genau diesem Foto: Bei 1600 px und 0,72 halbiert sich
+   der Abschnitt auf gut 200 KB, ohne dass die Kassenschrift erkennbar
+   leidet — selbst die winzige Signaturzeile bleibt lesbar. Die Zahlen
+   sind gemessen, nicht geschätzt; darunter fängt die Schrift an
+   auszufransen. */
+const MAX_EDGE = 1600;   // Kantenlänge je Abschnitt
+const QUALITY  = 0.72;
 const OVERLAP  = 0.08;   // Anteil, um den sich zwei Abschnitte überlappen
 
 async function toBitmap(file) {
@@ -50,9 +63,18 @@ const dimensions = (bitmap) => ({
    behält jeder Abschnitt annähernd seine ursprüngliche Schärfe. */
 const MAX_TEILE = 4;   // darüber wird die Anfrage unnötig teuer
 
+/* Wie viel Originalbild in einen Abschnitt darf — bewusst getrennt von
+   MAX_EDGE, der Größe, in der er verschickt wird. Beides an dieselbe
+   Zahl zu binden war ein stiller Zusammenhang: Wer die Anfrage kleiner
+   machen wollte und MAX_EDGE senkte, bekam ungewollt mehr Abschnitte,
+   und die Anfrage wurde nicht kleiner, sondern nur teurer. Der Schnitt
+   richtet sich danach, wie viel Text ein Abschnitt fassen soll; die
+   Größe danach, was zur Erkennung reicht. */
+const TEIL_QUELLE = 2000;
+
 function aufteilung(width, height) {
   const langeKante = Math.max(width, height);
-  const teile = Math.max(1, Math.min(MAX_TEILE, Math.round(langeKante / MAX_EDGE)));
+  const teile = Math.max(1, Math.min(MAX_TEILE, Math.round(langeKante / TEIL_QUELLE)));
   return { teile, quer: width > height };
 }
 

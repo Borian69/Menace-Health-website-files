@@ -203,8 +203,16 @@ function click(freq = 1050, gain = 0.07) {
   osc.stop(start + 0.09);
 }
 
+/* Vibration.
+
+   Das Muster ist eine Liste im Wechsel: brummen, Pause, brummen, …
+   Es folgt derselben Form wie der Ton — Anlauf, Stille, Aufschlag —,
+   denn beide zusammen sind die Rückmeldung, nicht jedes für sich. Ein
+   Handy in der Hosentasche gibt kurze schwache Impulse nicht wieder,
+   deshalb ist der Aufschlag ein kräftiger Stoss und kein Ticken. */
 const buzz = (pattern) => {
-  if (enabled.haptics) navigator.vibrate?.(pattern);
+  if (!enabled.haptics) return;
+  try { navigator.vibrate?.(pattern); } catch { /* Gerät kann es nicht */ }
 };
 
 /* ── Die Signale ─────────────────────────────────────────── */
@@ -214,7 +222,7 @@ export const cue = {
   tick() {
     if (enabled.sounds && webAudioReady()) { lastPath = 'Web Audio'; click(1180, 0.05); }
     else play('tick', [{ freq: 1180, gain: 0.16, duration: 0.09, partial: 2 }]);
-    buzz(8);
+    buzz(18);
   },
 
   /* Beleg erkannt. Der Aufbau ist bewusst dreiteilig:
@@ -232,7 +240,8 @@ export const cue = {
       { freq: 1318.5, at: 0.64, gain: 0.2, duration: 0.42 }, // E6 — der Piep
       { freq: 2637.0, at: 0.70, gain: 0.07, duration: 0.3 }, // eine Oktave als Glanz
     ]);
-    buzz([0, 440, 140, 55, 24]);
+    // Anlauf 0,5 s brummen, 0,14 s Stille, dann zwei Stösse.
+    buzz([0, 500, 140, 90, 40, 60]);
   },
 
   /** Abrechnung abgeschlossen — gleicher Aufbau, längerer Anlauf. */
@@ -245,7 +254,8 @@ export const cue = {
       { freq: 1568.0, at: 1.04, gain: 0.17, duration: 0.75 },    // G6
       { freq: 2093.0, at: 1.16, gain: 0.10, duration: 0.95 },    // C7 als Schimmer
     ]);
-    buzz([0, 640, 160, 40, 14, 40, 34]);
+    // Längerer Anlauf, Stille, dann der Dreiklang als drei Stösse.
+    buzz([0, 700, 160, 80, 50, 70, 50, 90]);
   },
 
   /** Beleg wandert in die Ablage — dasselbe im Kleinen. */
@@ -255,7 +265,7 @@ export const cue = {
       // 0,07 s Stille
       { freq: 1760, at: 0.29, gain: 0.11, duration: 0.24, partial: 2 },
     ]);
-    buzz([10, 30, 16]);
+    buzz([0, 220, 70, 60]);        // kurzer Anlauf, Stille, Stoss
   },
 
   /** Etwas ist schiefgegangen. */
@@ -264,7 +274,7 @@ export const cue = {
       { freq: 392, gain: 0.12, duration: 0.28, partial: 2 },
       { freq: 294, at: 0.11, gain: 0.11, duration: 0.42, partial: 2 },
     ]);
-    buzz([40, 60, 40]);
+    buzz([70, 90, 70, 90, 70]);    // dreimal kurz — unmissverständlich daneben
   },
 };
 

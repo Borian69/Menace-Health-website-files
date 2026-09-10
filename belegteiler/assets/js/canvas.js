@@ -126,6 +126,18 @@ function paint(ctx, summary, dry) {
   for (const [index, group] of summary.sections.entries()) {
     if (index > 0) y += summary.byStore ? 30 : 22;
 
+    /* Wechselt der Tag, bekommt er eine eigene Zeile. Ohne die stünden
+       Belege von Mittwoch und Freitag ununterscheidbar untereinander. */
+    if (group.tagLabel) {
+      if (index > 0) y += 16;
+      draw(() => {
+        ctx.font = `700 20px ${SANS}`;
+        ctx.fillStyle = FAINT;
+        tracked(ctx, group.tagLabel.toUpperCase(), PAD, y + 16, 3.2);
+      });
+      y += 40;
+    }
+
     if (summary.byStore) {
       // Ladenname groß, Datum und Uhrzeit rechts daneben
       ctx.font = `600 34px ${SERIF}`;
@@ -249,7 +261,9 @@ function paint(ctx, summary, dry) {
   });
   y += boxHeight + 26;
 
-  if (summary.mine !== 0) {
+  /* Was der Einkauf gesamt kostete und was davon meins war, sehen die
+     Empfänger nicht — sie sollen wissen, was sie zahlen, sonst nichts. */
+  if (summary.showMine && summary.mine !== 0) {
     for (const [label, value] of [
       ['Einkauf gesamt', euro(summary.total)],
       ['Davon meins', `− ${euro(Math.abs(summary.mine))}`],

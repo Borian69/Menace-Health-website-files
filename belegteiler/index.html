@@ -97,6 +97,9 @@
       <div class="spinner" id="scan-spinner" aria-hidden="true"></div>
       <p id="scan-step">Beleg wird gelesen …</p>
       <p class="scan-sub" id="scan-substep">Positionen, Preise und Kategorien werden erkannt.</p>
+      <!-- Läuft mit, damit nie minutenlang derselbe Bildschirm steht. -->
+      <p class="scan-uhr" id="scan-uhr" hidden></p>
+      <button class="link-btn" id="btn-scan-stop" hidden>Abbrechen</button>
     </div>
 
     <!-- Ablage, in die der fertige Beleg wandert -->
@@ -215,9 +218,13 @@
     <div class="zweck">
       <div class="zweck-head">
         <span>Verwendungszweck</span>
-        <button class="chip-btn" id="btn-copy-zweck">Kopieren</button>
+        <div class="zweck-actions">
+          <button class="chip-btn" id="btn-share-zweck">Einzeln senden</button>
+          <button class="chip-btn" id="btn-copy-zweck">Kopieren</button>
+        </div>
       </div>
       <p class="zweck-text" id="zweck-text"></p>
+      <p class="field-hint">Geht als eigene Nachricht raus — so lässt er sich beim Überweisen mit einem Griff kopieren.</p>
     </div>
     <div class="spacer"></div>
   </div>
