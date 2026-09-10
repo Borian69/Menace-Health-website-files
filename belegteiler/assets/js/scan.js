@@ -327,10 +327,22 @@ export async function scanReceipt(parts, settings, signal) {
   let receipts = [];
   let genutztesModell = settings.model;
   let bester = null;
+  let letzterFehler = null;
+  const gruende = [];   // je Anlauf einer, für die Diagnose
 
   for (const [nummer, model] of versuche.entries()) {
     if (nummer > 0) await sleep(900, signal);   // kurz Luft holen
-    result = await call({
+    /* Wirft der Aufruf, ist der Anlauf gescheitert — nicht der Scan.
+       Genau das war hier der Fehler: Die Schleife fing nichts ab, also
+       flog ein Netzaussetzer, ein leeres Kontingent oder ein zickender
+       Anbieter an allen weiteren Anläufen vorbei nach draussen. Die
+       zweite Chance und das Ausweichmodell, die hier ausdrücklich
+       aufgereiht sind, kamen nie zum Zug: Gemessen wurde genau eine
+       Anfrage, wo drei vorgesehen waren.
+
+       Ein Abbruch durch den Nutzer ist etwas anderes und geht durch. */
+    try {
+      result = await call({
       settings,
       model,
       system: SYSTEM_PROMPT,
@@ -345,7 +357,13 @@ export async function scanReceipt(parts, settings, signal) {
       images: parts,
       tool: SCAN_TOOL,
       signal,
-    });
+      });
+    } catch (error) {
+      if (error.name === 'AbortError') throw error;
+      letzterFehler = error;
+      gruende.push(`${nummer + 1}. ${model}: ${error.diagnose?.grund || error.message}`);
+      continue;
+    }
     receipts = (result.args?.receipts || []).filter((receipt) => receipt?.items?.length);
     if (!receipts.length) continue;
 
@@ -363,6 +381,19 @@ export async function scanReceipt(parts, settings, signal) {
   }
 
   if (!receipts.length) {
+    /* Sind alle Anläufe an der Anfrage selbst gescheitert, ist deren
+       Grund die Wahrheit — „das Modell hat nichts erfasst" wäre schlicht
+       gelogen und schickt die Fehlersuche in die falsche Richtung. */
+    if (letzterFehler) {
+      letzterFehler.diagnose = {
+        ...(letzterFehler.diagnose || {}),
+        versucht: versuche.join(', '),
+        anlaeufe: `${gruende.length} von ${versuche.length}`,
+        proAnlauf: gruende.join(' | '),
+      };
+      throw letzterFehler;
+    }
+
     const d = result?.diagnose || {};
     const hint = result?.text?.trim();
 

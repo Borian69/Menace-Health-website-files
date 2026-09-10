@@ -45,9 +45,14 @@ const nutzbar = () => Boolean(navigator.serviceWorker?.controller);
 /* Kommt gar nichts zurück, darf die App nicht ewig warten. Der Worker
    kann zwischendurch ersetzt oder beendet worden sein, dann läuft die
    Erkennung gegen eine Wand und die Anzeige steht still. Nach dieser
-   Frist wird stattdessen direkt gefragt. Grosszügig bemessen: Ein Bild
-   mit mehreren Abschnitten darf durchaus eine Minute brauchen. */
-const WORKER_FRIST = 90_000;
+   Frist wird stattdessen direkt gefragt.
+
+   Sie liegt bewusst knapp über der Frist im Worker (FRIST in sw.js): Der
+   Worker soll von sich aus aufgeben und Bescheid sagen. Vorher standen
+   hier 90 Sekunden gegen einen Worker ganz ohne Frist — die Seite gab
+   also zuerst auf und schob dieselben Megabyte ein zweites Mal
+   hinterher, während der erste Upload weiterlief. */
+const WORKER_FRIST = 70_000;
 
 function ueberWorker(url, init, signal) {
   const id = `${Date.now()}-${(laufendeNummer += 1)}`;
@@ -101,17 +106,45 @@ function verbindungsfehler({ grund, weg, url, init, begonnen }) {
   return fehler;
 }
 
+/* Eine Anfrage, die nie antwortet, ist schlimmer als eine, die scheitert:
+   Sie belegt die Leitung, und der nächste Anlauf kommt gar nicht erst
+   dran. Auf dem Handy passiert genau das beim Wechsel zwischen WLAN und
+   Mobilfunk — die Verbindung steht formal noch, es fliesst nur nichts
+   mehr. Nach dieser Frist gilt der Anlauf als gescheitert und der
+   nächste darf ran. */
+export const ANFRAGE_FRIST = 60_000;
+
+/** Bricht ab, wenn zu lange nichts kommt — und sagt, dass es die Frist war. */
+function mitFrist(signal) {
+  const steuerung = new AbortController();
+  const zeit = setTimeout(() => steuerung.abort(new DOMException('Zeit abgelaufen', 'TimeoutError')), ANFRAGE_FRIST);
+  const weiter = () => steuerung.abort(signal.reason);
+  signal?.addEventListener('abort', weiter, { once: true });
+  return {
+    signal: steuerung.signal,
+    fertig: () => { clearTimeout(zeit); signal?.removeEventListener('abort', weiter); },
+    abgelaufen: () => steuerung.signal.reason?.name === 'TimeoutError',
+  };
+}
+
 async function direkt(url, init, signal, weg = 'direkt') {
   const begonnen = Date.now();
+  const frist = mitFrist(signal);
   let antwort;
   try {
-    antwort = await fetch(url, { ...init, signal });
+    antwort = await fetch(url, { ...init, signal: frist.signal });
   } catch (error) {
-    if (error.name === 'AbortError') throw error;
+    // Ein Abbruch durch den Nutzer geht durch, einer durch die Frist nicht:
+    // der ist ein Fehlschlag wie jeder andere und darf einen neuen Anlauf auslösen.
+    if (error.name === 'AbortError' && !frist.abgelaufen()) throw error;
     throw verbindungsfehler({
-      grund: `${error?.name || 'Fehler'}: ${error?.message || error}`,
+      grund: frist.abgelaufen()
+        ? `Zeit abgelaufen nach ${ANFRAGE_FRIST / 1000} s`
+        : `${error?.name || 'Fehler'}: ${error?.message || error}`,
       weg, url, init, begonnen,
     });
+  } finally {
+    frist.fertig();
   }
   return {
     ok: antwort.ok,
