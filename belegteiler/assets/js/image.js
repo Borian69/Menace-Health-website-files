@@ -180,7 +180,7 @@ function schaerfen(canvas, staerke = 0.6) {
    drei Abschnitten war der Hauptthread damit leicht eine halbe Sekunde
    am Stück belegt, und genau in dieser Zeit sollte die Animation
    anlaufen. toBlob() und FileReader erledigen dasselbe nebenher. */
-async function renderSlice(bitmap, { sx, sy, sw, sh }, aufbereiten, kante = MAX_EDGE) {
+async function renderSlice(bitmap, { sx, sy, sw, sh }, aufbereiten, kante = MAX_EDGE, guete = QUALITY) {
   const scale = Math.min(1, kante / Math.max(sw, sh));
   const canvas = document.createElement('canvas');
   canvas.width  = Math.max(1, Math.round(sw * scale));
@@ -195,7 +195,7 @@ async function renderSlice(bitmap, { sx, sy, sw, sh }, aufbereiten, kante = MAX_
     schaerfen(canvas);
   }
 
-  return base64(await encode(canvas, QUALITY));
+  return base64(await encode(canvas, guete));
 }
 
 const encode = (canvas, quality) =>
@@ -214,6 +214,33 @@ const base64 = (blob) =>
     reader.onerror = () => reject(new Error('Das Bild ließ sich nicht lesen.'));
     reader.readAsDataURL(blob);
   });
+
+/* ── Obergrenze für die Anfrage ──────────────────────────────
+
+   Auf dem Gerät gemessen: 2,69 MB, danach „TypeError: Failed to fetch".
+   Nachgestellt an einem Bon auf grobem Untergrund: Das Nachschärfen
+   verdoppelt die Datenmenge (0,69 → 1,48 MB), weil es die Struktur des
+   Teppichs mitzieht — und Rauschen lässt sich nicht komprimieren. Vom
+   Hochgeladenen war das meiste Untergrund.
+
+   Eine feste Güte kann das nicht auffangen: Wie gross ein Foto wird,
+   entscheidet sein Inhalt, nicht seine Einstellung. Also wird gemessen
+   statt geschätzt — passt es nicht ins Budget, wird eine Stufe tiefer
+   neu kodiert, bis es passt. Damit kann kein Foto mehr eine Anfrage
+   erzeugen, an der die Leitung scheitert.
+
+   Die Stufen senken zuerst die Güte (kostet am wenigsten Lesbarkeit)
+   und erst danach die Kantenlänge. Die unterste Stufe ist noch immer
+   schärfer als das, womit v8 gearbeitet hat. */
+const BUDGET = 700 * 1024;   // Base64-Zeichen für alle Abschnitte zusammen
+const STUFEN = [
+  { guete: QUALITY, faktor: 1 },
+  { guete: 0.62,    faktor: 1 },
+  { guete: 0.52,    faktor: 0.8 },
+  { guete: 0.45,    faktor: 0.65 },
+];
+
+const zusammen = (teile) => teile.reduce((summe, teil) => summe + teil.length, 0);
 
 /* Dem Browser zwischen zwei Abschnitten Luft zum Zeichnen geben. Ohne
    das laufen sie in einem Zug durch und die Animation hakt trotzdem. */
@@ -264,15 +291,29 @@ export async function prepareImage(file, onPreview, { aufbereiten = true } = {})
   const laenge = achse / teile;
   const overlap = teile > 1 ? laenge * OVERLAP : 0;
 
-  const parts = [];
-  for (let index = 0; index < teile; index += 1) {
-    await durchatmen();
-    const start = Math.max(0, laenge * index - (index > 0 ? overlap : 0));
-    const end   = Math.min(achse, laenge * (index + 1) + (index < teile - 1 ? overlap : 0));
-    parts.push(await renderSlice(bitmap, quer
-      ? { sx: start, sy: 0, sw: end - start, sh: height }
-      : { sx: 0, sy: start, sw: width, sh: end - start },
-      aufbereiten, teile === 1 ? EINZEL_EDGE : MAX_EDGE));
+  const grundKante = teile === 1 ? EINZEL_EDGE : MAX_EDGE;
+
+  const bauen = async ({ guete, faktor }) => {
+    const stuecke = [];
+    for (let index = 0; index < teile; index += 1) {
+      await durchatmen();
+      const start = Math.max(0, laenge * index - (index > 0 ? overlap : 0));
+      const end   = Math.min(achse, laenge * (index + 1) + (index < teile - 1 ? overlap : 0));
+      stuecke.push(await renderSlice(bitmap, quer
+        ? { sx: start, sy: 0, sw: end - start, sh: height }
+        : { sx: 0, sy: start, sw: width, sh: end - start },
+        aufbereiten, Math.round(grundKante * faktor), guete));
+    }
+    return stuecke;
+  };
+
+  /* Solange kodieren, bis es ins Budget passt. Die letzte Stufe wird
+     genommen, wie sie ist — tiefer wäre die Schrift nicht mehr sicher
+     lesbar, und ein zu grosses Bild ist immer noch besser als keines. */
+  let parts = [];
+  for (const stufe of STUFEN) {
+    parts = await bauen(stufe);
+    if (zusammen(parts) <= BUDGET) break;
   }
 
   bitmap.close?.();
