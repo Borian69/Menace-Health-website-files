@@ -40,8 +40,8 @@
         </svg>
         <span class="capture-label">Beleg scannen</span>
       </button>
-      <p class="hero-hint" id="hero-hint">Kamera öffnen und den Kassenbon abfotografieren.<br>Mehrere Bons dürfen nebeneinander liegen.</p>
-      <button class="ghost-btn" id="btn-pick">Bild aus der Galerie wählen</button>
+      <p class="hero-hint" id="hero-hint">Kamera öffnen und den Kassenbon abfotografieren.<br>Digitale Belege gehen als PDF — dort steht der Text schon drin.</p>
+      <button class="ghost-btn" id="btn-pick">Bild oder PDF auswählen</button>
     </div>
 
     <!-- Aufnahme, die noch nicht durch ist -->
@@ -476,7 +476,9 @@
 <div class="toast" id="toast" hidden></div>
 
 <input type="file" id="file-camera" accept="image/*" capture="environment" hidden>
-<input type="file" id="file-gallery" accept="image/*" multiple hidden>
+<!-- PDFs gehören ausdrücklich dazu: Ein digital erzeugter Beleg
+     trägt seinen Text schon in sich und muss nicht erkannt werden. -->
+<input type="file" id="file-gallery" accept="image/*,application/pdf,.pdf" multiple hidden>
 
 <script type="module" src="assets/js/app.js"></script>
 </body>

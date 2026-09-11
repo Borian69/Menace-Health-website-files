@@ -324,7 +324,13 @@ const fallbackQuery = (store, item) =>
  * Liest einen oder mehrere Belege aus vorbereiteten Bildabschnitten.
  * @param {string[]} parts Base64-JPEGs
  */
-export async function scanReceipt(parts, settings, signal, melden = () => {}) {
+export async function scanReceipt(parts, settings, signal, melden = () => {}, belegText = '') {
+  /* Ein digital erzeugter Beleg trägt seinen Text schon in sich (siehe
+     pdf.js). Dann gibt es nichts zu erkennen, nur zu ordnen: Der Text
+     geht direkt an das Modell, ohne Bild. Das ist schneller, billiger
+     und genauer — die Stufe, an der am meisten schiefgehen kann, fällt
+     ganz weg. */
+  const ausText = Boolean(belegText);
   /* Der zweite Fehlerfall, und der häufigere: Die Anfrage geht durch,
      das Modell antwortet mit 200 — und liefert trotzdem nichts
      Brauchbares. Kleine und kostenlose Modelle vergessen gern den
@@ -396,10 +402,12 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
            längs. „Aufeinanderfolgend" stimmt in beiden Fällen, „von oben
            nach unten" stimmte nur im einen — und eine falsche Angabe
            bringt kleine Modelle zuverlässig durcheinander. */
-        text: parts.length > 1
-          ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten. Sie gehören in dieser Reihenfolge zusammen; ein Bon kann über zwei Abschnitte reichen. Die Abschnitte sind für die Lesbarkeit in Graustufen umgewandelt. Erfasse jeden Kassenbon vollständig, aber keinen doppelt.`
-          : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.',
-        images: parts,
+        text: ausText
+          ? `Das hier ist der Text eines Belegs, direkt aus der Datei gelesen — nichts daran ist geraten. Die Zeilen stehen in der Reihenfolge des Belegs. Erfasse jeden Kassenbon darin vollständig.\n\n${belegText}`
+          : (parts.length > 1
+            ? `Hier ist ein Foto in ${parts.length} aufeinanderfolgenden, leicht überlappenden Abschnitten. Sie gehören in dieser Reihenfolge zusammen; ein Bon kann über zwei Abschnitte reichen. Die Abschnitte sind für die Lesbarkeit in Graustufen umgewandelt. Erfasse jeden Kassenbon vollständig, aber keinen doppelt.`
+            : 'Hier ist ein Foto. Erfasse jeden Kassenbon darauf vollständig.'),
+        images: ausText ? [] : parts,
         tool: SCAN_TOOL,
         signal,
         melden: sagen,
@@ -466,7 +474,9 @@ export async function scanReceipt(parts, settings, signal, melden = () => {}) {
         ? `Das Modell hat geantwortet, statt die Positionen zu erfassen: „${hint.slice(0, 160)}“`
         : 'Das Modell hat die Positionen nicht erfasst. Ein anderes Modell in den Einstellungen hilft meist.';
     } else {
-      message = 'Es konnten keine Positionen gelesen werden. Vielleicht hilft ein schärferes Foto bei mehr Licht.';
+      message = ausText
+        ? 'Aus dem Text der Datei liessen sich keine Positionen herauslesen. Ist es wirklich ein Kassenbon oder eine Rechnung?'
+        : 'Es konnten keine Positionen gelesen werden. Vielleicht hilft ein schärferes Foto bei mehr Licht.';
     }
 
     const failure = new Error(message);

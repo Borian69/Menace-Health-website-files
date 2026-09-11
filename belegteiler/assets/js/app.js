@@ -5,6 +5,7 @@ import { $, el, euro, euroPlain, formatDate, quantityLabel, parseQuantity, toCen
 import { CATEGORIES } from './categories.js';
 import { loadSettings, saveSettings, isConfigured, loadHistory, pushHistory, clearHistory, clearEverything, loadUsage, addUsage, clearUsage, loadOpenBill, saveOpenBill, clearOpenBill } from './store.js';
 import { prepareImage } from './image.js';
+import { pdfText, istPdf } from './pdf.js';
 import { scanReceipt, testConnection } from './scan.js';
 import { PROVIDERS, provider, detectProvider } from './providers.js';
 import { createBill, addScan, addReceipt, removeReceipt, createItem, totals, printedTotal, groupByCategory, storeLabel, billDate } from './receipt.js';
@@ -124,7 +125,7 @@ function renderOpenBill() {
   const running = bill && !bill.done ? bill : null;
   card.hidden = !running || running.items.length === 0;
   if (card.hidden) {
-    $('#hero-hint').textContent = 'Kamera öffnen und den Kassenbon abfotografieren. Mehrere Bons dürfen nebeneinander liegen.';
+    $('#hero-hint').textContent = 'Kamera öffnen und den Kassenbon abfotografieren. Digitale Belege gehen als PDF — dort steht der Text schon drin.';
     return;
   }
 
@@ -277,41 +278,85 @@ function uhrenAus() {
 
 /** Aufnahme(n) aufbereiten, ablegen und den ersten Anlauf starten. */
 async function handleFiles(fileList) {
-  const files = [...fileList].filter((file) => file.type.startsWith('image/'));
-  if (!files.length) return;
+  /* Mehrere Dateien sind mehrere Belege — nicht Abschnitte eines Fotos.
+
+     Vorher wurden alle Auswahlen zu einem einzigen Auftrag
+     zusammengeworfen und dem Modell als „aufeinanderfolgende Abschnitte
+     EINES Fotos" angekündigt. Wer zwei Bons gleichzeitig schickte,
+     bekam sie darum als einen gelesen. Jetzt wird jede Datei ihr
+     eigener Auftrag; abgearbeitet werden sie nacheinander. */
+  const dateien = [...fileList].filter((datei) => datei.type.startsWith('image/') || istPdf(datei));
+  if (!dateien.length) {
+    toast('Nur Fotos und PDFs — die Datei passt nicht.');
+    return;
+  }
 
   uhrenAus();
-  zeigeScanAnsicht(files.length);
+  zeigeScanAnsicht(dateien.length);
 
   scanAbort?.abort();
   scanAbort = new AbortController();
   const { signal } = scanAbort;
 
-  let parts = [];
-  let preview = '';
+  const auftraege = [];
   try {
-    for (const file of files) {
-      const fertig = await prepareImage(file, (bild) => {
-        if (preview) return;
-        preview = bild;
-        $('#scan-preview').src = bild;
-      });
-      parts = parts.concat(fertig.parts);
-      if (!preview) preview = fertig.preview;
+    for (const datei of dateien) {
+      const neuerAuftrag = await auftragBauen(datei, signal);
+      if (signal.aborted) return;
+      if (!neuerAuftrag) continue;
+      await merken(neuerAuftrag);    // ab hier ist die Aufnahme sicher
+      auftraege.push(neuerAuftrag);
     }
   } catch (error) {
     if (error.name === 'AbortError' || signal.aborted) return;
     zeigeFehler(error, { auftragDa: false });
     return;
   }
-  if (signal.aborted) return;
+  if (!auftraege.length) return;
 
-  auftrag = {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    parts, preview, angelegt: Date.now(), versuche: 0, fehler: '',
+  for (const [nummer, dieser] of auftraege.entries()) {
+    if (signal.aborted) return;
+    if (auftraege.length > 1) {
+      $('#scan-substep').textContent = `Beleg ${nummer + 1} von ${auftraege.length}.`;
+    }
+    auftrag = dieser;
+    await versuche(signal);
+    // Ist einer steckengeblieben, bleibt er liegen; der Rest läuft weiter.
+    if (auftrag) break;
+  }
+}
+
+/* Aus einer Datei einen Auftrag machen.
+
+   Ein PDF trägt seinen Text meist schon in sich — dann gibt es nichts
+   zu erkennen, nur zu ordnen. Lässt sich kein brauchbarer Text lesen
+   (eingescanntes PDF, verschlüsselt, fremde Zeichensatz-Abbildung),
+   sagt die App das, statt ein leeres Ergebnis zu liefern. */
+async function auftragBauen(datei, signal) {
+  const kennung = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+  if (istPdf(datei)) {
+    $('#scan-step').textContent = 'PDF wird gelesen …';
+    $('#scan-substep').textContent = 'Der Text steht in der Datei — er muss nicht erraten werden.';
+    const text = await pdfText(datei);
+    if (!text) {
+      toast('Aus diesem PDF liess sich kein Text lesen — bitte abfotografieren.');
+      return null;
+    }
+    return { id: kennung, parts: [], text, preview: '', angelegt: Date.now(), versuche: 0, fehler: '' };
+  }
+
+  let preview = '';
+  const fertig = await prepareImage(datei, (bild) => {
+    if (preview) return;
+    preview = bild;
+    $('#scan-preview').src = bild;
+  });
+  if (signal.aborted) return null;
+  return {
+    id: kennung, parts: fertig.parts, text: '',
+    preview: preview || fertig.preview, angelegt: Date.now(), versuche: 0, fehler: '',
   };
-  await merken(auftrag);     // ab hier ist die Aufnahme sicher
-  await versuche(signal);
 }
 
 /* ── Was gerade passiert ─────────────────────────────────────
@@ -442,7 +487,7 @@ async function versuche(signal = scanAbort?.signal) {
   uhrStarten();
 
   try {
-    const parsed = await scanReceipt(auftrag.parts, settings, signal, scanFortschritt);
+    const parsed = await scanReceipt(auftrag.parts, settings, signal, scanFortschritt, auftrag.text || '');
     uhrStoppen();
     if (signal?.aborted) return;
     await vergessen(auftrag.id);
@@ -1353,7 +1398,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v32';
+const BUILD = 'v33';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
