@@ -564,6 +564,10 @@ function zeigeFehler(error, { auftragDa }) {
   $('#scan-error-msg').textContent = error.message || 'Unbekannter Fehler.';
   $('#btn-scan-model').hidden = !MODEL_TROUBLE.has(error.status);
   zeigeDetails(error);
+  /* Die Erreichbarkeitsprobe läuft noch — sobald sie da ist, stehen die
+     Details neu da. Sie ist bei einem Netzfehler die wichtigste Zeile:
+     Sie unterscheidet "Dienst weg" von "auf dem Gerät blockiert". */
+  error.pruefung?.then(() => zeigeDetails(error)).catch(() => {});
 
   // Ohne abgelegtes Foto gibt es nichts zu wiederholen.
   $('#btn-scan-again').hidden = !auftragDa;
@@ -612,6 +616,7 @@ function zeigeDetails(error) {
     d.anfrageMB ? `Anfrage:  ${d.anfrageMB} MB` : '',
     d.dauerSekunden ? `Abbruch nach: ${d.dauerSekunden} s` : '',
     'geraetOnline' in d ? `Gerät meldet online: ${d.geraetOnline ? 'ja' : 'nein'}` : '',
+    d.erreichbarkeit ? `Probe:    ${d.erreichbarkeit}` : '',
     d.workerGrund ? `Zuvor im Service Worker: ${d.workerGrund}` : '',
     d.workerDauer ? `Dauer im Service Worker: ${d.workerDauer}` : '',
     `Meldung:  ${error.message || '—'}`,
@@ -1398,7 +1403,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v33';
+const BUILD = 'v34';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

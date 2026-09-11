@@ -4,7 +4,7 @@
    Bei Änderungen an den Dateien unten CACHE hochzählen. */
 
 /* Muss zu BUILD in assets/js/app.js passen — test13 prüft das. */
-const CACHE = 'belegteiler-v33';
+const CACHE = 'belegteiler-v34';
 
 // Getrenntes Fach für fertige Erkennungen, die noch niemand abgeholt hat.
 const ERGEBNISSE = 'belegteiler-ergebnisse';

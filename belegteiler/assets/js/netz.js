@@ -88,11 +88,73 @@ function ueberWorker(url, init, signal) {
    wie lange es dauerte, wie gross die Anfrage war, ob das Gerät sich für
    online hält. Aus "abgebrochen nach 40 s bei 1,8 MB" lässt sich etwas
    schliessen, aus "Keine Verbindung" nichts. */
+/* Wo genau klemmt es — beim Dienst oder auf dem Gerät?
+
+   "TypeError: Failed to fetch" sagt nichts darüber, und die Meldung
+   "Ist das Handy online?" war schlicht falsch, wenn das Gerät sich für
+   online hält und die Anfrage nach 0,3 Sekunden abbricht. So schnell
+   scheitert kein Upload — so schnell scheitert etwas, das gar nicht
+   erst losgeschickt wurde.
+
+   Also wird nach einem Fehlschlag nachgefasst, mit zwei Proben an
+   dieselbe Adresse:
+
+   1. Ohne CORS (`no-cors`). Die kommt an jedem Regelwerk des Browsers
+      vorbei; scheitert sie trotzdem, ist der Weg zum Dienst zu — VPN,
+      Schutzschild, Werbe- oder DNS-Blocker.
+   2. Eine gewöhnliche Anfrage an die offene Modell-Liste. Die braucht
+      weder Schlüssel noch Sonderkopf und löst keine Vorabfrage aus.
+
+   Aus dem Vergleich wird eine Aussage:
+     beide gut     → der Dienst ist erreichbar, es liegt an DIESER Anfrage
+     nur 1 gut     → etwas zwischen Gerät und Dienst schneidet die
+                     CORS-Kopfzeilen weg (typisch für VPN mit Filter)
+     beide schlecht→ der Dienst ist von diesem Gerät aus gesperrt */
+async function erreichbarkeit(url) {
+  const herkunft = (() => { try { return new URL(url).origin; } catch { return ''; } })();
+  if (!herkunft) return '';
+
+  const probe = async (init) => {
+    const steuerung = new AbortController();
+    const zeit = setTimeout(() => steuerung.abort(), 8000);
+    try {
+      await fetch(`${herkunft}/api/v1/models`, { cache: 'no-store', signal: steuerung.signal, ...init });
+      return true;
+    } catch {
+      return false;
+    } finally {
+      clearTimeout(zeit);
+    }
+  };
+
+  const [ohneRegeln, mitRegeln] = await Promise.all([
+    probe({ mode: 'no-cors' }),
+    probe({}),
+  ]);
+
+  if (ohneRegeln && mitRegeln) return 'Dienst erreichbar — es liegt an dieser Anfrage, nicht am Weg';
+  if (ohneRegeln) return 'Weg da, aber die CORS-Kopfzeilen fehlen — dazwischen filtert etwas (VPN, Schutzschild)';
+  return 'Dienst von diesem Gerät aus nicht erreichbar — VPN, Schutzschild, Werbe- oder DNS-Blocker';
+}
+
 function verbindungsfehler({ grund, weg, url, init, begonnen }) {
   const mb = ((init?.body?.length || 0) / 1024 / 1024).toFixed(2);
   const sekunden = ((Date.now() - begonnen) / 1000).toFixed(1);
 
-  const fehler = new Error('Keine Verbindung zur Erkennung. Ist das Handy online?');
+  /* Die Meldung richtet sich nach dem, was messbar ist.
+
+     "Ist das Handy online?" war falsch, sobald das Gerät sich für
+     online hält — und ein Abbruch nach 0,3 Sekunden ist ohnehin kein
+     Verbindungsabbruch: So schnell scheitert nur, was gar nicht erst
+     losgeschickt wurde. */
+  const schnell = Number(sekunden) < 3;
+  const meldung = !navigator.onLine
+    ? 'Das Gerät ist offline. Sobald wieder Netz da ist, klappt es.'
+    : schnell
+      ? 'Die Anfrage wurde sofort abgewiesen — nicht unterwegs verloren. Das kommt fast immer von etwas auf dem Gerät: VPN, Schutzschild des Browsers, Werbe- oder DNS-Blocker. Kurz abschalten und nochmal.'
+      : 'Die Verbindung zur Erkennung ist abgebrochen. Ein neuer Anlauf hilft meist.';
+
+  const fehler = new Error(meldung);
   fehler.wiederholbar = true;   // kommt das Netz zurück, klappt es
   fehler.diagnose = {
     grund,
@@ -102,6 +164,12 @@ function verbindungsfehler({ grund, weg, url, init, begonnen }) {
     dauerSekunden: sekunden,
     geraetOnline: navigator.onLine,
   };
+  /* Die Probe braucht selbst einen Moment — sie wird nachgereicht und
+     steht in den Details, sobald sie da ist. */
+  fehler.pruefung = erreichbarkeit(url).then((satz) => {
+    if (satz) fehler.diagnose.erreichbarkeit = satz;
+    return satz;
+  }).catch(() => '');
   return fehler;
 }
 
