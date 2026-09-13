@@ -110,6 +110,7 @@ export function saveSettings(patch) {
 
 /** Ist die Erkennung einsatzbereit? */
 export function isConfigured(settings = loadSettings()) {
+  // Im Proxy-Modus genügt die Adresse; der Schlüssel liegt dort.
   if (settings.mode === 'proxy') return Boolean(settings.proxyUrl.trim());
   const key = settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey;
   return Boolean((key || '').trim());
