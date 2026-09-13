@@ -179,11 +179,19 @@ function verbindungsfehler({ grund, weg, url, init, begonnen }) {
    Mobilfunk — die Verbindung steht formal noch, es fliesst nur nichts
    mehr. Nach dieser Frist gilt der Anlauf als gescheitert und der
    nächste darf ran. */
-/* Ohne den Worker-Umweg braucht es keine grosszügige Frist mehr: Der
-   direkte Weg antwortet oder scheitert, er verschwindet nicht. 60
-   Sekunden lassen einem langsamen Gratis-Modell Luft und halten die
-   Wartezeit im Erträglichen — zumal die Anläufe parallel laufen. */
-export const ANFRAGE_FRIST = 60_000;
+/* Die Frist muss sich nach dem Modell richten, nicht nach dem Upload.
+
+   Auf dem Gerät gemessen: "Zeit abgelaufen nach 60 s" bei einer Anfrage
+   von 0,51 MB, während die Probe bescheinigte, dass der Dienst
+   erreichbar ist. Die halbe Megabyte war längst oben — gewartet wurde
+   auf das Modell. Im selben Lauf brauchte das empfohlene Modell 54
+   Sekunden und ein Gratis-Modell 186. Mit 60 Sekunden habe ich also
+   Anfragen abgeschnitten, die noch am Arbeiten waren.
+
+   120 Sekunden geben einem langen Bon Luft. Lang wird die Wartezeit
+   dadurch nicht: Die Anläufe laufen nacheinander und der erste
+   brauchbare gewinnt. */
+export const ANFRAGE_FRIST = 120_000;
 
 /** Bricht ab, wenn zu lange nichts kommt — und sagt, dass es die Frist war. */
 function mitFrist(signal) {
