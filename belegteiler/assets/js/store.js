@@ -14,8 +14,21 @@ const DEFAULTS = {
   apiKey:        '',            // Anthropic
   openrouterKey: '',
   proxyUrl:      '',
-  model:         'google/gemma-4-31b-it:free',
-  helperModel:   'google/gemma-4-31b-it:free',
+  /* Nicht mehr das Gratis-Modell.
+
+     Die Fassungen, die liefen, benutzten Claude (v1 Opus, v2 Haiku, v3
+     Sonnet). Mit v4 kam OpenRouter und als Vorgabe
+     google/gemma-4-31b-it:free — und ab da ging es schief. Auf dem
+     Gerät gemessen: 126 Sekunden, danach „nichts erfasst". Kein
+     Netzproblem, kein Bildproblem; das Modell kann diese Aufgabe nicht.
+
+     Gerechnet, was die Alternative kostet: qwen3.7-flash liegt bei
+     0,04 Cent je Beleg. Hundert Belege kosten vier Cent. Ein Modell,
+     das nichts kostet und nichts liefert, ist nicht billiger — es ist
+     nur umsonst. Die Gratis-Modelle stehen weiter zur Auswahl, aber
+     nicht mehr als Vorgabe. */
+  model:         'qwen/qwen3.7-flash',
+  helperModel:   'qwen/qwen3.7-flash',
   fallbackModel: 'google/gemini-2.5-flash-lite',
   resolveUncertain: true,
   /* Kassenbons sind grau auf weiss und meist unter Mischlicht
@@ -67,7 +80,26 @@ export function loadSettings() {
     stored.helperModel = stored.model;
   }
 
-  return { ...DEFAULTS, ...stored };
+  const fertig = { ...DEFAULTS, ...stored };
+
+  /* Wer noch auf einem Gratis-Modell steht, wird einmalig umgestellt.
+
+     Eine geänderte Vorgabe erreicht nur neue Geräte — wer die App schon
+     benutzt, behält seine gespeicherte Wahl und damit genau das Modell,
+     das nachweislich nichts liefert. Das wäre eine Verbesserung, die
+     bei niemandem ankommt, der sie braucht.
+
+     Nur einmal, und nur für die Bilderkennung: Wer bewusst wieder ein
+     Gratis-Modell wählt, behält es. */
+  if (!fertig.modellUmgestellt && /:free$/.test(fertig.model || '')) {
+    fertig.vorherigesModell = fertig.model;
+    fertig.model = DEFAULTS.model;
+    if (/:free$/.test(fertig.helperModel || '')) fertig.helperModel = DEFAULTS.helperModel;
+    fertig.modellUmgestellt = true;
+    write(SETTINGS_KEY, fertig);
+  }
+
+  return fertig;
 }
 
 export function saveSettings(patch) {

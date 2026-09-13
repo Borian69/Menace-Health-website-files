@@ -111,23 +111,29 @@ const openrouter = {
   endpoint: 'https://openrouter.ai/api/v1/chat/completions',
   keyLabel: 'OpenRouter API-Key',
   keyPlaceholder: 'sk-or-v1-…',
-  keyHint: 'Key auf openrouter.ai/keys erstellen. Die Gratis-Modelle laufen ohne Guthaben — 20 Anfragen pro Minute, 50 pro Tag.',
+  keyHint: 'Key auf openrouter.ai/keys erstellen. Ein Beleg kostet mit der Empfehlung 0,04 Cent — hundert Belege vier Cent. Die Gratis-Modelle laufen ohne Guthaben, lesen Kassenbons aber oft gar nicht.',
   needsJsonFallback: true,
 
-  // Alle hier gelisteten Modelle können Bilder lesen und Funktionen
-  // aufrufen. Centangaben sind Schätzungen für einen üblichen Bon;
-  // abgerechnet wird, was OpenRouter je Anfrage zurückmeldet.
-  defaultModel: 'google/gemma-4-31b-it:free',
+  /* Alle hier gelisteten Modelle können Bilder lesen und Funktionen
+     aufrufen — abgerechnet wird, was OpenRouter je Anfrage zurückmeldet.
+
+     Die Reihenfolge ist eine Empfehlung, keine Preisliste.
+
+     Oben steht, was die Aufgabe zuverlässig erledigt; die
+     Gratis-Modelle stehen unten mit Ansage. Die Centangaben sind aus
+     den Preisen von OpenRouter gerechnet, für einen üblichen Bon
+     (ein Bild, rund 2500 Token Antwort) — nicht geschätzt. */
+  defaultModel: 'qwen/qwen3.7-flash',
   models: [
-    { id: 'google/gemma-4-31b-it:free',               label: 'Gemma 4 31B · gratis' },
-    { id: 'google/gemma-4-26b-a4b-it:free',           label: 'Gemma 4 26B · gratis' },
+    { id: 'qwen/qwen3.7-flash',                       label: 'Qwen3.7 Flash · 0,04 Cent', note: 'Empfehlung — schnell und verlässlich' },
+    { id: 'mistralai/mistral-small-3.2-24b-instruct', label: 'Mistral Small 3.2 · 0,07 Cent' },
+    { id: 'openai/gpt-5-nano',                        label: 'GPT-5 nano · 0,11 Cent' },
+    { id: 'google/gemini-2.5-flash-lite',             label: 'Gemini 2.5 Flash Lite · 0,13 Cent' },
+    { id: 'google/gemini-2.5-flash',                  label: 'Gemini 2.5 Flash · 0,70 Cent', note: 'am gründlichsten, für schwierige Bons' },
+    { id: 'google/gemma-4-31b-it:free',               label: 'Gemma 4 31B · gratis', note: 'liest Kassenbons oft gar nicht — gemessen 126 s ohne Ergebnis' },
+    { id: 'google/gemma-4-26b-a4b-it:free',           label: 'Gemma 4 26B · gratis', note: 'kleiner als das obige, eher noch schwächer' },
     { id: 'minimax/minimax-m3:free',                  label: 'MiniMax M3 · gratis' },
     { id: 'openrouter/free',                          label: 'Gratis · automatische Auswahl', note: 'Modell wechselt, Ergebnis schwankt' },
-    { id: 'qwen/qwen3.7-flash',                       label: 'Qwen3.7 Flash · ~0,03 Cent' },
-    { id: 'mistralai/mistral-small-3.2-24b-instruct', label: 'Mistral Small 3.2 · ~0,05 Cent' },
-    { id: 'openai/gpt-5-nano',                        label: 'GPT-5 nano · ~0,06 Cent' },
-    { id: 'google/gemini-2.5-flash-lite',             label: 'Gemini 2.5 Flash Lite · ~0,08 Cent' },
-    { id: 'google/gemini-2.5-flash',                  label: 'Gemini 2.5 Flash · ~0,4 Cent', note: 'am gründlichsten' },
   ],
 
   headers(key) {
