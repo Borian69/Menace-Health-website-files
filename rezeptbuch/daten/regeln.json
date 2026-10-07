@@ -1,0 +1,15 @@
+{
+  "_hinweis": "Die Prüfregeln des Rezeptbuchs. tools/pruefen.py wendet sie an — für den Grundstock und für jede Suche im Hintergrund.",
+  "protein_min_g_portion": 30,
+  "protein_anteil_min": 0.25,
+  "arbeitszeit_max_min": 20,
+  "gesamtzeit_max_min": 45,
+  "zutaten_max": 10,
+  "geraete_max": 2,
+  "preis_portion_max_eur": 3.50,
+  "basics_pauschale_eur_portion": 0.10,
+  "sossenbasis_verboten": ["skyr", "quark", "magerquark", "joghurt", "proteinjoghurt", "proteinpudding"],
+  "bewertung_min": 4.5,
+  "bewertungen_anzahl_min": 50,
+  "kalt_pflichtfelder": ["haltbarkeit_tage", "kuehlakku", "transport"]
+}

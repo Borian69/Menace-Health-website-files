@@ -1,0 +1,462 @@
+<title>Protein-Rezeptbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Moch-Design-System, eingebettet (Artifacts dürfen keine Repo-Dateien laden).
+   Werte aus design/tokens.css und design/bundle.css. Hell = Elfenbein, dunkel = Nacht.
+   Layout: eine Lesespalte, Liste und Rezept wechseln sich ab, Filter oben. */
+:root{
+  --ground:#F4EEE3; --surface:#FCFAF4; --surface-2:#E9E0CF;
+  --line:#CFBFA6; --line-strong:#B5A184;
+  --text:#16110E; --muted:#5E5245;
+  --brand:#5A3E27; --link:#5A3E27;
+  --accent-2:#5E2226; --brass:#7A5E1E; --brass-line:#D4AC52;
+  --shirt:#F5F0E6; --shirt-ink:#16110E;
+  --success:#2E6B4F; --error:#C0453F;
+  --font-display:"Abril Fatface",Georgia,"Times New Roman",serif;
+  --font-text:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",Consolas,monospace;
+  --display-track:.012em;
+  --s1:8px; --s2:16px; --s3:24px; --s4:32px; --s5:48px; --s6:64px;
+  --radius:2px; --radius-interactive:4px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#0E0F11; --surface:#24272C; --surface-2:#060708;
+    --line:#2C3037; --line-strong:#414751;
+    --text:#F2EBDD; --muted:#A9A69F;
+    --brand:#6B4A2F; --link:#D4AC52;
+    --accent-2:#471C23; --brass:#D4AC52; --brass-line:#D4AC52;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0E0F11; --surface:#24272C; --surface-2:#060708;
+  --line:#2C3037; --line-strong:#414751;
+  --text:#F2EBDD; --muted:#A9A69F;
+  --brand:#6B4A2F; --link:#D4AC52;
+  --accent-2:#471C23; --brass:#D4AC52; --brass-line:#D4AC52;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;corner-shape:superellipse(1.2)}
+body{background:var(--ground);color:var(--text);font-family:var(--font-text);font-size:17px;
+  line-height:1.5;-webkit-font-smoothing:antialiased;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-inline:var(--s3);padding-block:var(--s5) var(--s6)}
+@media (max-width:719px){.wrap{padding-block:var(--s4) var(--s5)}}
+h1{font-family:var(--font-display);font-weight:400;font-size:44px;line-height:1.06;
+  letter-spacing:var(--display-track);margin:0 0 var(--s2);text-wrap:balance}
+@media (max-width:719px){h1{font-size:34px}}
+h3{font-family:var(--font-text);font-weight:600;font-size:17px;margin:0;line-height:1.35;text-wrap:balance}
+.sec{font-family:var(--font-text);font-weight:600;font-size:17px;margin:0 0 var(--s2)}
+p{margin:0 0 var(--s2);max-width:66ch}
+.eyebrow,.lb{font-family:var(--font-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--brass);margin:0 0 var(--s2);font-weight:500}
+.muted{color:var(--muted)}
+.small{font-size:14.5px}
+.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:.93em}
+.shirt h3 .n{font-family:inherit;font-size:1em}
+.rule{height:1px;background:var(--brass-line);margin:var(--s4) 0;border:0}
+a{color:var(--link);text-underline-offset:3px}
+:focus-visible{outline:2px solid var(--brass-line);outline-offset:2px}
+
+/* Bedienelemente — Höhe 44 px */
+.btn{font-family:var(--font-text);font-size:14.5px;font-weight:500;padding:11px 16px;line-height:20px;
+  border-radius:var(--radius-interactive);border:1px solid transparent;cursor:pointer;
+  background:transparent;color:var(--text);transition:background-color .18s ease-out,border-color .18s ease-out,color .18s ease-out}
+.btn-ghost{border-color:var(--line-strong)}
+.btn-ghost:hover{border-color:var(--text)}
+.btn-quiet{color:var(--muted);padding-left:0}
+.btn-quiet:hover{color:var(--text)}
+.btn[aria-pressed="true"]{border-color:var(--brass-line);color:var(--text);background:var(--surface)}
+.btn[aria-pressed="true"]::before{content:"✓ ";font-family:var(--font-mono)}
+.btn:disabled{opacity:.45;cursor:default}
+
+.search{display:flex;flex-direction:column;gap:7px;margin:var(--s4) 0 var(--s2)}
+.search label,.field label{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+input[type=search],select{font-family:var(--font-text);font-size:17px;padding:9px 13px;line-height:24px;background:var(--surface);
+  color:var(--text);border:1px solid var(--line-strong);border-radius:var(--radius-interactive);width:100%}
+input[type=search]:focus,select:focus{outline:2px solid var(--brass-line);outline-offset:1px;border-color:var(--brass-line)}
+.chips{display:flex;flex-wrap:wrap;gap:var(--s1);margin:0 0 var(--s1)}
+.chips .btn{padding:11px 14px}
+.toolbar{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:end;justify-content:space-between;margin:var(--s3) 0 var(--s2)}
+.field{display:flex;flex-direction:column;gap:7px;min-width:0;flex:0 1 260px}
+.count{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding-bottom:12px}
+
+/* Datenzeile — Signatur-Regel 2 */
+.dataline{display:flex;flex-wrap:wrap;gap:6px 24px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  border-top:1px solid var(--brass-line);border-bottom:1px solid var(--line);padding:12px 0;margin:0}
+.dataline b{color:var(--text);font-weight:500}
+
+.badge{font-family:var(--font-mono);font-size:11px;letter-spacing:.11em;text-transform:uppercase;line-height:1.3;
+  padding:4px 8px;border:1px solid var(--line-strong);color:var(--muted);border-radius:var(--radius);white-space:nowrap}
+.badge.b-brass{border-color:var(--brass);color:var(--brass)}
+.badge.b-brand{border-color:var(--brand);color:var(--text)}
+
+/* Liste */
+.list{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.item{border-bottom:1px solid var(--line)}
+.item:first-child{border-top:1px solid var(--line)}
+.item button{all:unset;box-sizing:border-box;display:grid;gap:var(--s1);width:100%;padding:var(--s3) 0;cursor:pointer}
+.item button:focus-visible{outline:2px solid var(--brass-line);outline-offset:2px}
+.item button:hover h3{text-decoration:underline;text-decoration-color:var(--brass-line);text-underline-offset:4px}
+.item .kurz{font-size:14.5px;color:var(--muted);margin:0}
+.item .meta{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;font-family:var(--font-mono);font-size:11px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.item .meta b{color:var(--text);font-weight:500}
+.item .badges{display:flex;flex-wrap:wrap;gap:6px}
+.leer{border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);padding:var(--s3)}
+
+/* Rezept */
+.detail{animation:panel .24s ease-out}
+@keyframes panel{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:none}}
+.shirt{background:var(--shirt);color:var(--shirt-ink);padding:var(--s4);border-radius:var(--radius);margin:var(--s3) 0}
+.shirt h3{font-family:var(--font-display);font-weight:400;font-size:40px;line-height:1.1;letter-spacing:var(--display-track);color:var(--shirt-ink);margin:0 0 var(--s1)}
+.shirt p{margin:0;font-size:14.5px;color:var(--shirt-ink)}
+.block{margin:var(--s5) 0 0}
+.stepper{display:flex;align-items:center;gap:var(--s2);margin:0 0 var(--s2)}
+.stepper output{font-family:var(--font-mono);font-size:14.5px;min-width:9ch;text-align:center}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th,td{text-align:left;padding:10px var(--s1);border-bottom:1px solid var(--line);vertical-align:top}
+th:first-child,td:first-child{padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+th{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:400}
+tr.laden th{color:var(--brass);padding-top:var(--s3);border-bottom:1px solid var(--brass-line)}
+td.r,th.r{text-align:right;white-space:nowrap}
+details.mehr{margin:0 0 var(--s1)}
+details.mehr summary{cursor:pointer;font-size:14.5px;font-weight:500;min-height:44px;display:flex;align-items:center;gap:var(--s1)}
+details.mehr summary:focus-visible{outline:2px solid var(--brass-line);outline-offset:2px}
+details.mehr[open] summary{margin-bottom:var(--s1)}
+td.menge{white-space:nowrap;width:1%}
+td.sum{font-weight:600}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:grid;gap:var(--s2)}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:32px 1fr;gap:var(--s1);max-width:66ch}
+ol.steps li::before{content:counter(s);font-family:var(--font-mono);font-size:14.5px;color:var(--brass);padding-top:2px}
+.tipps{display:grid;gap:var(--s2)}
+.tipp{border:1px solid var(--line);border-radius:var(--radius);padding:var(--s2) var(--s3);background:var(--surface)}
+.tipp .lb{margin:0 0 6px}
+.tipp p{margin:0;font-size:14.5px}
+.check{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.check li{display:grid;grid-template-columns:auto 1fr auto;gap:var(--s2);padding:10px 0;border-bottom:1px solid var(--line);font-size:14.5px;align-items:baseline}
+.check .ok{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--success)}
+.check .lim{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-align:right}
+.urteil{display:flex;flex-wrap:wrap;gap:var(--s1)}
+.hinweis{font-size:14.5px;color:var(--muted)}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="wrap" id="app">
+  <header>
+    <p class="eyebrow" id="kopfzeile">Rezeptbuch · High Protein · wenig Aufwand</p>
+    <h1>Viel Protein, wenig Aufwand.</h1>
+    <p class="muted">Jedes Rezept hat mindestens <span class="n">30</span> g Protein pro Portion, höchstens <span class="n">20</span> Minuten Arbeit und kostet höchstens <span class="n">3,50</span> € pro Portion. Nährwerte und Preise sind aus den Zutaten nachgerechnet.</p>
+  </header>
+  <main id="ansicht">
+    <div class="leer"><p class="sec">Rezepte werden geladen …</p><p class="hinweis" style="margin:0">Die Rezepte liegen in der Datenbank dieses Rezeptbuchs. Neue Rezepte kommen über die Suche im Hintergrund dazu.</p></div>
+  </main>
+</div>
+
+<script>
+(() => {
+  const S = {
+    rezepte: [], bewertungen: {}, suche: null, regeln: null,
+    q: "", typ: "alle", mahlzeit: "alle", flags: new Set(), sort: "neu",
+    aktiv: null, portionen: null, zeigeAbgelehnte: false, geladen: false, dbFehlt: false,
+  };
+  let db = null, scrollListe = 0;
+  const el = document.getElementById("ansicht");
+
+  try {
+    const g = JSON.parse(localStorage.getItem("rb-filter") || "{}");
+    if (g.typ) S.typ = g.typ; if (g.sort) S.sort = g.sort; if (g.mahlzeit) S.mahlzeit = g.mahlzeit;
+  } catch (e) {}
+  const merke = () => { try { localStorage.setItem("rb-filter", JSON.stringify({ typ: S.typ, sort: S.sort, mahlzeit: S.mahlzeit })); } catch (e) {} };
+
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const zahl = (x, d = 0) => Number(x).toLocaleString("de-DE", { minimumFractionDigits: d, maximumFractionDigits: d });
+  const N = (x, d = 0) => `<span class="n">${zahl(x, d)}</span>`;
+  const euro = x => `${N(x, 2)} €`;
+  // Ziffern in Fließtext monospaced setzen (Signatur-Regel 1)
+  const nTxt = s => esc(s).replace(/\d+(?:[.,]\d+)*/g, m => `<span class="n">${m}</span>`);
+  const norm = s => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ß/g, "ss");
+  const tageAlt = iso => iso ? (Date.now() - new Date(iso).getTime()) / 864e5 : 999;
+  const datum = iso => new Date(iso).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const FLAGS = [
+    ["veg", "Vegetarisch", r => r.werte.vegetarisch],
+    ["schnell", "≤ 10 min Arbeit", r => r.arbeitszeit <= 10],
+    ["guenstig", "≤ 2,50 € pro Portion", r => r.werte.preis_portion <= 2.5],
+    ["protein", "≥ 45 g Protein", r => r.werte.protein >= 45],
+    ["prep", "Meal Prep", r => (r.tags || []).includes("Meal Prep")],
+    ["neu", "Neu (14 Tage)", r => tageAlt(r.hinzugefuegt) <= 14],
+    ["fav", "Wieder kochen", r => S.bewertungen[r.id]?.urteil === "gern"],
+  ];
+  const SORT = {
+    neu: ["Neueste zuerst", (a, b) => (b.hinzugefuegt || "").localeCompare(a.hinzugefuegt || "") || a.titel.localeCompare(b.titel, "de")],
+    protein: ["Meiste Protein", (a, b) => b.werte.protein - a.werte.protein],
+    preis: ["Günstigste Portion", (a, b) => a.werte.preis_portion - b.werte.preis_portion],
+    p30: ["Bestes Preis-Protein", (a, b) => a.werte.preis_30g_protein - b.werte.preis_30g_protein],
+    zeit: ["Schnellste", (a, b) => a.gesamtzeit - b.gesamtzeit || a.arbeitszeit - b.arbeitszeit],
+  };
+
+  function gefiltert() {
+    const terme = norm(S.q).split(/\s+/).filter(Boolean);
+    let abgelehnt = 0;
+    const liste = S.rezepte.filter(r => {
+      if (S.typ === "warm" && r.typ !== "warm") return false;
+      if (S.typ === "kalt" && r.typ !== "kalt") return false;
+      if (S.mahlzeit !== "alle" && r.mahlzeit !== S.mahlzeit) return false;
+      for (const [k, , f] of FLAGS) if (S.flags.has(k) && !f(r)) return false;
+      if (terme.length) {
+        const heu = norm([r.titel, r.kurz, (r.tags || []).join(" "), r.zutaten.map(z => z.name).join(" "), r.sossenbasis].join(" "));
+        if (!terme.every(t => heu.includes(t))) return false;
+      }
+      if (S.bewertungen[r.id]?.urteil === "nein" && !S.zeigeAbgelehnte) { abgelehnt++; return false; }
+      return true;
+    });
+    liste.sort(SORT[S.sort][1]);
+    return { liste, abgelehnt };
+  }
+
+  const pressed = b => `aria-pressed="${b ? "true" : "false"}"`;
+
+  function zeileSuche() {
+    const s = S.suche;
+    if (!s || !s.letzter_lauf) return `<p class="dataline"><span>Suche im Hintergrund</span><span><b>aktiv</b></span><span>Erster Lauf ${s?.naechster_lauf ? esc(datum(s.naechster_lauf)) : "am Sonntag"}</span></p>`;
+    return `<p class="dataline"><span>Letzte Suche <b>${esc(datum(s.letzter_lauf))}</b></span>
+      <span>Geprüft <b>${N(s.geprueft || 0)}</b></span><span>Aufgenommen <b>${N(s.aufgenommen || 0)}</b></span>
+      ${s.naechster_lauf ? `<span>Nächste <b>${esc(datum(s.naechster_lauf))}</b></span>` : ""}</p>`;
+  }
+
+  function renderListe() {
+    const { liste, abgelehnt } = gefiltert();
+    const kalt = S.rezepte.filter(r => r.typ === "kalt").length;
+    document.getElementById("kopfzeile").innerHTML = `Rezeptbuch · ${N(S.rezepte.length)} Rezepte · davon ${N(kalt)} kalt`;
+    el.innerHTML = `
+      <div class="search">
+        <label for="q">Suchen nach Gericht, Zutat oder Stichwort</label>
+        <input type="search" id="q" value="${esc(S.q)}" placeholder="z. B. Hähnchen Reis, Linsen, Frühstück" autocomplete="off">
+      </div>
+      <div class="chips" role="group" aria-label="Warm oder kalt">
+        ${[["alle", "Alle"], ["warm", "Warm"], ["kalt", "Kalt · Uni"]].map(([k, t]) => `<button class="btn btn-ghost" data-typ="${k}" ${pressed(S.typ === k)}>${t}</button>`).join("")}
+      </div>
+      <div class="chips" role="group" aria-label="Mahlzeit">
+        ${[["alle", "Jede Mahlzeit"], ["Hauptgericht", "Hauptgericht"], ["Frühstück", "Frühstück"], ["Snack", "Snack"]].map(([k, t]) => `<button class="btn btn-ghost" data-mahlzeit="${k}" ${pressed(S.mahlzeit === k)}>${t}</button>`).join("")}
+      </div>
+      <details class="mehr" ${S.mehrOffen || S.flags.size ? "open" : ""}><summary>Weitere Filter${S.flags.size ? ` · ${N(S.flags.size)} aktiv` : ""}</summary>
+      <div class="chips" role="group" aria-label="Weitere Filter">
+        ${FLAGS.map(([k, t]) => `<button class="btn btn-ghost" data-flag="${k}" ${pressed(S.flags.has(k))}>${nTxt(t)}</button>`).join("")}
+      </div></details>
+      <div class="toolbar">
+        <div class="field"><label for="sort">Sortieren</label>
+          <select id="sort">${Object.entries(SORT).map(([k, [t]]) => `<option value="${k}" ${S.sort === k ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+        <span class="count" aria-live="polite">${N(liste.length)} von ${N(S.rezepte.length)} Rezepten</span>
+      </div>
+      ${liste.length ? `<ul class="list">${liste.map(karte).join("")}</ul>` : `<div class="leer"><p class="sec">Kein Rezept passt.</p><p class="hinweis" style="margin:0">Nimm einen Filter heraus oder such nach einer einzelnen Zutat.</p></div>`}
+      ${abgelehnt ? `<p class="hinweis" style="margin-top:var(--s2)">${N(abgelehnt)} ${abgelehnt === 1 ? "Rezept ist" : "Rezepte sind"} als „Nicht mein Fall“ ausgeblendet. <button class="btn btn-quiet" id="zeigeNein" style="padding:0 4px;min-height:44px">Anzeigen</button></p>` : ""}
+      ${S.zeigeAbgelehnte ? `<p class="hinweis" style="margin-top:var(--s2)"><button class="btn btn-quiet" id="zeigeNein">Abgelehnte wieder ausblenden</button></p>` : ""}
+      <div style="margin-top:var(--s5)">${zeileSuche()}
+      <p class="hinweis" style="margin-top:var(--s2)">Die Suche im Hintergrund prüft neue Rezepte gegen dieselben Regeln. Aufgenommen wird nur, was besteht – die Zahl schwankt deshalb von Woche zu Woche.</p></div>`;
+  }
+
+  function karte(r) {
+    const w = r.werte, b = S.bewertungen[r.id]?.urteil;
+    const badges = [
+      r.typ === "kalt" ? `<span class="badge b-brass">Kalt · Uni</span>` : "",
+      w.vegetarisch ? `<span class="badge">Vegetarisch</span>` : "",
+      tageAlt(r.hinzugefuegt) <= 14 && r.herkunft === "suche" ? `<span class="badge b-brand">Neu</span>` : "",
+      b === "gern" ? `<span class="badge b-brand">✓ Wieder kochen</span>` : "",
+      b === "nein" ? `<span class="badge">Nicht mein Fall</span>` : "",
+    ].join("");
+    return `<li class="item"><button data-id="${esc(r.id)}">
+      <h3>${esc(r.titel)}</h3>
+      <p class="kurz">${nTxt(r.kurz)}</p>
+      <div class="meta"><span><b>${N(w.protein)} g</b> Protein</span><span>${N(w.kcal)} kcal</span>
+        <span>${N(r.arbeitszeit)} / ${N(r.gesamtzeit)} min</span><span>${euro(w.preis_portion)}</span>
+        ${badges ? `<span class="badges">${badges}</span>` : ""}</div>
+    </button></li>`;
+  }
+
+  // ---------- Rezeptansicht ----------
+  function menge(z, f) {
+    if (f === 1 || z.gramm === 0) return z.menge;
+    const g = z.gramm * f;
+    if (z.stueck_g) {
+      const n = Math.round((g / z.stueck_g) * 2) / 2;
+      if (n >= 0.5) {
+        const [ein, mehr] = z.stueck.split("|");
+        return `${zahl(n, n % 1 ? 1 : 0)} ${n <= 1 ? ein : mehr}`;
+      }
+    }
+    const r = g < 20 ? Math.round(g) : g < 100 ? Math.round(g / 5) * 5 : Math.round(g / 10) * 10;
+    return r >= 1000 ? `${zahl(r / 1000, 2)} kg` : `${zahl(r)} g`;
+  }
+
+  function regelListe(r) {
+    const g = S.regeln || { protein_min_g_portion: 30, protein_anteil_min: .25, arbeitszeit_max_min: 20, gesamtzeit_max_min: 45, zutaten_max: 10, geraete_max: 2, preis_portion_max_eur: 3.5 };
+    const w = r.werte;
+    const zeilen = [
+      ["Protein pro Portion", `${N(w.protein, 1)} g`, `mind. ${N(g.protein_min_g_portion)} g`],
+      ["Anteil Protein an den Kalorien", `${N(w.protein_anteil * 100)} %`, `mind. ${N(g.protein_anteil_min * 100)} %`],
+      ["Arbeitszeit", `${N(r.arbeitszeit)} min`, `max. ${N(g.arbeitszeit_max_min)} min`],
+      ["Gesamtzeit", `${N(r.gesamtzeit)} min`, `max. ${N(g.gesamtzeit_max_min)} min`],
+      ["Zutaten ohne Vorrat", `${N(w.zutaten_anzahl)}`, `max. ${N(g.zutaten_max)}`],
+      ["Töpfe, Pfannen, Bleche", `${N(r.geraete)}`, `max. ${N(g.geraete_max)}`],
+      ["Preis pro Portion", euro(w.preis_portion), `max. ${euro(g.preis_portion_max_eur)}`],
+      ["Soßenbasis", esc(r.sossenbasis || "keine Soße"), "nicht Skyr, Quark, Joghurt"],
+    ];
+    if (r.quelle?.url) zeilen.push(["Bewertung der Quelle", `${N(r.quelle.bewertung, 1)} bei ${N(r.quelle.bewertungen)}`, `mind. ${N(g.bewertung_min || 4.5, 1)} bei ${N(g.bewertungen_anzahl_min || 50)}`]);
+    return `<ul class="check">${zeilen.map(([a, v, l]) => `<li><span class="ok">✓ erfüllt</span><span>${a}: <b>${v}</b></span><span class="lim">${l}</span></li>`).join("")}</ul>`;
+  }
+
+  function renderDetail() {
+    const r = S.rezepte.find(x => x.id === S.aktiv);
+    if (!r) { S.aktiv = null; return renderListe(); }
+    const p = S.portionen || r.portionen, f = p / r.portionen, w = r.werte;
+    const gruppen = {};
+    for (const z of r.zutaten) (gruppen[z.basic ? "Vorrat" : z.laden] ||= []).push(z);
+    const reihenfolge = Object.keys(gruppen).sort((a, b) => rang(a) - rang(b));
+    const summe = r.zutaten.reduce((s, z) => s + z.preis, 0) * f;
+    const t = r.tipps || {}, u = r.unterwegs, b = S.bewertungen[r.id]?.urteil;
+    const tipp = (lb, txt) => txt ? `<div class="tipp"><p class="lb">${lb}</p><p>${nTxt(txt)}</p></div>` : "";
+    el.innerHTML = `<article class="detail">
+      <button class="btn btn-quiet" id="zurueck">← Alle Rezepte</button>
+      <p class="eyebrow" style="margin-top:var(--s2)">${r.typ === "kalt" ? "Kalt · Uni" : "Warm"} · ${esc(r.mahlzeit)}${w.vegetarisch ? " · Vegetarisch" : ""}</p>
+      <h1 style="font-size:clamp(28px,6vw,40px)">${esc(r.titel)}</h1>
+      <p class="muted">${nTxt(r.kurz)}</p>
+      <div class="shirt"><h3>${N(w.protein)} g Protein</h3>
+        <p>pro Portion · ${N(w.protein_anteil * 100)} % der Kalorien · ${euro(w.preis_30g_protein)} je ${N(30)} g Protein</p></div>
+      <p class="dataline"><span><b>${N(w.kcal)}</b> kcal</span><span>Fett <b>${N(w.fett)} g</b></span><span>KH <b>${N(w.kh)} g</b></span>
+        <span>Arbeit <b>${N(r.arbeitszeit)} min</b></span><span>Gesamt <b>${N(r.gesamtzeit)} min</b></span><span>Portion <b>${euro(w.preis_portion)}</b></span></p>
+
+      <section class="block" aria-labelledby="h-zut">
+        <h2 class="sec" id="h-zut">Einkauf und Zutaten</h2>
+        <div class="stepper"><button class="btn btn-ghost" id="minus" aria-label="Eine Portion weniger" ${p <= 1 ? "disabled" : ""}>−</button>
+          <output aria-live="polite">${N(p)} ${p === 1 ? "Portion" : "Portionen"}</output>
+          <button class="btn btn-ghost" id="plus" aria-label="Eine Portion mehr" ${p >= 12 ? "disabled" : ""}>+</button></div>
+        <div class="tbl"><table>
+          <thead><tr><th>Menge</th><th>Zutat</th><th class="r">Preis</th></tr></thead>
+          <tbody>${reihenfolge.map(l => `<tr class="laden"><th colspan="3">${esc(l)}</th></tr>` + gruppen[l].map(z =>
+            `<tr><td class="menge">${nTxt(menge(z, f))}</td><td>${esc(z.name)}</td><td class="r">${z.preis ? euro(z.preis * f) : "–"}</td></tr>`).join("")).join("")}
+            <tr><td></td><td class="sum">Zusammen, inkl. ${euro(0.1 * p)} für Gewürze</td><td class="r sum">${euro(summe + 0.1 * p)}</td></tr></tbody>
+        </table></div>
+        <p class="hinweis" style="margin-top:var(--s1)">Preise sind Richtwerte für Aldi, Edeka, Bio-Markt und Metzger, Stand Oktober <span class="n">2026</span>.</p>
+      </section>
+
+      <section class="block" aria-labelledby="h-schr">
+        <h2 class="sec" id="h-schr">So geht’s</h2>
+        <ol class="steps">${r.schritte.map(s => `<li><span>${nTxt(s)}</span></li>`).join("")}</ol>
+      </section>
+
+      <section class="block tipps" aria-labelledby="h-tipp">
+        <h2 class="sec" id="h-tipp" style="margin:0">Sparen, abkürzen, aufwerten</h2>
+        ${tipp("Günstiger strecken", t.strecken)}
+        ${tipp("Fertigprodukte", t.fertig)}
+        ${tipp("Proteinpulver (neutral)", t.pulver)}
+        ${u ? `<div class="tipp"><p class="lb">Mitnehmen und vorkochen</p><p>Hält <span class="n">${zahl(u.haltbarkeit_tage)}</span> ${u.haltbarkeit_tage === 1 ? "Tag" : "Tage"} im Kühlschrank. ${u.kuehlakku ? "Mit Kühlakku transportieren." : "Kurz ohne Kühlung unproblematisch."} ${nTxt(u.transport)}</p></div>` : ""}
+      </section>
+
+      <section class="block" aria-labelledby="h-urt">
+        <h2 class="sec" id="h-urt">Wie schmeckt es dir?</h2>
+        <p class="hinweis">Die Suche im Hintergrund richtet sich nach deinen Urteilen. „Nicht mein Fall“ blendet das Rezept aus.</p>
+        <div class="urteil">${[["gern", "Wieder kochen"], ["ok", "Geht so"], ["nein", "Nicht mein Fall"]].map(([k, l]) =>
+          `<button class="btn btn-ghost" data-urteil="${k}" ${pressed(b === k)}>${l}</button>`).join("")}</div>
+        <p class="hinweis" aria-live="polite" style="margin-top:var(--s1)">${esc(S.meldung || "")}</p>
+      </section>
+
+      <section class="block" aria-labelledby="h-pr">
+        <h2 class="sec" id="h-pr">Geprüft</h2>
+        ${regelListe(r)}
+        <p class="hinweis" style="margin-top:var(--s2)">${r.quelle?.url
+          ? `Quelle: <a href="${esc(r.quelle.url)}" target="_blank" rel="noopener">${esc(r.quelle.name || r.quelle.url)}</a>. In eigenen Worten nacherzählt, Mengen und Werte nachgerechnet.`
+          : "Grundstock: von Claude zusammengestellt. Ohne Fremdbewertung – dein Urteil oben zählt."} ${r.hinzugefuegt ? `Aufgenommen am ${esc(datum(r.hinzugefuegt))}.` : ""}</p>
+      </section>
+    </article>`;
+  }
+  const rang = l => l.startsWith("Aldi") && !l.includes("Haltung") ? 0 : l.includes("Haltung") ? 1 : l === "Metzger" ? 2 : l === "Edeka" ? 3 : l.startsWith("Bio") ? 4 : 9;
+
+  function render() {
+    if (S.dbFehlt) {
+      el.innerHTML = `<div class="leer"><p class="sec">Die Rezeptdatenbank ist hier nicht erreichbar.</p><p class="hinweis" style="margin:0">Öffne das Rezeptbuch angemeldet auf claude.ai. In der Vorschau und für abgemeldete Besucher sind die Rezepte nicht sichtbar.</p></div>`;
+      return;
+    }
+    if (!S.geladen) return;
+    if (!S.rezepte.length) {
+      el.innerHTML = `<div class="leer"><p class="sec">Noch keine Rezepte.</p><p class="hinweis" style="margin:0">Der Grundstock wird gerade eingespielt. Danach kommen neue Rezepte über die Suche im Hintergrund dazu.</p></div>`;
+      return;
+    }
+    document.querySelector("header").hidden = !!S.aktiv;
+    S.aktiv ? renderDetail() : renderListe();
+  }
+
+  // ---------- Bedienung ----------
+  el.addEventListener("click", async e => {
+    const t = e.target.closest("button");
+    if (!t) return;
+    if (t.dataset.id) { scrollListe = window.scrollY; S.aktiv = t.dataset.id; S.portionen = null; S.meldung = ""; render(); window.scrollTo(0, 0); return; }
+    if (t.id === "zurueck") { S.aktiv = null; render(); requestAnimationFrame(() => window.scrollTo(0, scrollListe)); return; }
+    if (t.dataset.typ) { S.typ = t.dataset.typ; merke(); return render(); }
+    if (t.dataset.mahlzeit) { S.mahlzeit = t.dataset.mahlzeit; merke(); return render(); }
+    if (t.dataset.flag) { S.flags.has(t.dataset.flag) ? S.flags.delete(t.dataset.flag) : S.flags.add(t.dataset.flag); return render(); }
+    if (t.id === "zeigeNein") { S.zeigeAbgelehnte = !S.zeigeAbgelehnte; return render(); }
+    const r = S.rezepte.find(x => x.id === S.aktiv);
+    if (t.id === "plus" || t.id === "minus") { S.portionen = Math.max(1, Math.min(12, (S.portionen || r.portionen) + (t.id === "plus" ? 1 : -1))); return render(); }
+    if (t.dataset.urteil && r && db) {
+      const alt = S.bewertungen[r.id]?.urteil;
+      const neu = alt === t.dataset.urteil ? null : t.dataset.urteil;
+      try {
+        const ref = db.collection("bewertungen").doc(r.id);
+        if (neu) await ref.set({ urteil: neu, titel: r.titel, datum: new Date().toISOString() });
+        else await ref.delete();
+        S.meldung = neu ? "Gespeichert." : "Urteil entfernt.";
+      } catch (err) {
+        S.meldung = err?.code === "invalid_argument" ? "Nur der Besitzer des Rezeptbuchs kann Urteile speichern." : "Speichern hat nicht geklappt. Bitte gleich noch einmal versuchen.";
+      }
+      render();
+    }
+  });
+  let tipp;
+  el.addEventListener("input", e => {
+    if (e.target.id !== "q") return;
+    S.q = e.target.value;
+    clearTimeout(tipp);
+    tipp = setTimeout(() => {
+      const pos = e.target.selectionStart;
+      render();
+      const q = document.getElementById("q");
+      if (q) { q.focus(); q.setSelectionRange(pos, pos); }
+    }, 120);
+  });
+  el.addEventListener("toggle", e => { if (e.target.matches?.("details.mehr")) S.mehrOffen = e.target.open; }, true);
+  el.addEventListener("change", e => { if (e.target.id === "sort") { S.sort = e.target.value; merke(); render(); } });
+
+  // ---------- Daten ----------
+  async function start() {
+    const anfrage = window.claude?.use?.("db");
+    db = anfrage ? await anfrage.catch(() => null) : null;
+    if (!db) { S.dbFehlt = true; return render(); }
+    db.collection("rezepte").limit(1000).onSnapshot(snap => {
+      S.rezepte = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(r => r.werte && r.titel);
+      S.geladen = true;
+      if (document.activeElement?.id !== "q") render();
+    }, () => { S.dbFehlt = true; render(); });
+    db.collection("bewertungen").onSnapshot(snap => {
+      const neu = {};
+      snap.docs.forEach(d => { neu[d.id] = d.data(); });
+      S.bewertungen = neu;
+      if (S.geladen && document.activeElement?.id !== "q") render();
+    }, () => {});
+    db.collection("system").onSnapshot(snap => {
+      for (const d of snap.docs) {
+        if (d.id === "suche") S.suche = d.data();
+        if (d.id === "regeln") S.regeln = d.data();
+      }
+      if (S.geladen && !S.aktiv && document.activeElement?.id !== "q") render();
+    }, () => {});
+  }
+  start();
+})();
+</script>
