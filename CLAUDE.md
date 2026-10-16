@@ -37,7 +37,9 @@ das Markup schreibst du selbst gegen das Vokabular unten.
 3. **Genau eine Hauptfarbe pro Projekt.** Kein zweiter Akzent, keine Palette. Die eine
    Farbe trägt Fläche, Linie, Rahmen und Schrift.
 4. **Gold `#FCBE11` ist nur Linie, nie Text.** Auf dunklem Grund trägt es 11,0 : 1, auf
-   hellem nur 1,4 : 1. Abgedunkelt würde es oliv. Label-Text läuft über `--label`.
+   hellem nur 1,4 : 1. Abgedunkelt würde es oliv. **`--label` ist kein Gold**, sondern
+   eine eigene Textrolle — sonst wird aus jedem Eyebrow eine goldene Wand. Gold steckt
+   ausschließlich in `--brass` und dem Fokusring.
 5. **Kein Schwarz, kein Weiß.** Kein Kanal unter 3 oder über 250.
 6. **Der Beweis in Zahlen.** Keine Superlative, kein „innovativ", kein „revolutionär".
    Jede Leistungsaussage nennt eine messbare Größe.
@@ -56,25 +58,16 @@ genügt eine Fassung.
 Hauptfarben sind gesättigt auf min(85 % des Gamuts, Deckel 0,125 warm / 0,090 kalt).
 Beide Grenzen sind gemessen, nicht geschätzt.
 
-Maßgeblich sind die Namen, die in `design/moch.css` stehen — nicht die der
-Kurzfassung. Vier heißen dort anders, und `--text` ist **die Schriftfamilie**,
-nicht die Textfarbe:
-
 | Token | Rolle |
 |---|---|
-| `--ground` `--surface` `--sunken` | Grundfläche, Karten, eingelassen |
+| `--ground` `--surface` `--surface-2` | Grundfläche, Karten, eingelassen |
 | `--line` `--line-strong` | Linien, starke Trennung |
-| `--ink` `--muted` | Text, Sekundärtext |
+| `--text` `--muted` | Text, Sekundärtext |
 | `--accent` `--accent-ink` `--auf-accent` | Hauptfarbe: Fläche, Schrift, Text darauf |
-| `--brass` `--brass-text` | Gold als Linie, Label-Text |
-| `--shirt` `--shirt-text` `--shirt-muted` | Hemd-Block |
-| `--kante` `--glas` `--scrim` | helle Oberkante, Milchglas, Abdunklung |
-| `--display` `--text` `--mono` | die drei Schriftfamilien |
-
-**Status hat keine Tokens.** Fehler, Warnung und Erfolg kommen im System nicht
-vor. Wer sie braucht, definiert sie im Projekt, hält sie von der Hauptfarbe
-fern und lässt sie nie allein durch Farbe sprechen — Text oder Form gehören
-dazu. Eintrag in der Übersetzungstabelle.
+| `--brass` | Gold — ausschließlich Linien und Fokus |
+| `--label` | Label- und Eyebrow-Text (kein Gold) |
+| `--success` `--warning` `--error` `--info` | Status, je Schema zwei Fassungen |
+| `--shirt` `--shirt-text` | Hemd-Block |
 
 ## Raum: φ
 
@@ -91,12 +84,14 @@ Datei alle Medien:
 
 **Nähe kodiert Beziehung.** Der Abstand *zwischen* Gruppen ist immer mindestens zwei
 φ-Stufen größer als *innerhalb*: `.stapel-eng` (10) innerhalb einer Einheit, `.stapel`
-(26) zwischen verwandten, `section` (110) zwischen Abschnitten.
+(26) zwischen verwandten, `.abschnitt` (110) zwischen Abschnitten. **Das Polster hängt an
+der Klasse, nicht am `section`-Element** — App-Flächen sind oft `<section>` und sollen
+kein 110-px-Polster erben.
 
 **Mindestens 45 % freie Fläche.** Weißraum ist kein Rest, sondern das Material, das
 Premium herstellt — er wird zuerst geplant.
 
-Radien: `--r-chip` 6 · `--r-ctrl` 10 · `--r-card` 16 · `--r-sheet` 26.
+Radien: `--radius` 6 · `--radius-interactive` 10 · `--r-card` 16 · `--r-sheet` 26.
 Konzentrisch: innen = außen − Polster. Ecken laufen als **G2-Superellipse**
 (`corner-shape`), nicht als Kreisbogen. **Rahmen statt Schatten** — `box-shadow` nur als
 helle Oberkante (`--kante`).
@@ -142,9 +137,16 @@ Genau diese Namen existieren — keine weiteren erfinden:
 | `.reihe` | gleichmäßiges Raster |
 | `.bild` `.bild-hoch` | Bildfeld im φ-Verhältnis |
 | `.stapel-eng` `.stapel` | Abstandsgruppen (siehe Nähe) |
+| `.abschnitt` | Abschnittspolster 110 px — **als Klasse, nicht auf `section`** |
 | `.medium-overlay` `.medium-karte` | Filmbild-Overlay, Visitenkarte |
 
 `h2`, `h3`, `p`, `table` sind bereits gestylt — nicht überschreiben.
+
+**Die Token-Namen hier sind exakt die aus `moch.css` und `tokens/tokens.css`.** Farbrollen:
+`--ground` `--surface` `--surface-2` `--line` `--line-strong` `--text` `--muted` `--label`
+`--accent` `--accent-ink` `--auf-accent` `--brass` `--shirt` `--scrim` `--kante`.
+Schriftfamilien heißen `--font-display` `--font-text` `--font-mono` — nicht `--text`,
+das ist die Textfarbe.
 
 ## Bewegung
 

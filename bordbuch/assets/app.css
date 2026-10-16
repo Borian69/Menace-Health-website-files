@@ -2,9 +2,8 @@
    Bordbuch — App-Hülle über dem Moch-Design-System v3.2
 
    Hier steht ausschließlich Layout. Jede Farbe, jede Schrift, jeder
-   Abstand und jeder Radius kommt aus den Tokens in design/moch.css.
-   Ausnahme sind die drei Statustöne weiter unten — das System kennt
-   keine, und das ist in referenz/UEBERSETZUNGSTABELLE.md begründet.
+   Abstand und jeder Radius kommt aus den Tokens in design/moch.css —
+   ohne eine einzige Ausnahme.
 
    Das Klassenvokabular des Systems (.card .inner .shirt .btn .field
    .eyebrow .n .klein .muted .haar .dataline .badge .stapel .reihe)
@@ -23,15 +22,6 @@
   --fuss: 60px;
   /* Seitenrand der App: eine φ-Stufe, kein eigener Wert. */
   --rand: var(--f4);
-
-  /* ── Status ──────────────────────────────────────────────
-     Das System nennt keine Statusfarben. Diese drei sind bewusst
-     stumpf gehalten, damit sie neben Walnuss nicht wie eine zweite
-     Markenfarbe wirken. Sie tragen nie allein die Bedeutung: überall
-     steht zusätzlich Text oder ein Zeichen. */
-  --warnung: #B8862B;
-  --fehler:  #C25A4E;
-  --gut:     #3C7D63;
 }
 
 html, body { height: 100%; overscroll-behavior-y: none; }
@@ -66,10 +56,10 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; strok
 .topbar-titel { flex: 1; font-weight: 600; font-size: var(--t0); }
 .mark {
   flex: 1;
-  font: 500 var(--t-2)/1 var(--mono);
+  font: 500 var(--t-2)/1 var(--font-mono);
   letter-spacing: .3em;
   text-transform: uppercase;
-  color: var(--brass-text);
+  color: var(--label);
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -82,13 +72,13 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; strok
   display: grid; place-items: center;
   background: transparent;
   border: 1px solid var(--line);
-  border-radius: var(--r-ctrl);
+  border-radius: var(--radius-interactive);
   color: var(--muted);
   cursor: pointer;
   transition: color var(--t-hover) ease-out, border-color var(--t-hover) ease-out,
               transform 100ms ease-out;
 }
-.icon-btn:hover { color: var(--ink); }
+.icon-btn:hover { color: var(--text); }
 /* Rückmeldung beim Drücken, nicht beim Loslassen. */
 .icon-btn:active { transform: scale(.94); }
 .icon-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
@@ -100,13 +90,9 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; strok
 
 /* ── Flächen ─────────────────────────────────────────────── */
 
-/* `section` bekommt vom System 110 px Polster — gedacht für Abschnitte
-   in einem Dokument. Die Flächen der App sind ebenfalls <section>, dort
-   wäre das ein leeres Drittel über dem Inhalt. */
 .pane, .voll {
   position: fixed;
   inset: 0;
-  padding: 0;
   display: flex;
   flex-direction: column;
   background: var(--ground);
@@ -160,7 +146,7 @@ body[data-tab="verlauf"] #pane-neu { display: none; }
   background: transparent;
   border: 0;
   color: var(--muted);
-  font: 500 var(--t-2)/1 var(--mono);
+  font: 500 var(--t-2)/1 var(--font-mono);
   letter-spacing: .14em;
   text-transform: uppercase;
   cursor: pointer;
@@ -169,7 +155,7 @@ body[data-tab="verlauf"] #pane-neu { display: none; }
 .tabbar button svg { width: 20px; height: 20px; }
 .tabbar button:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
 body[data-tab="neu"] .tabbar button[data-tab="neu"],
-body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"] { color: var(--ink); }
+body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"] { color: var(--text); }
 /* Der aktive Bereich wird von einer Goldlinie getragen — Gold ist
    Linie, nie Fläche. */
 body[data-tab="neu"] .tabbar button[data-tab="neu"]::before,
@@ -190,7 +176,7 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
   margin: var(--f3) var(--rand) 0;
   padding: 1px;
   border: 1px solid var(--line);
-  border-radius: var(--r-ctrl);
+  border-radius: var(--radius-interactive);
   background: var(--line);
 }
 .segment button {
@@ -199,13 +185,13 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
   background: var(--ground);
   border: 0;
   color: var(--muted);
-  font: 500 var(--t-2)/1 var(--mono);
+  font: 500 var(--t-2)/1 var(--font-mono);
   letter-spacing: .06em;
   text-transform: uppercase;
   cursor: pointer;
   transition: color var(--t-hover) ease-out, background-color var(--t-hover) ease-out;
 }
-.segment button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.segment button[aria-selected="true"] { background: var(--surface); color: var(--text); }
 .segment button:focus-visible { outline: 2px solid var(--brass); outline-offset: -2px; }
 
 .blaettern {
@@ -226,7 +212,7 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
 .shirt .hemd-meta { color: var(--shirt-muted); }
 
 .odo {
-  font-family: var(--display);
+  font-family: var(--font-display);
   font-weight: var(--display-wght);
   font-variation-settings: "opsz" var(--display-opsz);
   font-size: var(--t4);
@@ -240,8 +226,8 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
 
 /* ── Abschnitte und Texte ────────────────────────────────── */
 
-.abschnitt { padding: 0; margin-bottom: var(--f6); }
-.abschnitt-kopf {
+#letzte-abschnitt { margin: var(--f6) 0; }
+.listen-kopf {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -255,7 +241,7 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
   max-width: 62ch;
 }
 .fussnote {
-  font: 400 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 400 var(--t-2)/var(--lh-mittel) var(--font-mono);
   color: var(--muted);
   margin: 0 0 var(--f4);
 }
@@ -267,7 +253,7 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
 }
 .fehlerzeile {
   font-size: var(--t-1);
-  color: var(--fehler);
+  color: var(--error);
   margin: var(--f2) 0 0;
 }
 /* Form, nicht nur Farbe: Das Dreieck sagt es auch in Graustufen. */
@@ -289,11 +275,11 @@ form { margin-bottom: var(--f6); }
 .field select {
   min-height: 44px;
   padding: var(--f2) var(--f3);
-  border-radius: var(--r-ctrl);
+  border-radius: var(--radius-interactive);
   background: var(--ground);
   border: 1px solid var(--line-strong);
-  color: var(--ink);
-  font: 400 var(--t0)/1 var(--text);
+  color: var(--text);
+  font: 400 var(--t0)/1 var(--font-text);
   /* Eine Data-URI kann keine CSS-Variable lesen; %23948E87 ist --muted
      des dunklen Schemas. Bei einer Token-Änderung hier nachziehen —
      wie im Icon-Generator, im PDF und in der Belegablage. */
@@ -314,9 +300,9 @@ form { margin-bottom: var(--f6); }
   padding: var(--f2) var(--f3);
   background: transparent;
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-ctrl);
+  border-radius: var(--radius-interactive);
   color: var(--muted);
-  font: 400 var(--t-1)/1 var(--text);
+  font: 400 var(--t-1)/1 var(--font-text);
   cursor: pointer;
   transition: color var(--t-hover) ease-out, border-color var(--t-hover) ease-out,
               background-color var(--t-hover) ease-out, transform 100ms ease-out;
@@ -332,7 +318,7 @@ form { margin-bottom: var(--f6); }
 
 .mehr { margin-bottom: var(--f4); }
 .mehr > summary {
-  font: 500 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 500 var(--t-2)/var(--lh-mittel) var(--font-mono);
   letter-spacing: .12em;
   text-transform: uppercase;
   color: var(--muted);
@@ -341,7 +327,7 @@ form { margin-bottom: var(--f6); }
   list-style: none;
 }
 .mehr > summary::-webkit-details-marker { display: none; }
-.mehr > summary::before { content: "+ "; color: var(--brass-text); }
+.mehr > summary::before { content: "+ "; color: var(--label); }
 .mehr[open] > summary::before { content: "– "; }
 .mehr > summary:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
@@ -349,11 +335,11 @@ form { margin-bottom: var(--f6); }
 .btn { width: 100%; margin-bottom: var(--f3); }
 .btn.schmal { width: auto; min-height: 38px; padding: var(--f2) var(--f3); font-size: var(--t-1); }
 .btn-quiet { padding-left: 0; justify-content: flex-start; }
-.btn.gefahr { color: var(--fehler); }
-.btn-ghost.gefahr { border-color: var(--fehler); }
+.btn.gefahr { color: var(--error); }
+.btn-ghost.gefahr { border-color: var(--error); }
 .knopfreihe { display: flex; gap: var(--f3); }
 .knopfreihe .btn { flex: 1; }
-.abschnitt-kopf .btn { width: auto; margin: 0; padding: 0; min-height: 0; font-size: var(--t-1); }
+.listen-kopf .btn { width: auto; margin: 0; padding: 0; min-height: 0; font-size: var(--t-1); }
 
 /* ── Liste ───────────────────────────────────────────────── */
 
@@ -362,11 +348,11 @@ form { margin-bottom: var(--f6); }
   width: 100%;
   min-height: 44px;
   padding: var(--f2) var(--f3);
-  border-radius: var(--r-ctrl);
-  background: var(--sunken);
+  border-radius: var(--radius-interactive);
+  background: var(--surface-2);
   border: 1px solid var(--line);
-  color: var(--ink);
-  font: 400 var(--t0)/1 var(--text);
+  color: var(--text);
+  font: 400 var(--t0)/1 var(--font-text);
   appearance: none;
 }
 .suchzeile input:focus { outline: 2px solid var(--brass); outline-offset: 2px; border-color: transparent; }
@@ -380,9 +366,9 @@ form { margin-bottom: var(--f6); }
   align-items: center;
   gap: var(--f3);
   margin: var(--f5) 0 var(--f3);
-  font: 500 var(--t-2)/1 var(--mono);
+  font: 500 var(--t-2)/1 var(--font-mono);
   letter-spacing: .16em;
-  color: var(--brass-text);
+  color: var(--label);
 }
 .jahr-trenner::after { content: ""; flex: 1; height: 1px; background: var(--brass); }
 .jahr-trenner:first-child { margin-top: 0; }
@@ -400,8 +386,8 @@ form { margin-bottom: var(--f6); }
   border: 1px solid var(--line);
   border-radius: var(--r-card);
   box-shadow: inset 0 1px 0 var(--kante);
-  color: var(--ink);
-  font: 400 var(--t0)/var(--lh-text) var(--text);
+  color: var(--text);
+  font: 400 var(--t0)/var(--lh-text) var(--font-text);
   cursor: pointer;
   transition: border-color var(--t-hover) ease-out, transform 100ms ease-out;
 }
@@ -412,7 +398,7 @@ form { margin-bottom: var(--f6); }
 .eintrag-koerper { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .eintrag-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: var(--f3); }
 .eintrag-datum {
-  font: 400 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 400 var(--t-2)/var(--lh-mittel) var(--font-mono);
   letter-spacing: .06em;
   color: var(--muted);
 }
@@ -421,7 +407,7 @@ form { margin-bottom: var(--f6); }
 .eintrag-meta { display: block; margin-top: var(--f1); font-size: var(--t-1); color: var(--muted); }
 .eintrag-strecke {
   display: block;
-  font: 400 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 400 var(--t-2)/var(--lh-mittel) var(--font-mono);
   color: var(--muted);
 }
 
@@ -431,18 +417,18 @@ form { margin-bottom: var(--f6); }
   padding: var(--f3);
   margin-bottom: var(--f3);
   background: var(--surface);
-  border: 1px solid var(--warnung);
+  border: 1px solid var(--warning);
   border-radius: var(--r-card);
   font-size: var(--t-1);
 }
-.warnkarte svg { width: 18px; height: 18px; flex: none; color: var(--warnung); }
+.warnkarte svg { width: 18px; height: 18px; flex: none; color: var(--warning); }
 
 /* ── Kalender ────────────────────────────────────────────── */
 
 .kal-kopf, .kal-gitter { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .kal-kopf {
   margin-bottom: var(--f2);
-  font: 400 var(--t-2)/1 var(--mono);
+  font: 400 var(--t-2)/1 var(--font-mono);
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -459,9 +445,9 @@ form { margin-bottom: var(--f6); }
   padding: 0;
   background: var(--surface);
   border: 1px solid transparent;
-  border-radius: var(--r-chip);
-  color: var(--ink);
-  font: 400 var(--t-1)/1 var(--mono);
+  border-radius: var(--radius);
+  color: var(--text);
+  font: 400 var(--t-1)/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   transition: border-color var(--t-hover) ease-out, background-color var(--t-hover) ease-out,
@@ -478,7 +464,7 @@ form { margin-bottom: var(--f6); }
 .kal-tag.an .kal-punkte i { background: var(--auf-accent); }
 .kal-mehr { font-size: 9px; color: var(--accent-ink); }
 .kal-tag.an .kal-mehr { color: var(--auf-accent); }
-.kal-debug { position: absolute; top: 1px; left: 3px; font-size: 8px; color: var(--brass-text); }
+.kal-debug { position: absolute; top: 1px; left: 3px; font-size: 8px; color: var(--label); }
 
 #kalender-tag { margin-top: var(--f4); }
 /* Die Datenzeile des Systems, hier für den gewählten Tag. */
@@ -488,7 +474,7 @@ form { margin-bottom: var(--f6); }
   margin-bottom: var(--f3);
   border-top: 1px solid var(--brass);
   border-bottom: 1px solid var(--line);
-  font: 400 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 400 var(--t-2)/var(--lh-mittel) var(--font-mono);
   letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--muted);
@@ -511,12 +497,6 @@ form { margin-bottom: var(--f6); }
   border-radius: var(--r-card);
   box-shadow: inset 0 1px 0 var(--kante);
 }
-/* Gold trägt im dunklen Schema 11 : 1 und ist als Label freigegeben.
-   Auf jeder einzelnen Kennzahl wäre es trotzdem zu viel — es bleibt den
-   Überschriften vorbehalten, hier steht Sekundärtext. Dieselbe Rolle
-   wie `label` im Feld des Systems. */
-.kennzahl .eyebrow,
-.shirt .eyebrow { color: var(--muted); }
 .kennzahl .eyebrow { display: block; }
 .kennzahl-wert { font-size: var(--t1); font-weight: 600; margin-top: var(--f1); }
 .kennzahl-wert.gross { font-size: var(--t2); margin: var(--f2) 0; }
@@ -531,7 +511,7 @@ form { margin-bottom: var(--f6); }
   margin-bottom: var(--f3);
 }
 .dg-lesehilfe {
-  font: 400 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 400 var(--t-2)/var(--lh-mittel) var(--font-mono);
   font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
@@ -544,9 +524,8 @@ form { margin-bottom: var(--f6); }
 .dg-balken.an { fill: var(--accent-ink); }
 .dg-treffer { fill: transparent; stroke: none; }
 /* Daten tragen die Hauptfarbe — sie trägt laut Regel 3 Fläche, Linie
-   und Schrift. Gold bleibt der Struktur: Trennlinien, Tabellenkopf,
-   aktiver Bereich, Fokus. Zwei goldene Kurven wären mehr Gold, als dem
-   System lieb ist. */
+   und Schrift. Gold steckt ausschließlich in --brass und dem Fokusring
+   und bleibt damit der Struktur vorbehalten. */
 .dg-linie { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linejoin: round; }
 .dg-punkt { fill: var(--accent-ink); stroke: none; }
 .dg-fadenkreuz { stroke: var(--line-strong); stroke-width: 1; }
@@ -555,24 +534,24 @@ form { margin-bottom: var(--f6); }
 .dg-tick {
   fill: var(--muted);
   stroke: none;
-  font: 400 10px var(--mono);
+  font: 400 10px var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: .04em;
 }
 .dg-wert {
-  fill: var(--ink);
+  fill: var(--text);
   stroke: none;
-  font: 400 11px var(--mono);
+  font: 400 11px var(--font-mono);
   font-variant-numeric: tabular-nums;
 }
-.dg-roh { fill: var(--brass-text); stroke: none; font: 400 8px var(--mono); }
+.dg-roh { fill: var(--label); stroke: none; font: 400 8px var(--font-mono); }
 
 .tabellenrahmen { margin-bottom: var(--f4); overflow-x: auto; }
 .dg-tabelle { min-width: 260px; }
-.dg-tabelle .zahl { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.dg-tabelle .zahl { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 .dg-tabelle .leise { color: var(--muted); }
 .dg-tabelle tr.ausgelassen td { color: var(--muted); }
-.dg-tabelle .marke-aus { color: var(--warnung); }
+.dg-tabelle .marke-aus { color: var(--warning); }
 
 /* ── Tafel und Betrachter ────────────────────────────────── */
 
@@ -623,7 +602,7 @@ form { margin-bottom: var(--f6); }
   object-fit: contain;
   border: 1px solid var(--line);
   border-radius: var(--r-card);
-  background: var(--sunken);
+  background: var(--surface-2);
 }
 .betrachter .btn { margin-bottom: 0; }
 
@@ -648,16 +627,16 @@ form { margin-bottom: var(--f6); }
   width: 60px; height: 80px;
   padding: 0;
   overflow: hidden;
-  background: var(--sunken);
+  background: var(--surface-2);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-chip);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: transform 100ms ease-out;
 }
 .beleg-daumen:active { transform: scale(.96); }
 .beleg-daumen img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .beleg-daumen:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
-.beleg-laedt { display: grid; place-items: center; font: 400 var(--t-2)/1 var(--mono); color: var(--muted); }
+.beleg-laedt { display: grid; place-items: center; font: 400 var(--t-2)/1 var(--font-mono); color: var(--muted); }
 
 .eintrag-belege { display: flex; gap: 4px; margin-top: var(--f1); }
 .eintrag-belege i { width: 13px; height: 17px; border: 1px solid var(--line-strong); border-radius: 1px; display: block; }
@@ -675,7 +654,7 @@ form { margin-bottom: var(--f6); }
   width: 44px; height: 27px;
   flex: none;
   padding: 2px;
-  background: var(--sunken);
+  background: var(--surface-2);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   transition: background-color var(--t-hover) ease-out, border-color var(--t-hover) ease-out;
@@ -701,12 +680,12 @@ form { margin-bottom: var(--f6); }
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--r-card);
-  font: 400 var(--t-2)/1.7 var(--mono);
+  font: 400 var(--t-2)/1.7 var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: .04em;
   color: var(--muted);
 }
-.statuskarte b { color: var(--ink); font-weight: 500; }
+.statuskarte b { color: var(--text); font-weight: 500; }
 
 .testzeile {
   display: flex;
@@ -720,29 +699,31 @@ form { margin-bottom: var(--f6); }
 .testmarke {
   flex: none;
   width: 66px;
-  font: 500 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 500 var(--t-2)/var(--lh-mittel) var(--font-mono);
   letter-spacing: .1em;
   text-transform: uppercase;
 }
-.testzeile.ok .testmarke { color: var(--gut); }
-.testzeile.weg .testmarke { color: var(--fehler); }
-.test-info { color: var(--muted); font-size: var(--t-2); margin-top: var(--f1); }
+.testzeile.ok .testmarke { color: var(--success); }
+.testzeile.weg .testmarke { color: var(--error); }
+/* Beides sind span-Elemente im selben Behälter — ohne eigenen Block
+   liefe die Erläuterung direkt hinter dem Namen weiter. */
+.test-info { display: block; color: var(--muted); font-size: var(--t-2); margin-top: var(--f1); }
 .test-summe {
   margin: var(--f3) 0;
-  font: 500 var(--t-2)/var(--lh-mittel) var(--mono);
+  font: 500 var(--t-2)/var(--lh-mittel) var(--font-mono);
   letter-spacing: .1em;
   text-transform: uppercase;
-  color: var(--ink);
+  color: var(--text);
 }
 
 .protokoll {
   max-height: 260px;
   overflow: auto;
   padding: var(--f3);
-  background: var(--sunken);
+  background: var(--surface-2);
   border: 1px solid var(--line);
   border-radius: var(--r-card);
-  font: 400 var(--t-2)/1.7 var(--mono);
+  font: 400 var(--t-2)/1.7 var(--font-mono);
   color: var(--muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -764,10 +745,10 @@ form { margin-bottom: var(--f6); }
   padding: var(--f2) var(--f4);
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--r-ctrl);
+  border-radius: var(--radius-interactive);
   box-shadow: inset 0 1px 0 var(--kante);
   font-size: var(--t-1);
-  color: var(--ink);
+  color: var(--text);
   animation: toastIn var(--t-panel) var(--feder);
 }
 @keyframes toastIn { from { transform: translateY(8px); opacity: 0; } }

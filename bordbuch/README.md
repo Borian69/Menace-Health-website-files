@@ -203,8 +203,8 @@ Die App läuft auf dem **Moch-Design-System v3.2** (`../design/moch.css`) im Sch
 Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` oder
 `smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau eine je Projekt.
 
-`assets/app.css` enthält **keinen Hexwert außer den drei Statustönen** und keinen
-Abstand außerhalb der φ-Skala. Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 ·
+`assets/app.css` enthält **keinen einzigen Hexwert** und keinen Abstand außerhalb der
+φ-Skala — auch Fehler, Warnung und Erfolg kommen aus den Status-Tokens des Systems. Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 ·
 68 · 110 · 177), Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in
 Literata, alles andere in Archivo, jede Ziffer in IBM Plex Mono.
 

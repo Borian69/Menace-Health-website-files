@@ -28,7 +28,7 @@ const FARBE = {
   linie:   [0.808, 0.792, 0.761],  // #CECAC2 --line
   kante:   [0.686, 0.667, 0.635],  // #AFAAA2 --line-strong
   messing: [0.753, 0.565, 0.039],  // #C0900A --brass (nur Linie)
-  label:   [0.494, 0.365, 0.016],  // #7E5D04 --brass-text
+  label:   [0.322, 0.349, 0.373],  // #52595F --label (kein Gold mehr)
   text:    [0.176, 0.204, 0.224],  // #2D3439 --ink
   leise:   [0.380, 0.404, 0.427],  // #61676D --muted
   akzent:  [0.612, 0.345, 0.133],  // #9C5822 --accent (walnuss, hell)

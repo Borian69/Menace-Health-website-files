@@ -35,13 +35,13 @@
   --lh-text:1.618; --lh-mittel:1.272; --lh-display:1.128;
 
   /* ---- Schriftfamilien: genau drei ---- */
-  --display:"Literata",Georgia,serif;
-  --text:"Archivo","Helvetica Neue",Arial,sans-serif;
-  --mono:"IBM Plex Mono",Consolas,monospace;
+  --font-display:"Literata",Georgia,serif;
+  --font-text:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",Consolas,monospace;
   --display-wght:600; --display-opsz:72;
 
   /* ---- Form ---- */
-  --r-chip:calc(var(--m) * .375); --r-ctrl:calc(var(--m) * .625);
+  --radius:calc(var(--m) * .375); --radius-interactive:calc(var(--m) * .625);
   --r-card:var(--m);              --r-sheet:var(--f4);
   --corner:superellipse(1.2);     /* G2, nicht Kreisbogen */
   --bund:calc(var(--m) * 77.5);   /* Satzspiegel ~1240 */
@@ -56,24 +56,28 @@
    Zwei Fassungen teilen Farbton UND Gamut-Anteil, nie die Chroma.
    ============================================================ */
 :root,:root,[data-scheme="hell"]{
-  --ground:#EFEBE4; --surface:#F8F5EE; --sunken:#E2DDD6;
+  --ground:#EFEBE4; --surface:#F8F5EE; --surface-2:#E2DDD6;
   --line:#CECAC2; --line-strong:#AFAAA2;
-  --ink:#2D3439; --muted:#61676D;
-  --brass:#C0900A; --brass-text:#7E5D04;
+  --text:#2D3439; --muted:#61676D;
+  --brass:#C0900A; --label:#52595F;
   --accent:#257372; --accent-ink:#257372; --auf-accent:#F8F5EE;
   --kante:rgba(255,255,255,.55); --glas:rgba(248,245,238,.74);
   --scrim:rgba(45,52,57,.55);
+  /* Status: Farbton fest, Saettigung nach denselben Regeln wie die Hauptfarben.
+     Farbe allein traegt nie Bedeutung - Status immer zusaetzlich mit Wort. */
+  --success:#25783F; --warning:#8C6323; --error:#AB4D48; --info:#2F6A9E;
   --shirt:#F8F5EE; --shirt-text:#2D3439; --shirt-muted:#61676D;
   --accent-2:#AFAAA2;
 }
 [data-scheme="dunkel"]{
-  --ground:#121417; --surface:#1B1D21; --sunken:#24262B;
+  --ground:#121417; --surface:#1B1D21; --surface-2:#24262B;
   --line:#2D3036; --line-strong:#44484E;
-  --ink:#E0DAD1; --muted:#948E87;
-  --brass:#FCBE11; --brass-text:#FCBE11;
+  --text:#E0DAD1; --muted:#948E87;
+  --brass:#FCBE11; --label:#AAA49B;
   --accent:#226A68; --accent-ink:#308D8B; --auf-accent:#E0DAD1;
   --kante:rgba(255,255,255,.10); --glas:rgba(27,29,33,.74);
   --scrim:rgba(8,10,12,.62);
+  --success:#398E51; --warning:#A5762B; --error:#C3625C; --info:#4C80B5;
   --shirt:#EFEBE4; --shirt-text:#121417; --shirt-muted:#61676D;
   --accent-2:#44484E;
 }
@@ -99,27 +103,27 @@
 *,*::before,*::after{box-sizing:border-box;corner-shape:var(--corner)}
 .is-circle,.is-pill{corner-shape:round}
 
-body{margin:0;background:var(--ground);color:var(--ink);
-  font:400 var(--t0)/var(--lh-text) var(--text);
+body{margin:0;background:var(--ground);color:var(--text);
+  font:400 var(--t0)/var(--lh-text) var(--font-text);
   font-optical-sizing:auto;
   transition:background var(--t-modus) ease,color var(--t-modus) ease}
 
 .bund{max-width:var(--bund);margin:0 auto;padding:0 var(--f5)}
 
 h1,h2,h3{margin:0}
-.display,h1{font-family:var(--display);font-weight:var(--display-wght);
+.display,h1{font-family:var(--font-display);font-weight:var(--display-wght);
   font-size:var(--t4);line-height:var(--lh-display);letter-spacing:0;
   font-variation-settings:"opsz" var(--display-opsz)}
 .display-gross{font-size:var(--t5)}
-h2{font:600 var(--t2)/var(--lh-mittel) var(--text);letter-spacing:-.01em}
-h3{font:600 var(--t1)/var(--lh-mittel) var(--text)}
+h2{font:600 var(--t2)/var(--lh-mittel) var(--font-text);letter-spacing:-.01em}
+h3{font:600 var(--t1)/var(--lh-mittel) var(--font-text)}
 p{margin:0;max-width:62ch}
 .lead{font-size:var(--t1);line-height:var(--lh-mittel);color:var(--muted)}
 .klein{font-size:var(--t-1)}
 .muted{color:var(--muted)}
-.eyebrow{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.16em;
-  text-transform:uppercase;color:var(--brass-text)}
-.n{font-family:var(--mono);font-size:.93em;font-variant-numeric:tabular-nums}
+.eyebrow{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--label)}
+.n{font-family:var(--font-mono);font-size:.93em;font-variant-numeric:tabular-nums}
 .display .n,h1 .n{font-family:inherit;font-size:1em}
 
 /* ============================================================
@@ -129,8 +133,9 @@ p{margin:0;max-width:62ch}
 .stapel-eng  > * + *{margin-top:var(--f2)}   /* innerhalb einer Einheit */
 .stapel      > * + *{margin-top:var(--f4)}   /* verwandte Einheiten     */
 .stapel-weit > * + *{margin-top:var(--f6)}   /* Abschnitte              */
-section{padding:var(--f7) 0}
-section > .haar{margin-bottom:var(--f6)}
+.abschnitt{padding:var(--f7) 0}        /* NICHT auf section: eine App-Flaeche ist
+                                           oft ein <section> und braucht kein Polster */
+.abschnitt > .haar{margin-bottom:var(--f6)}
 
 /* ============================================================
    GRAFISCHES INVENTAR — kuratiert, nicht gesammelt (Premium 4)
@@ -141,13 +146,13 @@ section > .haar{margin-bottom:var(--f6)}
   border-top:1px solid var(--brass);border-bottom:1px solid var(--brass);margin:0}
 .marke{display:flex;align-items:center;justify-content:center;gap:var(--f3)}
 .marke i{height:1px;width:var(--f6);background:var(--brass);flex:none}
-.marke b{font:500 var(--t-2)/1 var(--mono);letter-spacing:.3em;
-  text-transform:uppercase;color:var(--brass-text)}
+.marke b{font:500 var(--t-2)/1 var(--font-mono);letter-spacing:.3em;
+  text-transform:uppercase;color:var(--label)}
 .dataline{display:flex;gap:var(--f4);flex-wrap:wrap;padding:var(--f2) 0;
   border-top:1px solid var(--brass);border-bottom:1px solid var(--line);
-  font:400 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.06em;
+  font:400 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.06em;
   text-transform:uppercase;color:var(--muted)}
-.dataline b{font-weight:500;color:var(--ink)}
+.dataline b{font-weight:500;color:var(--text)}
 
 /* ============================================================
    LAYOUT — Goldener Schnitt und Symmetrie
@@ -161,10 +166,10 @@ section > .haar{margin-bottom:var(--f6)}
 .drei > *{padding:var(--f5) var(--f4);text-align:center;
   border-right:1px solid var(--line)}
 .drei > *:last-child{border-right:0}
-.drei .zahl{font-family:var(--display);font-weight:var(--display-wght);
+.drei .zahl{font-family:var(--font-display);font-weight:var(--display-wght);
   font-size:var(--t6);line-height:1;color:var(--accent-ink);display:block;
   margin-bottom:var(--f2);font-variation-settings:"opsz" var(--display-opsz)}
-.drei .lb{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.14em;
+.drei .lb{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.14em;
   text-transform:uppercase;color:var(--muted)}
 
 /* ---- Rhythmus: gleiche Elemente, gleicher Abstand (Figma 9) ---- */
@@ -172,7 +177,7 @@ section > .haar{margin-bottom:var(--f6)}
   grid-template-columns:repeat(auto-fit,minmax(calc(var(--m)*15),1fr))}
 
 /* ---- Bildfeld im phi-Verhaeltnis (Premium 5) ---- */
-.bild{aspect-ratio:1.618;background:var(--sunken);border:1px solid var(--line);
+.bild{aspect-ratio:1.618;background:var(--surface-2);border:1px solid var(--line);
   border-radius:var(--r-card);overflow:hidden;display:block;width:100%;
   object-fit:cover}
 .bild-hoch{aspect-ratio:.618}
@@ -185,7 +190,7 @@ section > .haar{margin-bottom:var(--f6)}
   box-shadow:inset 0 1px 0 var(--kante);
   transition:background var(--t-modus) ease,border-color var(--t-modus) ease}
 .card > .inner{border-radius:calc(var(--r-card) - var(--f2));
-  background:var(--sunken);border:1px solid var(--line);padding:var(--f3)}
+  background:var(--surface-2);border:1px solid var(--line);padding:var(--f3)}
 
 /* Hemd — genau einer pro Ansicht, traegt die wichtigste Aussage */
 .shirt{background:var(--shirt);color:var(--shirt-text);
@@ -194,7 +199,7 @@ section > .haar{margin-bottom:var(--f6)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--f2);
   min-height:44px;padding:calc(var(--f2) + 2px) var(--f4);
-  border-radius:var(--r-ctrl);font:500 var(--t0)/1 var(--text);
+  border-radius:var(--radius-interactive);font:500 var(--t0)/1 var(--font-text);
   cursor:pointer;border:1px solid transparent;text-decoration:none;
   transition:background var(--t-hover) ease-out,color var(--t-hover) ease-out,
              transform 100ms ease-out}
@@ -207,16 +212,16 @@ section > .haar{margin-bottom:var(--f6)}
 .btn-quiet{background:transparent;color:var(--muted)}
 
 .badge{display:inline-flex;align-items:center;min-height:calc(var(--m)*1.75);
-  padding:var(--f1) var(--f2);border-radius:var(--r-chip);
-  border:1px solid var(--brass);color:var(--brass-text);
-  font:500 var(--t-2)/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+  padding:var(--f1) var(--f2);border-radius:var(--radius);
+  border:1px solid var(--brass);color:var(--label);
+  font:500 var(--t-2)/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
 
 .field{display:flex;flex-direction:column;gap:var(--f1)}
-.field label{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.12em;
+.field label{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.12em;
   text-transform:uppercase;color:var(--muted)}
-.field input{min-height:44px;padding:var(--f2) var(--f3);border-radius:var(--r-ctrl);
-  background:var(--ground);border:1px solid var(--line-strong);color:var(--ink);
-  font:400 var(--t0)/1 var(--text)}
+.field input{min-height:44px;padding:var(--f2) var(--f3);border-radius:var(--radius-interactive);
+  background:var(--ground);border:1px solid var(--line-strong);color:var(--text);
+  font:400 var(--t0)/1 var(--font-text)}
 .field input:focus{outline:2px solid var(--brass);outline-offset:2px;
   border-color:transparent}
 
@@ -224,8 +229,8 @@ table{border-collapse:collapse;width:100%;font-size:var(--t-1)}
 th,td{border-bottom:1px solid var(--line);padding:var(--f2) var(--f3);text-align:right}
 th:first-child,td:first-child{text-align:left;padding-left:0}
 th:last-child,td:last-child{padding-right:0}
-thead th{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.12em;
-  text-transform:uppercase;color:var(--brass-text);border-bottom-color:var(--brass)}
+thead th{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--label);border-bottom-color:var(--brass)}
 tbody tr:last-child td{border-bottom:0}
 
 /* Transluzente Leiste — Tiefe ueber Kante, nie Schatten */
@@ -259,7 +264,7 @@ tbody tr:last-child td{border-bottom:0}
 
 @media print{
   :root{--m:3.6mm;
-    --ground:#FFFFFF;--surface:#FFFFFF;--sunken:#F2EEE8;
+    --ground:#FFFFFF;--surface:#FFFFFF;--surface-2:#F2EEE8;
     --kante:transparent;--glas:transparent}
   body{background:none}
   .bar{position:static;backdrop-filter:none;border:0}
@@ -278,5 +283,5 @@ tbody tr:last-child td{border-bottom:0}
   .bar{background:var(--surface);backdrop-filter:none}
 }
 @media (prefers-contrast:more){
-  :root{--line:var(--line-strong);--muted:var(--ink)}
+  :root{--line:var(--line-strong);--muted:var(--text)}
 }
