@@ -5,7 +5,7 @@
    und BUILD in assets/js/fassung.js mit; der Selbsttest prüft, dass
    beide zusammenpassen. */
 
-const CACHE = 'bordbuch-v4';
+const CACHE = 'bordbuch-v5';
 
 const SHELL = [
   './',

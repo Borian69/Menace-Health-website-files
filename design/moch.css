@@ -78,7 +78,7 @@
   --kante:rgba(255,255,255,.10); --glas:rgba(27,29,33,.74);
   --scrim:rgba(8,10,12,.62);
   --success:#398E51; --warning:#A5762B; --error:#C3625C; --info:#4C80B5;
-  --shirt:#EFEBE4; --shirt-text:#121417; --shirt-muted:#61676D;
+  --shirt:#24262B; --shirt-text:#E0DAD1; --shirt-muted:#948E87;
   --accent-2:#44484E;
 }
 
@@ -194,7 +194,10 @@ p{margin:0;max-width:62ch}
 
 /* Hemd — genau einer pro Ansicht, traegt die wichtigste Aussage */
 .shirt{background:var(--shirt);color:var(--shirt-text);
-  border-radius:var(--r-card);padding:var(--f6) var(--f5)}
+  border-radius:var(--r-card);padding:var(--f6) var(--f5);
+  border-top:1px solid var(--brass)}   /* Betonung ueber die Goldkante,
+     nicht ueber eine helle Flaeche: die waere im Dunkeln 15:1 gegen den Grund
+     und klebt als Aufkleber obenauf. */
 .shirt .eyebrow{color:inherit;opacity:.82}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--f2);

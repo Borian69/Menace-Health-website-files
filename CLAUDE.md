@@ -96,6 +96,50 @@ Konzentrisch: innen = außen − Polster. Ecken laufen als **G2-Superellipse**
 (`corner-shape`), nicht als Kreisbogen. **Rahmen statt Schatten** — `box-shadow` nur als
 helle Oberkante (`--kante`).
 
+## Dichte: wo Premium entsteht
+
+Acht Abstandsstufen nützen nichts ohne die Regel, welche wann gilt. **Premium entsteht im
+Abstand zwischen Gruppen, nicht innerhalb.** In Bedienoberflächen:
+
+| Ebene | Stufe |
+|---|---|
+| Innerhalb einer Zeile (Chips, Icon + Text) | `--f2` 10 |
+| Zwischen Feldern einer Gruppe | `--f3` 16 |
+| **Zwischen Gruppen** | `--f5` 42 |
+| Über einer tragenden Kennzahl | `--f5` 42 |
+| Zwischen Abschnitten | `--f6` 68 bis `--f7` 110 |
+
+Wer zwischen Gruppen bei 16 px bleibt, bekommt ein dichtes Standard-Interface — technisch
+regelkonform, aber ohne Haltung.
+
+## Der häufige Weg zuerst
+
+**Neun gleich laute Schaltflächen sind kein Premium**, auch wenn keine davon „laut" im
+Sinne der Lautstärke-Regel ist. Ein 3×3-Raster identischer Kacheln ist die Standardlösung
+jeder App.
+
+Zeige, was oft gebraucht wird — drei bis fünf Einträge. Der Rest liegt eine Ebene tiefer
+hinter „Weitere anzeigen". Einfachheit ist nicht Minimalismus: nicht alles verstecken,
+sondern den häufigen Weg zuerst.
+
+## Eingaben sind Linien, keine Kästen
+
+Ein Feld bekommt eine **Grundlinie**, keinen umlaufenden Rahmen — wie ein Formular auf
+Papier. Im Fokus wird die Linie Gold. Das unterscheidet eine Oberfläche von tausend
+anderen und kostet nichts.
+
+```css
+input{background:transparent;border:0;border-bottom:1px solid var(--line-strong)}
+input:focus{outline:0;border-bottom-color:var(--brass)}
+```
+
+## Der Hemd-Block im Dunkelmodus
+
+`.shirt` ist **keine helle Fläche**, wenn der Grund dunkel ist. Eine Fläche mit
+15 : 1 gegen den Grund klebt als Aufkleber obenauf — während jede Karte daneben bei
+1,1 : 1 liegt. Im Dunkeln trägt die Aussage **die Zahl selbst**: groß, in `--font-display`,
+über einer Goldlinie. Die Betonung kommt aus der Kante, nicht aus der Helligkeit.
+
 ## Typografie
 
 **Literata** (Display, variabel opsz 7–72) · **Archivo** (Text) · **IBM Plex Mono**
@@ -174,3 +218,11 @@ acht Minuten."
 Jede Abweichung von diesen Regeln wird **begründet und notiert**, nicht stillschweigend
 vorgenommen. Wenn eine Regel im konkreten Fall nicht trägt, sag das — und schreib dazu,
 was stattdessen gilt und warum.
+
+## Die Prüffrage
+
+**Erkennt jemand die Arbeit ohne Logo als Moch?** Wenn nicht, fehlt die Signatur. Sie
+besteht aus: Goldlinie als Struktur · Datenzeile in Mono-Versalien · der Bruch zwischen
+lauter Serifenzahl und stiller Grotesk · durchgehend tabellarischer Zahlensatz ·
+Eingaben als Linie. Diese fünf kosten nichts und machen den Unterschied zwischen einem
+System und einer Standardoberfläche.

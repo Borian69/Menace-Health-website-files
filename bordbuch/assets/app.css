@@ -237,7 +237,7 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
 .hinweis {
   font-size: var(--t-1);
   color: var(--muted);
-  margin: var(--f2) 0 var(--f3);
+  margin: 0;
   max-width: 62ch;
 }
 .fussnote {
@@ -261,25 +261,41 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
 
 /* ── Formular ────────────────────────────────────────────── */
 
+/* Dichte: Premium entsteht im Abstand *zwischen* Gruppen, nicht
+   innerhalb. Die direkten Kinder des Formulars sind Gruppen und stehen
+   deshalb --f5 auseinander; Felder innerhalb einer Gruppe --f3, Zeilen
+   innerhalb einer Einheit --f2 (.stapel-eng des Systems). */
 form { margin-bottom: var(--f6); }
+#form-neu > * + * { margin-top: var(--f5); }
+
 .feld-reihe { display: flex; gap: var(--f3); }
-.feld-reihe > .field { flex: 1; }
+.feld-reihe > .field { flex: 1; margin-bottom: 0; }
 .field { margin-bottom: var(--f3); }
 
-/* Das System setzt 16px Schrift in Feldern — genau die Grenze, unter
-   der iOS beim Antippen hineinzoomt. Deshalb nichts ändern. */
-.field input, .field select {
+/* Eingaben sind Linien, keine Kästen — wie ein Formular auf Papier.
+   Im Fokus wird die Linie Gold. Die Regel steht im Regelwerk; moch.css
+   führt die Felder noch als Kasten, deshalb steht die Linie hier.
+   Die Schriftgröße bleibt bei --t0 (16 px): darunter zoomt iOS beim
+   Antippen ins Feld und die Ansicht springt weg. */
+.field input, .field select, .suchzeile input {
   width: 100%;
-  appearance: none;
-}
-.field select {
   min-height: 44px;
-  padding: var(--f2) var(--f3);
-  border-radius: var(--radius-interactive);
-  background: var(--ground);
-  border: 1px solid var(--line-strong);
+  padding: var(--f2) 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line-strong);
+  border-radius: 0;
   color: var(--text);
   font: 400 var(--t0)/1 var(--font-text);
+  appearance: none;
+  transition: border-color var(--t-hover) ease-out;
+}
+.field input:focus, .field select:focus, .suchzeile input:focus {
+  outline: 0;
+  border-bottom-color: var(--brass);
+}
+.field select {
+  padding-right: var(--f5);
   /* Eine Data-URI kann keine CSS-Variable lesen; %23948E87 ist --muted
      des dunklen Schemas. Bei einer Token-Änderung hier nachziehen —
      wie im Icon-Generator, im PDF und in der Belegablage. */
@@ -289,7 +305,7 @@ form { margin-bottom: var(--f6); }
   background-size: 18px;
   padding-right: var(--f5);
 }
-.field select:focus { outline: 2px solid var(--brass); outline-offset: 2px; border-color: transparent; }
+
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--f2); }
 .chip {
@@ -334,7 +350,7 @@ form { margin-bottom: var(--f6); }
 /* Knöpfe des Systems tragen in der App die volle Spaltenbreite. */
 .btn { width: 100%; margin-bottom: var(--f3); }
 .btn.schmal { width: auto; min-height: 38px; padding: var(--f2) var(--f3); font-size: var(--t-1); }
-.btn-quiet { padding-left: 0; justify-content: flex-start; }
+.btn-quiet, .btn-quiet.schmal { padding-left: 0; justify-content: flex-start; }
 .btn.gefahr { color: var(--error); }
 .btn-ghost.gefahr { border-color: var(--error); }
 .knopfreihe { display: flex; gap: var(--f3); }
@@ -344,18 +360,7 @@ form { margin-bottom: var(--f6); }
 /* ── Liste ───────────────────────────────────────────────── */
 
 .suchzeile { margin-bottom: var(--f3); }
-.suchzeile input {
-  width: 100%;
-  min-height: 44px;
-  padding: var(--f2) var(--f3);
-  border-radius: var(--radius-interactive);
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  color: var(--text);
-  font: 400 var(--t0)/1 var(--font-text);
-  appearance: none;
-}
-.suchzeile input:focus { outline: 2px solid var(--brass); outline-offset: 2px; border-color: transparent; }
+
 
 .filter-chips { display: flex; flex-wrap: wrap; gap: var(--f1); margin-bottom: var(--f4); }
 .filter-chips .chip { min-height: 32px; padding: var(--f1) var(--f2); font-size: var(--t-2); }

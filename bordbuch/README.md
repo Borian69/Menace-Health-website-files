@@ -47,8 +47,11 @@ Eine Ansicht, ein Ziel: in zehn Sekunden fertig sein.
 - **Kilometerstand** — darunter steht sofort, wie viel seit dem letzten Eintrag
   gefahren wurde. Ein Stand unter dem letzten wird angemeckert, aber nicht verboten:
   Tachos werden getauscht, und die App weiß nicht alles besser.
-- **Arbeit** — neun Chips (Inspektion, Ölwechsel, Reifen, HU/AU, Bremsen, Reparatur,
-  Tanken, Pflege, Sonstiges). Ein Tipp füllt die Beschreibung vor.
+- **Arbeit** — sichtbar sind die **fünf Arten, die in diesem Auto am häufigsten
+  vorkommen**, gezählt aus den eigenen Einträgen. Die übrigen vier liegen hinter
+  *Weitere anzeigen*; eine gewählte Art bleibt immer sichtbar. Neun gleich laute
+  Schaltflächen wären die Standardlösung jeder App — hier steht der häufige Weg
+  zuerst. Ein Tipp füllt die Beschreibung vor.
 - **Beim Tanken** erscheinen zwei zusätzliche Felder: getankte Liter und bezahlter
   Betrag, dazu der Schalter *Vollgetankt*. Das Kosten-Feld aus dem Klappbereich
   verschwindet dann — zwei Felder für dieselbe Zahl wären eine Falle.
@@ -59,8 +62,10 @@ Eine Ansicht, ein Ziel: in zehn Sekunden fertig sein.
 - **Kosten, Werkstatt, Notiz** liegen zugeklappt darunter. Wer sie nicht braucht,
   sieht sie nicht.
 
-Oben steht der aktuelle Kilometerstand als heller Block — die eine laute Aussage
-dieser Ansicht.
+Oben steht der aktuelle Kilometerstand als Hemd-Block — die eine laute Aussage dieser
+Ansicht. Im Dunkeln ist das **keine helle Fläche**: Eine Fläche mit 15 : 1 gegen den
+Grund klebt als Aufkleber obenauf. Die Betonung trägt die Zahl selbst, groß in
+Literata, über einer Goldkante.
 
 ### Verlauf
 
@@ -144,7 +149,7 @@ nur ein Problem sucht, schaltet den Rest ab. Bei eingeschaltetem Diagramm-Bereic
 stehen die Rohwerte unter den Balken, bei eingeschaltetem Kalender das Datum in jeder
 Zelle.
 
-**Selbsttest** prüft fünfzehn Dinge und sagt bei jedem, was herauskam:
+**Selbsttest** prüft siebzehn Dinge und sagt bei jedem, was herauskam:
 
 | Prüfung | Fängt was ab |
 |---|---|
@@ -153,6 +158,7 @@ Zelle.
 | Zahlen einlesen | „123.456 km“, „1.234,56“ |
 | Datum rechnen | Schaltjahr, Sommerzeit, Jahreswechsel |
 | Eingaben prüfen | falsches Datum, negativer Stand, unbekannte Art |
+| Formular schaltet um | drückt *Tanken* wirklich: erscheinen Liter und Betrag, weicht das Kostenfeld |
 | Reihenfolge und Kennzahlen | Sortierung, Fahrleistung, Kostensumme |
 | Ausreißer erkennen | rückwärts laufender Tacho |
 | Monatsverteilung | Summe der Monate, monoton steigende Kurve |
@@ -163,6 +169,7 @@ Zelle.
 | Verbrauch rechnen | Voll-zu-Voll, Teilbetankung, vergessene Füllung, einzelner Tank |
 | Belege ablegen | IndexedDB schreiben, lesen, als JPEG-Bytes holen, löschen |
 | Fassung und Offline-Speicher | `BUILD` gegen den Cache-Namen in `sw.js` |
+| Keine unbehandelten Fehler | Fehler aus Klick-Handlern, die sonst nur still im Protokoll stehen |
 
 **Testdaten** legen zwei Jahre Fahrzeugleben an — mit Sommer-Winter-Verlauf, damit
 die Jahreskurve etwas zu zeigen hat. Sie tragen eine Markierung und lassen sich mit
@@ -208,6 +215,10 @@ Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` o
 68 · 110 · 177), Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in
 Literata, alles andere in Archivo, jede Ziffer in IBM Plex Mono.
 
+**Eingaben sind Linien, keine Kästen** — wie ein Formular auf Papier. Im Fokus wird
+die Linie Gold. Diese vier Zeilen stehen vorerst in `assets/app.css`, weil `moch.css`
+die Felder noch mit Rahmen zeichnet; zieht die Datei nach, fallen sie weg.
+
 Das PDF steht im hellen Schema: Was gelesen, unterschrieben oder gedruckt wird, ist
 hell. Dort ist die Schrift Helvetica — Literata ließe sich nur als eingebettete
 Schriftdatei verwenden, und die wiegt mehr als die ganze App.
@@ -239,7 +250,7 @@ bordbuch/
     belege.js               Belegablage in IndexedDB
     demo.js                 Testdaten
     debug.js                Protokoll und Bereichsschalter
-    selbsttest.js           Die dreizehn Prüfungen
+    selbsttest.js           Die siebzehn Prüfungen
     fassung.js              BUILD — muss zum Cache-Namen in sw.js passen
   tools/make-icons.mjs      Erzeugt die App-Icons: node tools/make-icons.mjs
 ```

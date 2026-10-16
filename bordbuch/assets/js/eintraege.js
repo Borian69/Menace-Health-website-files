@@ -30,6 +30,30 @@ export const ARTEN = [
 
 export const artVon = (id) => ARTEN.find((art) => art.id === id) || ARTEN[ARTEN.length - 1];
 
+/* Der häufige Weg zuerst: neun gleich laute Schaltflächen sind die
+   Standardlösung jeder App. Sichtbar sind die fünf Arten, die in diesem
+   Auto am häufigsten vorkommen — der Rest liegt eine Ebene tiefer. */
+export const ARTEN_SICHTBAR = 5;
+
+/* Reihenfolge, solange nichts eingetragen ist: die eines Autolebens.
+   Getankt wird am häufigsten. */
+const START_REIHE = ['tanken', 'inspektion', 'oel', 'reifen', 'hu'];
+
+/** Alle Arten, die häufigste zuerst. Bei Gleichstand gilt START_REIHE. */
+export function artenNachHaeufigkeit(liste = []) {
+  const zaehler = new Map();
+  for (const eintrag of liste) {
+    zaehler.set(eintrag.art, (zaehler.get(eintrag.art) || 0) + 1);
+  }
+  return ARTEN.slice().sort((a, b) => {
+    const unterschied = (zaehler.get(b.id) || 0) - (zaehler.get(a.id) || 0);
+    if (unterschied !== 0) return unterschied;
+    const ra = START_REIHE.indexOf(a.id);
+    const rb = START_REIHE.indexOf(b.id);
+    return (ra === -1 ? 99 : ra) - (rb === -1 ? 99 : rb);
+  });
+}
+
 /** Rohdaten (Eingabe, Import, alte Fassung) in einen sauberen Eintrag.
     Gibt null zurück, wenn Pflichtangaben fehlen — Datum und Stand. */
 export function normalisiere(roh) {

@@ -43,21 +43,24 @@
     </div>
 
     <form id="form-neu" novalidate>
-      <div class="feld-reihe">
-        <div class="field">
-          <label for="f-datum">Datum</label>
-          <input type="date" id="f-datum" required>
+      <div class="stapel-eng">
+        <div class="feld-reihe">
+          <div class="field">
+            <label for="f-datum">Datum</label>
+            <input type="date" id="f-datum" required>
+          </div>
+          <div class="field">
+            <label for="f-km">Stand (km)</label>
+            <input type="text" id="f-km" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="123456" required>
+          </div>
         </div>
-        <div class="field">
-          <label for="f-km">Stand (km)</label>
-          <input type="text" id="f-km" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="123456" required>
-        </div>
+        <p class="hinweis" id="km-hinweis"></p>
       </div>
-      <p class="hinweis" id="km-hinweis"></p>
 
       <div class="field">
         <label>Arbeit</label>
         <div class="chips" id="arten-chips"></div>
+        <button type="button" class="btn btn-quiet schmal" id="btn-mehr-arten" hidden>Weitere anzeigen</button>
       </div>
 
       <!-- Erscheint nur beim Tanken: ohne Liter kein Verbrauch. -->
@@ -113,8 +116,10 @@
         </div>
       </details>
 
-      <button type="submit" class="btn btn-primary" id="btn-speichern">Eintragen</button>
-      <p class="fehlerzeile" id="form-fehler" hidden></p>
+      <div class="stapel-eng">
+        <button type="submit" class="btn btn-primary" id="btn-speichern">Eintragen</button>
+        <p class="fehlerzeile" id="form-fehler" hidden></p>
+      </div>
     </form>
 
     <section id="letzte-abschnitt" hidden>
@@ -427,6 +432,7 @@
     <div class="field">
       <label>Arbeit</label>
       <div class="chips" id="b-arten"></div>
+      <button type="button" class="btn btn-quiet schmal" id="btn-b-mehr-arten" hidden>Weitere anzeigen</button>
     </div>
     <div class="tankblock" id="b-tank-felder" hidden>
       <div class="feld-reihe">

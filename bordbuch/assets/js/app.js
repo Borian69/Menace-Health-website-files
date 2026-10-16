@@ -10,7 +10,7 @@
 import { $, $$, el, icon, euro, km, liter, verbrauchZahl, spritZahl, toKm, toCents, toMilliliter, formatDatum, formatMonat, heuteISO, istISO, uid, plural } from './util.js';
 import { log, fehler, messe, setzeFlags, BEREICHE, protokollText, protokollLeeren, beiEintrag, flags } from './debug.js';
 import { ladeEinstellungen, speichereEinstellungen, ladeEintraege, speichereEintraege, alsJSON, ausJSON, speicherInfo, alleDatenLoeschen } from './store.js';
-import { ARTEN, artVon, normalisiere, sortiere, sortiereNeueste, statistik, strecken, monateFuerJahr, jahre, nachTag } from './eintraege.js';
+import { ARTEN, ARTEN_SICHTBAR, artenNachHaeufigkeit, artVon, normalisiere, sortiere, sortiereNeueste, statistik, strecken, monateFuerJahr, jahre, nachTag } from './eintraege.js';
 import { gitter } from './kalender.js';
 import { balken, kurve, tabelle, zeitreihe } from './diagramm.js';
 import { erzeugePDF, testSeite } from './pdf.js';
@@ -50,9 +50,8 @@ function start() {
   $('#f-datum').value = heuteISO();
   springeZumLetztenMonat();
 
-  baueArtChips($('#arten-chips'), () => neuArt, (id) => { neuArt = id; });
-  baueArtChips($('#b-arten'), () => tafelArt, (id) => { tafelArt = id; });
-
+  // Die Chips baut zeichneAlles() weiter unten; die der Tafel baut sie beim
+  // Öffnen, weil erst dann feststeht, welche Art gewählt ist.
   verdrahteTabs();
   verdrahteFormular();
   verdrahteListe();
@@ -71,6 +70,7 @@ function start() {
 
 function zeichneAlles() {
   const fertig = messe('ui', 'Alles neu aufgebaut');
+  baueArtChips($('#arten-chips'), () => neuArt, (id) => { neuArt = id; });
   renderStand();
   renderLetzte();
   renderListe();
@@ -135,29 +135,55 @@ function zeigeAnsicht(name) {
 
 /* ── Eintragen ───────────────────────────────────────────── */
 
+/* Gezeigt werden die fünf Arten, die dieser Nutzer wirklich braucht —
+   gezählt aus seinen eigenen Einträgen. Gezählt und sortiert wird in
+   eintraege.js, damit der Selbsttest dieselbe Reihenfolge prüfen kann wie
+   die Oberfläche sie zeichnet. */
 function baueArtChips(halter, holeArt, setzeArt) {
+  const imFormular = halter.id === 'arten-chips';
+  const mehrKnopf = $(imFormular ? '#btn-mehr-arten' : '#btn-b-mehr-arten');
+  const sortiert = artenNachHaeufigkeit(eintraege);
+  const aktuell = holeArt();
+
+  // Eine Art, die gerade gewählt ist, bleibt sichtbar — sonst verschwände
+  // die eigene Auswahl hinter einem Knopf.
+  const gewaehltVersteckt = sortiert.findIndex((art) => art.id === aktuell) >= ARTEN_SICHTBAR;
+  let offen = gewaehltVersteckt;
+
   halter.textContent = '';
-  for (const art of ARTEN) {
+  for (const art of sortiert) {
     const knopf = el('button', {
       class: 'chip',
       type: 'button',
       'data-art': art.id,
-      'aria-pressed': String(art.id === holeArt()),
+      'aria-pressed': String(art.id === aktuell),
       onclick: () => {
         setzeArt(art.id);
         for (const anderer of halter.querySelectorAll('.chip')) {
           anderer.setAttribute('aria-pressed', String(anderer.dataset.art === art.id));
         }
         // Beschreibung nur füllen, solange nichts Eigenes drinsteht.
-        const imFormular = halter.id === 'arten-chips';
         const feld = imFormular ? $('#f-text') : $('#b-text');
         const vorbelegt = ARTEN.some((eintrag) => eintrag.standard === feld.value);
         if (!feld.value || vorbelegt) feld.value = art.standard;
         zeigeTankfelder(imFormular);
       },
-    }, icon(art.pfad, { size: 15 }), art.label);
+    }, icon(art.pfad, { size: 16 }), art.label);
     halter.append(knopf);
   }
+
+  const zeige = () => {
+    const chips = [...halter.querySelectorAll('.chip')];
+    chips.forEach((chip, i) => { chip.hidden = !offen && i >= ARTEN_SICHTBAR; });
+    mehrKnopf.hidden = chips.length <= ARTEN_SICHTBAR;
+    mehrKnopf.textContent = offen
+      ? 'Weniger anzeigen'
+      : `Weitere ${chips.length - ARTEN_SICHTBAR} anzeigen`;
+    log('ui', 'Arten-Auswahl aufgebaut', { sichtbar: offen ? chips.length : ARTEN_SICHTBAR, offen });
+  };
+
+  mehrKnopf.onclick = () => { offen = !offen; zeige(); };
+  zeige();
 }
 
 /* Beim Tanken erscheinen Liter und Betrag oben im Formular. Der Betrag
@@ -982,9 +1008,7 @@ function oeffneTafel(id) {
   zeigeTankfelder(false);
   zeigeTafelBelege(eintrag);
 
-  for (const chip of $$('#b-arten .chip')) {
-    chip.setAttribute('aria-pressed', String(chip.dataset.art === eintrag.art));
-  }
+  baueArtChips($('#b-arten'), () => tafelArt, (id) => { tafelArt = id; });
 
   $('#blende').hidden = false;
   log('eintrag', 'Tafel geöffnet', { id });
