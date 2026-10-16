@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="de" data-theme="nacht">
+<html lang="de" data-scheme="dunkel" data-farbe="walnuss">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bordbuch</title>
 <meta name="description" content="Datum, Kilometerstand, Arbeit — in zehn Sekunden eingetragen. Übersicht, Kalender, Jahreskurve und ein PDF, das beim Verkauf bares Geld wert ist.">
-<meta name="theme-color" content="#0E0F11">
+<meta name="theme-color" content="#121417">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
@@ -16,8 +16,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Das Moch-Design-System: Schriften, Tokens, Formsprache, Komponenten. -->
-<link rel="stylesheet" href="../design/styles.css">
+<!-- Das Moch-Design-System v3.2: Schriften, Tokens, Formsprache, Komponenten. -->
+<link rel="stylesheet" href="../design/moch.css">
 <link rel="stylesheet" href="assets/app.css">
 </head>
 <body data-tab="neu" data-ansicht="liste">
@@ -37,7 +37,7 @@
 
     <!-- Der eine helle Block dieser Ansicht: der aktuelle Stand. -->
     <div class="shirt" id="stand-karte">
-      <span class="label">Kilometerstand</span>
+      <span class="eyebrow">Kilometerstand</span>
       <div class="odo" id="odo">—</div>
       <span class="hemd-meta muted" id="odo-meta">Noch kein Eintrag</span>
     </div>
@@ -119,7 +119,7 @@
 
     <section class="abschnitt" id="letzte-abschnitt" hidden>
       <div class="abschnitt-kopf">
-        <span class="label">Zuletzt eingetragen</span>
+        <span class="eyebrow">Zuletzt eingetragen</span>
         <button class="btn btn-quiet" id="btn-alle-zeigen">Alle</button>
       </div>
       <ul class="liste" id="letzte-liste"></ul>
@@ -186,7 +186,7 @@
            helle Block gehört dem Kilometerstand, und laut sind in dieser
            Ansicht schon die Balken und der Primärknopf. -->
       <div class="card" id="jahr-karte">
-        <span class="label">Fahrleistung im Jahr</span>
+        <span class="eyebrow">Fahrleistung im Jahr</span>
         <div class="kennzahl-wert gross" id="jahr-km">—</div>
         <span class="hemd-meta muted" id="jahr-meta"></span>
       </div>
@@ -195,7 +195,7 @@
 
       <figure class="diagramm">
         <figcaption>
-          <span class="label">Kilometer je Monat</span>
+          <span class="eyebrow">Kilometer je Monat</span>
           <span class="dg-lesehilfe" id="lese-balken">Antippen für den Monatswert</span>
         </figcaption>
         <div class="dg-halter" id="halter-balken"></div>
@@ -203,7 +203,7 @@
 
       <figure class="diagramm">
         <figcaption>
-          <span class="label">Aufsummiert über das Jahr</span>
+          <span class="eyebrow">Aufsummiert über das Jahr</span>
           <span class="dg-lesehilfe" id="lese-kurve">Antippen für den Stand im Monat</span>
         </figcaption>
         <div class="dg-halter" id="halter-kurve"></div>
@@ -221,7 +221,7 @@
     <!-- ── Verbrauch ── -->
     <div class="ansicht" id="ansicht-verbrauch" hidden>
       <div class="card" id="verbrauch-karte">
-        <span class="label">Tatsächlicher Verbrauch</span>
+        <span class="eyebrow">Tatsächlicher Verbrauch</span>
         <div class="kennzahl-wert gross" id="verbrauch-wert">—</div>
         <span class="hemd-meta muted" id="verbrauch-meta"></span>
       </div>
@@ -230,7 +230,7 @@
 
       <figure class="diagramm" id="verbrauch-diagramm" hidden>
         <figcaption>
-          <span class="label">Verbrauch je Tankfüllung</span>
+          <span class="eyebrow">Verbrauch je Tankfüllung</span>
           <span class="dg-lesehilfe" id="lese-verbrauch">Antippen für die einzelne Messung</span>
         </figcaption>
         <div class="dg-halter" id="halter-verbrauch"></div>
@@ -238,7 +238,7 @@
 
       <figure class="diagramm" id="preis-diagramm" hidden>
         <figcaption>
-          <span class="label">Preis je Liter</span>
+          <span class="eyebrow">Preis je Liter</span>
           <span class="dg-lesehilfe" id="lese-preis">Antippen für den Preis der Tankfüllung</span>
         </figcaption>
         <div class="dg-halter" id="halter-preis"></div>
@@ -282,7 +282,7 @@
   <div class="scroll">
 
     <div class="abschnitt">
-      <span class="label">Fahrzeug</span>
+      <span class="eyebrow">Fahrzeug</span>
       <p class="hinweis">Steht im Kopf des PDF. Ohne diese Angaben ist die Liste
         nur eine Liste — mit ihnen ist sie ein Nachweis.</p>
       <div class="field">
@@ -306,7 +306,7 @@
     </div>
 
     <div class="abschnitt">
-      <span class="label">Anzeige</span>
+      <span class="eyebrow">Anzeige</span>
       <label class="schalter">
         <input type="checkbox" id="e-kosten-anzeigen">
         <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
@@ -322,7 +322,7 @@
     </div>
 
     <div class="abschnitt">
-      <span class="label">PDF</span>
+      <span class="eyebrow">PDF</span>
       <div class="field">
         <label for="e-format">Papierformat</label>
         <select id="e-format">
@@ -354,7 +354,7 @@
     </div>
 
     <div class="abschnitt">
-      <span class="label">Daten</span>
+      <span class="eyebrow">Daten</span>
       <div class="statuskarte" id="speicher-status"></div>
       <div class="knopfreihe">
         <button type="button" class="btn btn-ghost" id="btn-export">Sicherung speichern</button>
@@ -366,7 +366,7 @@
 
     <!-- ── Diagnose ── -->
     <div class="abschnitt">
-      <span class="label">Diagnose</span>
+      <span class="eyebrow">Diagnose</span>
       <p class="hinweis">Für den Fall, dass etwas nicht so läuft wie erwartet.
         Der Hauptschalter aktiviert das Protokoll; darunter lässt sich für jeden
         Bereich einzeln entscheiden, ob er mitschreibt.</p>
@@ -399,7 +399,7 @@
     </div>
 
     <div class="abschnitt">
-      <span class="label">Über</span>
+      <span class="eyebrow">Über</span>
       <p class="hinweis" id="ueber-text"></p>
       <button type="button" class="btn btn-quiet" id="btn-neu-laden">Nach neuer Fassung suchen</button>
     </div>
@@ -487,7 +487,7 @@
 <!-- ══════════════════ BELEG ANSEHEN ══════════════════ -->
 <div class="blende betrachter" id="betrachter" hidden>
   <div class="betrachter-kopf">
-    <span class="label" id="betrachter-titel"></span>
+    <span class="eyebrow" id="betrachter-titel"></span>
     <button class="icon-btn" id="btn-betrachter-zu" aria-label="Schließen">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>

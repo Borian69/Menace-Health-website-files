@@ -546,7 +546,7 @@ function renderKennzahlen(daten, werte) {
 
   for (const [label, wert] of felder) {
     halter.append(el('div', { class: 'kennzahl' },
-      el('span', { class: 'label', text: label }),
+      el('span', { class: 'eyebrow', text: label }),
       el('div', { class: 'kennzahl-wert' }, zahl(wert)),
     ));
   }
@@ -863,7 +863,7 @@ function renderVerbrauchsKennzahlen(bilanz) {
 
   for (const [label, text] of felder) {
     halter.append(el('div', { class: 'kennzahl' },
-      el('span', { class: 'label', text: label }),
+      el('span', { class: 'eyebrow', text: label }),
       el('div', { class: 'kennzahl-wert' }, zahl(text)),
     ));
   }
@@ -932,7 +932,7 @@ function renderVerbrauchsTabelle(bilanz) {
       el('td', { class: 'zahl' },
         zahl(verbrauchZahl(messung.verbrauch)),
         // Form statt Farbe allein: Das Sternchen sagt es auch in Graustufen.
-        messung.plausibel ? null : el('span', { class: 'marke', title: 'nicht eingerechnet', text: ' *' })),
+        messung.plausibel ? null : el('span', { class: 'marke-aus', title: 'nicht eingerechnet', text: ' *' })),
     ));
   }
 

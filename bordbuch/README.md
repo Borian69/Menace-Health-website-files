@@ -23,7 +23,7 @@ https://<dein-name>.github.io/Menace-Health-website-files/bordbuch/
 ```
 
 Wichtig: **Das Verzeichnis `design/` muss mitveröffentlicht werden** — die App lädt
-von dort ihre Tokens und Schriften.
+von dort `moch.css`, also Tokens, Raumskala und Schriften.
 
 ### 2. Auf den Startbildschirm legen
 
@@ -193,18 +193,31 @@ Einstellungen zeigen vorher an, wie viel die Ablage belegt.
 
 ## Gestaltung
 
-Die App liegt auf dem **Moch-Design-System** (`../design/styles.css`) im Fond *Nacht*.
-Sie bringt keine eigenen Farben und keine eigenen Schriften mit — `assets/app.css`
-enthält keinen einzigen Hexwert, nur Tokens. Das PDF steht im Elfenbein-Theme: Was
-gelesen, unterschrieben oder gedruckt wird, ist hell.
+Die App läuft auf dem **Moch-Design-System v3.2** (`../design/moch.css`) im Schema
+`dunkel` mit der Hauptfarbe `walnuss` — beides steht als Attribut am `<html>`-Element:
 
-Jede Abweichung vom Regelwerk ist in `../referenz/UEBERSETZUNGSTABELLE.md` begründet.
+```html
+<html lang="de" data-scheme="dunkel" data-farbe="walnuss">
+```
+
+Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` oder
+`smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau eine je Projekt.
+
+`assets/app.css` enthält **keinen Hexwert außer den drei Statustönen** und keinen
+Abstand außerhalb der φ-Skala. Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 ·
+68 · 110 · 177), Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in
+Literata, alles andere in Archivo, jede Ziffer in IBM Plex Mono.
+
+Das PDF steht im hellen Schema: Was gelesen, unterschrieben oder gedruckt wird, ist
+hell. Dort ist die Schrift Helvetica — Literata ließe sich nur als eingebettete
+Schriftdatei verwenden, und die wiegt mehr als die ganze App.
+
+Jede Abweichung vom Regelwerk ist in `../referenz/UEBERSETZUNGSTABELLE.md` mit Wunsch,
+Risiko und Umsetzung begründet.
 
 Ohne Netzverbindung greifen beim ersten Start die Ersatzschriften — das Layout bleibt
 stabil, der Charakter geht verloren. Nach dem ersten Laden liegen die Schriften im
 Cache des Service Workers.
-
----
 
 ## Dateien
 

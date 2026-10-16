@@ -1,0 +1,282 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap');
+
+/* ============================================================
+   MOCH 3.0 — ein System, alle Medien
+   Web · Motion · Overlay · Print · Visitenkarte
+   Alles leitet sich aus einem Modul --m und der Zahl phi ab.
+   ============================================================ */
+
+:root{
+  /* ---- Das Modul. Einziger Wert, der je Medium wechselt. ---- */
+  --m:16px;
+
+  /* ---- Raum: phi-Potenzen des Moduls ---- */
+  --f1:calc(var(--m) / 2.618);   /* m / phi²  ~  6   */
+  --f2:calc(var(--m) / 1.618);   /* m / phi   ~ 10   */
+  --f3:var(--m);                 /*           ~ 16   */
+  --f4:calc(var(--m) * 1.618);   /*           ~ 26   */
+  --f5:calc(var(--m) * 2.618);   /*           ~ 42   */
+  --f6:calc(var(--m) * 4.236);   /*           ~ 68   */
+  --f7:calc(var(--m) * 6.854);   /*           ~110   */
+  --f8:calc(var(--m) * 11.09);   /*           ~177   */
+
+  /* ---- Schrift: Schrittweite wurzel(phi). Jede zweite Stufe = Raumskala. ---- */
+  --t-2:calc(var(--m) / 1.618);  /*  ~ 10   Label, Mono-Versalien */
+  --t-1:calc(var(--m) / 1.272);  /*  ~ 12,5 Sekundaertext         */
+  --t0:var(--m);                 /*  ~ 16   Fliesstext            */
+  --t1:calc(var(--m) * 1.272);   /*  ~ 20,5 Lead, h3              */
+  --t2:calc(var(--m) * 1.618);   /*  ~ 26   h2                    */
+  --t3:calc(var(--m) * 2.058);   /*  ~ 33   h1 klein              */
+  --t4:calc(var(--m) * 2.618);   /*  ~ 42   Display               */
+  --t5:calc(var(--m) * 3.330);   /*  ~ 53,5 Display gross         */
+  --t6:calc(var(--m) * 4.236);   /*  ~ 68   Plakat                */
+
+  /* ---- Zeilenabstand: phi, wurzel(phi), vierte wurzel(phi) ---- */
+  --lh-text:1.618; --lh-mittel:1.272; --lh-display:1.128;
+
+  /* ---- Schriftfamilien: genau drei ---- */
+  --display:"Literata",Georgia,serif;
+  --text:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --mono:"IBM Plex Mono",Consolas,monospace;
+  --display-wght:600; --display-opsz:72;
+
+  /* ---- Form ---- */
+  --r-chip:calc(var(--m) * .375); --r-ctrl:calc(var(--m) * .625);
+  --r-card:var(--m);              --r-sheet:var(--f4);
+  --corner:superellipse(1.2);     /* G2, nicht Kreisbogen */
+  --bund:calc(var(--m) * 77.5);   /* Satzspiegel ~1240 */
+
+  /* ---- Bewegung: Apple-Federn, kritisch gedaempft ---- */
+  --feder:cubic-bezier(.32,.72,0,1);
+  --t-hover:180ms; --t-panel:240ms; --t-reveal:600ms; --t-modus:350ms;
+}
+
+/* ============================================================
+   FARBE — Grund fast neutral, eine Hauptfarbe, Messing als Linie
+   Zwei Fassungen teilen Farbton UND Gamut-Anteil, nie die Chroma.
+   ============================================================ */
+:root,:root,[data-scheme="hell"]{
+  --ground:#EFEBE4; --surface:#F8F5EE; --sunken:#E2DDD6;
+  --line:#CECAC2; --line-strong:#AFAAA2;
+  --ink:#2D3439; --muted:#61676D;
+  --brass:#C0900A; --brass-text:#7E5D04;
+  --accent:#257372; --accent-ink:#257372; --auf-accent:#F8F5EE;
+  --kante:rgba(255,255,255,.55); --glas:rgba(248,245,238,.74);
+  --scrim:rgba(45,52,57,.55);
+  --shirt:#F8F5EE; --shirt-text:#2D3439; --shirt-muted:#61676D;
+  --accent-2:#AFAAA2;
+}
+[data-scheme="dunkel"]{
+  --ground:#121417; --surface:#1B1D21; --sunken:#24262B;
+  --line:#2D3036; --line-strong:#44484E;
+  --ink:#E0DAD1; --muted:#948E87;
+  --brass:#FCBE11; --brass-text:#FCBE11;
+  --accent:#226A68; --accent-ink:#308D8B; --auf-accent:#E0DAD1;
+  --kante:rgba(255,255,255,.10); --glas:rgba(27,29,33,.74);
+  --scrim:rgba(8,10,12,.62);
+  --shirt:#EFEBE4; --shirt-text:#121417; --shirt-muted:#61676D;
+  --accent-2:#44484E;
+}
+
+
+/* ---- Hauptfarbe: genau eine je Projekt ---- */
+[data-farbe="walnuss"]{--accent:#9C5822;--accent-ink:#9C5822;--auf-accent:#F8F5EE}
+[data-farbe="oxblood"]{--accent:#AA4B5B;--accent-ink:#AA4B5B;--auf-accent:#F8F5EE}
+[data-farbe="taupe"]{--accent:#8F6123;--accent-ink:#8F6123;--auf-accent:#F8F5EE}
+[data-farbe="stahlblau"]{--accent:#277194;--accent-ink:#277194;--auf-accent:#F8F5EE}
+[data-farbe="petrol"]{--accent:#257372;--accent-ink:#257372;--auf-accent:#F8F5EE}
+[data-farbe="smaragd"]{--accent:#267752;--accent-ink:#267752;--auf-accent:#F8F5EE}
+[data-scheme="dunkel"][data-farbe="walnuss"]{--accent:#8C4E1E;--accent-ink:#BB6C2F;--auf-accent:#E0DAD1}
+[data-scheme="dunkel"][data-farbe="oxblood"]{--accent:#9D4050;--accent-ink:#C2606F;--auf-accent:#E0DAD1}
+[data-scheme="dunkel"][data-farbe="taupe"]{--accent:#80571E;--accent-ink:#A9742B;--auf-accent:#E0DAD1}
+[data-scheme="dunkel"][data-farbe="stahlblau"]{--accent:#216585;--accent-ink:#3F86AA;--auf-accent:#E0DAD1}
+[data-scheme="dunkel"][data-farbe="petrol"]{--accent:#226A68;--accent-ink:#308D8B;--auf-accent:#E0DAD1}
+[data-scheme="dunkel"][data-farbe="smaragd"]{--accent:#226D4B;--accent-ink:#2F8E63;--auf-accent:#E0DAD1}
+
+/* ============================================================
+   GRUNDLAGEN
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;corner-shape:var(--corner)}
+.is-circle,.is-pill{corner-shape:round}
+
+body{margin:0;background:var(--ground);color:var(--ink);
+  font:400 var(--t0)/var(--lh-text) var(--text);
+  font-optical-sizing:auto;
+  transition:background var(--t-modus) ease,color var(--t-modus) ease}
+
+.bund{max-width:var(--bund);margin:0 auto;padding:0 var(--f5)}
+
+h1,h2,h3{margin:0}
+.display,h1{font-family:var(--display);font-weight:var(--display-wght);
+  font-size:var(--t4);line-height:var(--lh-display);letter-spacing:0;
+  font-variation-settings:"opsz" var(--display-opsz)}
+.display-gross{font-size:var(--t5)}
+h2{font:600 var(--t2)/var(--lh-mittel) var(--text);letter-spacing:-.01em}
+h3{font:600 var(--t1)/var(--lh-mittel) var(--text)}
+p{margin:0;max-width:62ch}
+.lead{font-size:var(--t1);line-height:var(--lh-mittel);color:var(--muted)}
+.klein{font-size:var(--t-1)}
+.muted{color:var(--muted)}
+.eyebrow{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--brass-text)}
+.n{font-family:var(--mono);font-size:.93em;font-variant-numeric:tabular-nums}
+.display .n,h1 .n{font-family:inherit;font-size:1em}
+
+/* ============================================================
+   NÄHE — Abstand kodiert Beziehung (Figma 12)
+   Zwischen Gruppen immer mindestens zwei phi-Stufen mehr als innerhalb.
+   ============================================================ */
+.stapel-eng  > * + *{margin-top:var(--f2)}   /* innerhalb einer Einheit */
+.stapel      > * + *{margin-top:var(--f4)}   /* verwandte Einheiten     */
+.stapel-weit > * + *{margin-top:var(--f6)}   /* Abschnitte              */
+section{padding:var(--f7) 0}
+section > .haar{margin-bottom:var(--f6)}
+
+/* ============================================================
+   GRAFISCHES INVENTAR — kuratiert, nicht gesammelt (Premium 4)
+   Genau diese vier Mittel. Keine weiteren erfinden.
+   ============================================================ */
+.haar{height:1px;background:var(--brass);border:0;margin:0}
+.doppel{border:0;height:var(--f1);
+  border-top:1px solid var(--brass);border-bottom:1px solid var(--brass);margin:0}
+.marke{display:flex;align-items:center;justify-content:center;gap:var(--f3)}
+.marke i{height:1px;width:var(--f6);background:var(--brass);flex:none}
+.marke b{font:500 var(--t-2)/1 var(--mono);letter-spacing:.3em;
+  text-transform:uppercase;color:var(--brass-text)}
+.dataline{display:flex;gap:var(--f4);flex-wrap:wrap;padding:var(--f2) 0;
+  border-top:1px solid var(--brass);border-bottom:1px solid var(--line);
+  font:400 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.dataline b{font-weight:500;color:var(--ink)}
+
+/* ============================================================
+   LAYOUT — Goldener Schnitt und Symmetrie
+   ============================================================ */
+.gold{display:grid;grid-template-columns:1fr 1.618fr;gap:var(--f5);align-items:start}
+.gold-kehr{display:grid;grid-template-columns:1.618fr 1fr;gap:var(--f5);align-items:start}
+.mitte{text-align:center}
+.mitte p,.mitte .display{margin-left:auto;margin-right:auto}
+.drei{display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--brass);border-bottom:1px solid var(--brass)}
+.drei > *{padding:var(--f5) var(--f4);text-align:center;
+  border-right:1px solid var(--line)}
+.drei > *:last-child{border-right:0}
+.drei .zahl{font-family:var(--display);font-weight:var(--display-wght);
+  font-size:var(--t6);line-height:1;color:var(--accent-ink);display:block;
+  margin-bottom:var(--f2);font-variation-settings:"opsz" var(--display-opsz)}
+.drei .lb{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+
+/* ---- Rhythmus: gleiche Elemente, gleicher Abstand (Figma 9) ---- */
+.reihe{display:grid;gap:var(--f3);
+  grid-template-columns:repeat(auto-fit,minmax(calc(var(--m)*15),1fr))}
+
+/* ---- Bildfeld im phi-Verhaeltnis (Premium 5) ---- */
+.bild{aspect-ratio:1.618;background:var(--sunken);border:1px solid var(--line);
+  border-radius:var(--r-card);overflow:hidden;display:block;width:100%;
+  object-fit:cover}
+.bild-hoch{aspect-ratio:.618}
+
+/* ============================================================
+   FLÄCHEN UND KOMPONENTEN
+   ============================================================ */
+.card{background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-card);padding:var(--f4);
+  box-shadow:inset 0 1px 0 var(--kante);
+  transition:background var(--t-modus) ease,border-color var(--t-modus) ease}
+.card > .inner{border-radius:calc(var(--r-card) - var(--f2));
+  background:var(--sunken);border:1px solid var(--line);padding:var(--f3)}
+
+/* Hemd — genau einer pro Ansicht, traegt die wichtigste Aussage */
+.shirt{background:var(--shirt);color:var(--shirt-text);
+  border-radius:var(--r-card);padding:var(--f6) var(--f5)}
+.shirt .eyebrow{color:inherit;opacity:.82}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--f2);
+  min-height:44px;padding:calc(var(--f2) + 2px) var(--f4);
+  border-radius:var(--r-ctrl);font:500 var(--t0)/1 var(--text);
+  cursor:pointer;border:1px solid transparent;text-decoration:none;
+  transition:background var(--t-hover) ease-out,color var(--t-hover) ease-out,
+             transform 100ms ease-out}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.btn-primary{background:var(--accent);color:var(--auf-accent);
+  border-color:var(--accent-ink)}
+.btn-ghost{background:transparent;color:var(--accent-ink);
+  border-color:var(--accent-ink)}
+.btn-quiet{background:transparent;color:var(--muted)}
+
+.badge{display:inline-flex;align-items:center;min-height:calc(var(--m)*1.75);
+  padding:var(--f1) var(--f2);border-radius:var(--r-chip);
+  border:1px solid var(--brass);color:var(--brass-text);
+  font:500 var(--t-2)/1 var(--mono);letter-spacing:.1em;text-transform:uppercase}
+
+.field{display:flex;flex-direction:column;gap:var(--f1)}
+.field label{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.field input{min-height:44px;padding:var(--f2) var(--f3);border-radius:var(--r-ctrl);
+  background:var(--ground);border:1px solid var(--line-strong);color:var(--ink);
+  font:400 var(--t0)/1 var(--text)}
+.field input:focus{outline:2px solid var(--brass);outline-offset:2px;
+  border-color:transparent}
+
+table{border-collapse:collapse;width:100%;font-size:var(--t-1)}
+th,td{border-bottom:1px solid var(--line);padding:var(--f2) var(--f3);text-align:right}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font:500 var(--t-2)/var(--lh-mittel) var(--mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--brass-text);border-bottom-color:var(--brass)}
+tbody tr:last-child td{border-bottom:0}
+
+/* Transluzente Leiste — Tiefe ueber Kante, nie Schatten */
+.bar{position:sticky;top:0;z-index:12;padding:var(--f3) var(--f5);
+  background:var(--glas);backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--line);box-shadow:inset 0 1px 0 var(--kante);
+  display:flex;gap:var(--f4);align-items:center;flex-wrap:wrap}
+
+/* ============================================================
+   MEDIEN — dieselbe Datei, anderes Modul
+   ============================================================ */
+@media(max-width:860px){
+  :root{--m:15px}
+  .gold,.gold-kehr{grid-template-columns:1fr}
+  .drei{grid-template-columns:1fr}
+  .drei > *{border-right:0;border-bottom:1px solid var(--line)}
+  .drei > *:last-child{border-bottom:0}
+  .bund{padding:0 var(--f4)}
+}
+
+/* Overlay fuer Film und Motion: Modul an die Bildhoehe gebunden,
+   damit die Typografie in jeder Aufloesung gleich gross wirkt. */
+.medium-overlay{--m:2.2vh;padding:var(--f6);
+  text-shadow:0 1px calc(var(--m)/4) rgba(0,0,0,.45)}
+.medium-overlay .haar,.medium-overlay .doppel{opacity:.9}
+
+/* Visitenkarte 85 x 55 mm */
+.medium-karte{--m:2.6mm;width:85mm;height:55mm;padding:var(--f4);
+  display:flex;flex-direction:column;justify-content:space-between;
+  border:1px solid var(--line);border-radius:calc(var(--m)*.6)}
+
+@media print{
+  :root{--m:3.6mm;
+    --ground:#FFFFFF;--surface:#FFFFFF;--sunken:#F2EEE8;
+    --kante:transparent;--glas:transparent}
+  body{background:none}
+  .bar{position:static;backdrop-filter:none;border:0}
+  .card{break-inside:avoid}
+  .bund{padding:0}
+}
+
+/* ============================================================
+   BARRIEREFREIHEIT — nicht verhandelbar
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:120ms!important}
+  .btn:active{transform:none}
+}
+@media (prefers-reduced-transparency:reduce){
+  .bar{background:var(--surface);backdrop-filter:none}
+}
+@media (prefers-contrast:more){
+  :root{--line:var(--line-strong);--muted:var(--ink)}
+}

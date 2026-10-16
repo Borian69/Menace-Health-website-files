@@ -1,14 +1,13 @@
 /* Erzeugt die App-Icons ohne externe Abhängigkeiten.
    Aufruf:  node bordbuch/tools/make-icons.mjs
 
-   Motiv: ein Blatt aus dem Bordbuch. Heller Hemd-Block auf Nacht, eine
-   Messing-Haarlinie oben, darunter drei Walnuss-Zeilen — dieselben vier
-   Rollen wie im Design-System (Tuch, Hemd, Leder, Details). Kein Symbol,
+   Motiv: ein Blatt aus dem Bordbuch. Heller Hemd-Block auf dem Grund, eine
+   Goldlinie oben, darunter drei Zeilen in der Hauptfarbe. Kein Symbol,
    kein Verlauf, kein Schatten.
 
    Die Farben sind hier als Hexwerte hinterlegt, weil ein PNG-Generator
    keine CSS-Variablen lesen kann; sie stammen unverändert aus
-   design/tokens.css. Bei einer Token-Änderung hier nachziehen. */
+   design/moch.css. Bei einer Token-Änderung hier nachziehen. */
 
 import { deflateSync } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -17,10 +16,10 @@ import { fileURLToPath } from 'node:url';
 
 const AUSGABE = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'icons');
 
-const NACHT   = [0x0e, 0x0f, 0x11];   // --ground
-const HEMD    = [0xf5, 0xf0, 0xe6];   // --shirt
-const WALNUSS = [0x6b, 0x4a, 0x2f];   // --brand
-const MESSING = [0xd4, 0xac, 0x52];   // --brass-line
+const NACHT   = [0x12, 0x14, 0x17];   // --ground   (dunkel)
+const HEMD    = [0xef, 0xeb, 0xe4];   // --shirt
+const WALNUSS = [0x8c, 0x4e, 0x1e];   // --accent   (dunkel · walnuss)
+const MESSING = [0xfc, 0xbe, 0x11];   // --brass
 const SS      = 3;                    // Überabtastung für weiche Kanten
 
 const klemme = (wert, min, max) => Math.min(max, Math.max(min, wert));
