@@ -65,6 +65,15 @@
         </select>
       </label>
 
+      <label>
+        Wie soll das Modell antworten?
+        <textarea name="system" rows="8" spellcheck="false"></textarea>
+      </label>
+      <p class="hint">
+        Gilt für jede neue Nachricht. Modellname und Datum fügt die App selbst hinzu.
+        <button type="button" id="reset-system">Standard wiederherstellen</button>
+      </p>
+
       <fieldset>
         <legend>Darstellung</legend>
         <label><input type="radio" name="theme" value="system"> wie das System</label>

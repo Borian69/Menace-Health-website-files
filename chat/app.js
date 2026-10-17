@@ -19,7 +19,25 @@ const STORE = {
   active: 'chat.active',
 };
 
-const DEFAULT_SETTINGS = { apiKey: '', model: DEFAULT_MODEL, reasoning: '', theme: 'system' };
+/* Wie sich das Modell verhalten soll. In den Einstellungen änderbar;
+   solange dort nichts Eigenes steht, gilt diese Fassung. */
+const DEFAULT_SYSTEM = `Ton: Pass dich mir an. Ist meine Frage locker, antworte locker und umgangssprachlich, wie unter Freunden. Ist sie sachlich oder ernst, antworte klar und sachlich. Bleib dabei immer hilfreich.
+
+Ehrlichkeit: Sei ehrlich und direkt. Sag offen, wenn etwas falsch, unklar oder keine gute Idee ist, statt es schönzureden. Wenn du etwas nicht weißt oder unsicher bist, sag das, statt zu raten.
+
+Länge: Antworte so lang, wie die Frage es verlangt, nicht länger. Kein Vorgeplänkel, keine Wiederholung der Frage, keine Zusammenfassung am Ende, keine Liste möglicher Folgefragen. Eine einfache Frage bekommt eine kurze Antwort, eine komplexe so viel wie nötig. Aber nicht künstlich knapp: Was zum Verstehen gebraucht wird, gehört rein. Ausführlich nur, wenn ich ausdrücklich danach frage.
+
+Format: Die App zeigt reinen Text, Markdown wird nicht umgesetzt. Also keine Sternchen für Fett, keine #-Überschriften, keine Tabellen. Einfache Aufzählungen mit „-“ und Codeblöcke sind in Ordnung.
+
+Antworte in der Sprache, in der ich schreibe.`;
+
+const DEFAULT_SETTINGS = { apiKey: '', model: DEFAULT_MODEL, reasoning: '', theme: 'system', system: '' };
+
+/** Die Systemanweisung: wer das Modell ist, welcher Tag ist, wie es antworten soll. */
+function systemPrompt() {
+  const today = new Date().toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  return `Du bist das Sprachmodell ${settings.model || DEFAULT_MODEL}, aufgerufen über OpenRouter in einer privaten Chat-App. Heute ist ${today}.\n\n${settings.system || DEFAULT_SYSTEM}`;
+}
 
 /* ── Speicher ────────────────────────────────────────────── */
 
@@ -214,7 +232,11 @@ function errorText(status, payload) {
  * Stück (Server-Sent Events). onDelta bekommt je Stück { content, reasoning }.
  */
 async function complete(messages, signal, onDelta) {
-  const body = { model: settings.model || DEFAULT_MODEL, messages, stream: true };
+  const body = {
+    model: settings.model || DEFAULT_MODEL,
+    messages: [{ role: 'system', content: systemPrompt() }, ...messages],
+    stream: true,
+  };
   if (settings.reasoning) body.reasoning = { effort: settings.reasoning };
 
   let res;
@@ -360,6 +382,7 @@ function openSettings() {
   f.model.value = settings.model;
   f.reasoning.value = settings.reasoning;
   f.theme.value = settings.theme;
+  f.system.value = settings.system || DEFAULT_SYSTEM;
   document.body.classList.remove('sidebar-open');
   // Sonst gilt nach einem Speichern auch Esc beim nächsten Mal als „Speichern“.
   els.settings.returnValue = '';
@@ -375,6 +398,9 @@ els.settings.addEventListener('close', () => {
     model: f.model.value.trim() || DEFAULT_MODEL,
     reasoning: f.reasoning.value,
     theme: f.theme.value || 'system',
+    // Unverändert oder leer heißt: Standard. So kommen spätere
+    // Verbesserungen am Standard auch bei Dir an.
+    system: f.system.value.trim() === DEFAULT_SYSTEM ? '' : f.system.value.trim(),
   };
   store(STORE.settings, settings);
   applyTheme();
@@ -402,6 +428,10 @@ $('new-chat').addEventListener('click', () => {
 });
 
 $('open-settings').addEventListener('click', openSettings);
+
+$('reset-system').addEventListener('click', () => {
+  els.settingsForm.elements.system.value = DEFAULT_SYSTEM;
+});
 
 $('toggle-sidebar').addEventListener('click', (e) => {
   e.stopPropagation();

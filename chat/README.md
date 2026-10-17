@@ -20,10 +20,16 @@ Dann **Einstellungen → OpenRouter API-Key** eintragen (Key auf
 |---|---|
 | **Aktiver Chat** | Antwort erscheint Wort für Wort. Enter sendet, Shift+Enter macht eine neue Zeile. „Stopp“ bricht ab. |
 | **Verlauf** | Jeder Chat wird gespeichert und steht links. Antippen öffnet ihn, ✕ löscht ihn. Auf dem Handy über ☰. |
-| **Einstellungen** | API-Key, Modell, wie viel das Modell vor der Antwort nachdenkt, Darstellung (System / Hell / Dunkel). |
+| **Einstellungen** | API-Key, Modell, wie viel das Modell vor der Antwort nachdenkt, wie das Modell antworten soll, Darstellung (System / Hell / Dunkel). |
 
 Das Modell ist auf `deepseek/deepseek-v4.1-flash` vorbelegt und lässt sich in
 den Einstellungen gegen jede andere OpenRouter-Modell-ID tauschen.
+
+**Wie das Modell antwortet:** Eine Systemanweisung geht mit jeder Nachricht mit:
+lockerer Ton bei lockeren Fragen, ehrlich und direkt, so lang wie die Frage es
+verlangt, ausführlich nur auf Nachfrage. Sie steht in den Einstellungen und lässt
+sich dort umschreiben; „Standard wiederherstellen“ holt die Vorgabe zurück.
+Modellname und Datum setzt die App selbst davor, damit das Modell weiß, wer es ist.
 
 **Nachdenken:** DeepSeek V4.1 Flash denkt standardmäßig gründlich nach, bevor es
 antwortet. Für schnelle Antworten in den Einstellungen auf „Aus“ stellen.
