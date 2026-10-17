@@ -5,6 +5,15 @@
    Abstand und jeder Radius kommt aus den Tokens in design/moch.css —
    ohne eine einzige Ausnahme.
 
+   Form folgt Funktion: Es gibt genau einen Radius (--r, 10 px), und
+   ihn bekommt nur, was man drückt. Flächen, Zahlen und Textblöcke
+   haben gerade Kanten. Gegliedert wird über Linien und Abstand, nicht
+   über gestapelte Hintergründe — eine Flächenebene.
+
+   Gold entfällt bei Walnuss (Farbtonabstand 30°): --brass trägt dort
+   die Hauptfarbe. Deshalb steht hier nirgends „Gold", sondern überall
+   --brass — das Token entscheidet, nicht diese Datei.
+
    Das Klassenvokabular des Systems (.card .inner .shirt .btn .field
    .eyebrow .n .klein .muted .haar .dataline .badge .stapel .reihe)
    wird benutzt, nicht ersetzt. Was hier dazukommt, ist App-Möblierung
@@ -14,6 +23,21 @@
 /* Muss vor allen display-Regeln stehen, sonst überstimmt etwa
    .blende { display:flex } das hidden-Attribut. */
 [hidden] { display: none !important; }
+
+/* Status im Dunkeln — die einzige Stelle mit Hexwerten in dieser Datei.
+   Das Regelwerk fordert „je Schema zwei Fassungen"; moch.css setzt die
+   vier Statustöne seit dem Umbau nur noch einmal, in der hellen
+   Fassung. Auf dem dunklen Grund #040F16 tragen die hellen Werte
+   3,39–3,62 : 1 und bleiben damit unter den 4,5 : 1, die Fließtext
+   braucht. Die dunklen Fassungen des Systems tragen 4,67–4,82 : 1.
+   Gemessen, nicht geschätzt. Zieht moch.css nach, fällt dieser Block
+   weg. */
+[data-scheme="dunkel"] {
+  --success: #398E51;
+  --warning: #A5762B;
+  --error:   #C3625C;
+  --info:    #4C80B5;
+}
 
 :root {
   --safe-t: env(safe-area-inset-top, 0px);
@@ -66,13 +90,16 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; strok
   .topbar { background: var(--surface); backdrop-filter: none; }
 }
 
+/* Ein Rahmen um ein Zahnrad leistet nichts — das Icon ist schon das
+   Ziel. Die Fläche von 44 × 44 px bleibt, sichtbar wird sie nur beim
+   Drücken und im Fokus. */
 .icon-btn {
   width: 44px; height: 44px;
   flex: none;
   display: grid; place-items: center;
   background: transparent;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-interactive);
+  border: 0;
+  border-radius: var(--r);
   color: var(--muted);
   cursor: pointer;
   transition: color var(--t-hover) ease-out, border-color var(--t-hover) ease-out,
@@ -80,7 +107,7 @@ svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; strok
 }
 .icon-btn:hover { color: var(--text); }
 /* Rückmeldung beim Drücken, nicht beim Loslassen. */
-.icon-btn:active { transform: scale(.94); }
+.icon-btn:active { transform: scale(.94); background: var(--surface); }
 .icon-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .icon-btn svg { width: 20px; height: 20px; }
 .icon-btn:disabled { opacity: .35; pointer-events: none; }
@@ -156,8 +183,8 @@ body[data-tab="verlauf"] #pane-neu { display: none; }
 .tabbar button:focus-visible { outline: 2px solid var(--brass); outline-offset: -4px; }
 body[data-tab="neu"] .tabbar button[data-tab="neu"],
 body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"] { color: var(--text); }
-/* Der aktive Bereich wird von einer Goldlinie getragen — Gold ist
-   Linie, nie Fläche. */
+/* Der aktive Bereich wird von einer Linie getragen, nie von einer
+   Fläche. Welche Farbe die Linie hat, entscheidet --brass. */
 body[data-tab="neu"] .tabbar button[data-tab="neu"]::before,
 body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
   content: "";
@@ -176,7 +203,7 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
   margin: var(--f3) var(--rand) 0;
   padding: 1px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-interactive);
+  border-radius: var(--r);
   background: var(--line);
 }
 .segment button {
@@ -204,10 +231,19 @@ body[data-tab="verlauf"] .tabbar button[data-tab="verlauf"]::before {
 .blaettern-titel { flex: 1; text-align: center; font-weight: 600; font-size: var(--t0); }
 
 /* ── Hemd-Block: der Kilometerstand ──────────────────────────
-   Das System polstert den Hemd-Block mit f6/f5 — auf einem Telefon
-   bliebe für die Zahl zu wenig Platz. Hier eine Stufe weniger. */
+   Eine Fläche hinter einer großen Zahl leistet nichts — die Zahl ist
+   schon groß. Hier bleibt die Kante und sonst nichts: kein Kasten,
+   kein Radius, kein Hintergrund. Das Polster ist eine φ-Stufe unter
+   dem des Systems (f6/f5), sonst bliebe auf dem Telefon für die Zahl
+   zu wenig Breite. */
 
-.shirt { padding: var(--f5) var(--f4); margin-bottom: var(--f5); }
+.shirt {
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--f5) 0;
+  margin-bottom: var(--f5);
+}
 .shirt .eyebrow { display: block; margin-bottom: var(--f2); }
 .shirt .hemd-meta { color: var(--shirt-muted); }
 
@@ -273,8 +309,8 @@ form { margin-bottom: var(--f6); }
 .field { margin-bottom: var(--f3); }
 
 /* Eingaben sind Linien, keine Kästen — wie ein Formular auf Papier.
-   Im Fokus wird die Linie Gold. Die Regel steht im Regelwerk; moch.css
-   führt die Felder noch als Kasten, deshalb steht die Linie hier.
+   Im Fokus trägt die Linie --brass. Die Regel steht im Regelwerk;
+   moch.css führt die Felder noch als Kasten, deshalb steht sie hier.
    Die Schriftgröße bleibt bei --t0 (16 px): darunter zoomt iOS beim
    Antippen ins Feld und die Ansicht springt weg. */
 .field input, .field select, .suchzeile input {
@@ -296,10 +332,10 @@ form { margin-bottom: var(--f6); }
 }
 .field select {
   padding-right: var(--f5);
-  /* Eine Data-URI kann keine CSS-Variable lesen; %23948E87 ist --muted
+  /* Eine Data-URI kann keine CSS-Variable lesen; %2392877F ist --muted
      des dunklen Schemas. Bei einer Token-Änderung hier nachziehen —
      wie im Icon-Generator, im PDF und in der Belegablage. */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23948E87' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2392877F' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right var(--f3) center;
   background-size: 18px;
@@ -316,7 +352,7 @@ form { margin-bottom: var(--f6); }
   padding: var(--f2) var(--f3);
   background: transparent;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-interactive);
+  border-radius: var(--r);
   color: var(--muted);
   font: 400 var(--t-1)/1 var(--font-text);
   cursor: pointer;
@@ -362,10 +398,11 @@ form { margin-bottom: var(--f6); }
 .suchzeile { margin-bottom: var(--f3); }
 
 
-.filter-chips { display: flex; flex-wrap: wrap; gap: var(--f1); margin-bottom: var(--f4); }
+.filter-chips { display: flex; flex-wrap: wrap; gap: var(--f2); margin-bottom: var(--f2); }
+#btn-filter-mehr { margin-bottom: var(--f4); }
 .filter-chips .chip { min-height: 32px; padding: var(--f1) var(--f2); font-size: var(--t-2); }
 
-/* Jahrestrenner: Goldlinie mit der Zahl davor. */
+/* Jahrestrenner: die Linie des Systems mit der Zahl davor. */
 .jahr-trenner {
   display: flex;
   align-items: center;
@@ -379,25 +416,26 @@ form { margin-bottom: var(--f6); }
 .jahr-trenner:first-child { margin-top: 0; }
 
 .liste { list-style: none; margin: 0; padding: 0; }
+/* Eine Zeile ist eine Karte des Systems: getrennt wird über die Linie
+   und den Abstand, nicht über eine zweite Flächenebene. Die Fläche
+   erscheint nur unter dem Finger. */
 .eintrag {
   display: flex;
   align-items: flex-start;
   gap: var(--f3);
   width: 100%;
-  padding: var(--f3);
-  margin-bottom: var(--f2);
+  padding: var(--f3) 0;
   text-align: left;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  box-shadow: inset 0 1px 0 var(--kante);
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
   color: var(--text);
   font: 400 var(--t0)/var(--lh-text) var(--font-text);
   cursor: pointer;
-  transition: border-color var(--t-hover) ease-out, transform 100ms ease-out;
+  transition: background-color var(--t-hover) ease-out;
 }
-.eintrag:hover { border-color: var(--line-strong); }
-.eintrag:active { transform: scale(.99); }
+.eintrag:active { background: var(--surface); }
 .eintrag:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .eintrag-symbol { flex: none; width: 20px; height: 20px; color: var(--accent-ink); margin-top: 2px; }
 .eintrag-koerper { flex: 1; min-width: 0; display: flex; flex-direction: column; }
@@ -416,14 +454,17 @@ form { margin-bottom: var(--f6); }
   color: var(--muted);
 }
 
+/* Form, nicht nur Farbe: Die Warnung steht an einer kräftigen Kante,
+   nicht in einem farbigen Kasten. Das Wort daneben sagt es ohnehin. */
 .warnkarte {
   display: flex;
   gap: var(--f2);
-  padding: var(--f3);
+  padding: var(--f3) 0;
   margin-bottom: var(--f3);
-  background: var(--surface);
-  border: 1px solid var(--warning);
-  border-radius: var(--r-card);
+  background: none;
+  border: 0;
+  border-top: 2px solid var(--warning);
+  border-radius: 0;
   font-size: var(--t-1);
 }
 .warnkarte svg { width: 18px; height: 18px; flex: none; color: var(--warning); }
@@ -448,9 +489,9 @@ form { margin-bottom: var(--f6); }
   justify-content: center;
   gap: var(--f1);
   padding: 0;
-  background: var(--surface);
+  background: none;
   border: 1px solid transparent;
-  border-radius: var(--radius);
+  border-radius: var(--r);
   color: var(--text);
   font: 400 var(--t-1)/1 var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -458,17 +499,19 @@ form { margin-bottom: var(--f6); }
   transition: border-color var(--t-hover) ease-out, background-color var(--t-hover) ease-out,
               transform 100ms ease-out;
 }
-.kal-tag:active { transform: scale(.94); }
-.kal-tag.fremd { background: transparent; color: var(--line-strong); cursor: default; }
-.kal-tag.fremd:active { transform: none; }
+.kal-tag:active { transform: scale(.94); background: var(--surface); }
+.kal-tag.fremd { color: var(--line-strong); cursor: default; }
+.kal-tag.fremd:active { transform: none; background: none; }
 .kal-tag.heute { border-color: var(--brass); }
-.kal-tag.an { background: var(--accent); color: var(--auf-accent); }
+/* Dieselbe Messung wie bei den Balken: Die tiefe Fläche hebt sich im
+   Gitter nicht ab (1,4 : 1), --accent-ink schon (4,53 : 1). */
+.kal-tag.an { background: var(--accent-ink); color: var(--ground); }
 .kal-tag:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 .kal-punkte { display: flex; gap: 3px; height: 5px; align-items: center; }
 .kal-punkte i { width: 4px; height: 4px; background: var(--accent-ink); border-radius: 50%; }
-.kal-tag.an .kal-punkte i { background: var(--auf-accent); }
+.kal-tag.an .kal-punkte i { background: var(--ground); }
 .kal-mehr { font-size: 9px; color: var(--accent-ink); }
-.kal-tag.an .kal-mehr { color: var(--auf-accent); }
+.kal-tag.an .kal-mehr { color: var(--ground); }
 .kal-debug { position: absolute; top: 1px; left: 3px; font-size: 8px; color: var(--label); }
 
 #kalender-tag { margin-top: var(--f4); }
@@ -487,24 +530,31 @@ form { margin-bottom: var(--f6); }
 
 /* ── Kennzahlen ──────────────────────────────────────────────
    Das System hat .drei für Kennzahlen, aber nur dreispaltig und mit
-   f5-Polster. Auf 390 px Breite trägt das zwei Felder je Zeile. */
+   f5-Polster. Auf 390 px Breite trägt das zwei Felder je Zeile.
+
+   Eine Zahl steht einfach da: kein Kasten, kein Rahmen, kein
+   Hintergrund. Das Label gehört zu seinem Wert und klebt 2 px
+   darüber — nicht 16. Getrennt werden die Felder von der Linie
+   oben, wie jede Karte des Systems. */
 
 .kennzahlen {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--f2);
+  gap: var(--f3) var(--f4);
   margin-bottom: var(--f5);
 }
-.kennzahl {
-  padding: var(--f3);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  box-shadow: inset 0 1px 0 var(--kante);
+.kennzahl { padding-top: var(--f2); border-top: 1px solid var(--line); }
+.kennzahl .eyebrow { display: block; margin-bottom: 2px; }
+.kennzahl-wert { font-size: var(--t1); font-weight: 600; }
+.kennzahl-wert.gross {
+  font-family: var(--font-display);
+  font-weight: var(--display-wght);
+  font-variation-settings: "opsz" var(--display-opsz);
+  font-size: var(--t3);
+  line-height: var(--lh-display);
 }
-.kennzahl .eyebrow { display: block; }
-.kennzahl-wert { font-size: var(--t1); font-weight: 600; margin-top: var(--f1); }
-.kennzahl-wert.gross { font-size: var(--t2); margin: var(--f2) 0; }
+/* In der Display-Zeile läuft die Ziffer mit — wie im Hemd-Block. */
+.kennzahl-wert.gross .n { font-family: inherit; font-size: 1em; }
 
 /* ── Diagramme ───────────────────────────────────────────── */
 
@@ -525,12 +575,18 @@ form { margin-bottom: var(--f6); }
    zeichnet jede Klasse ihre Kontur selbst. */
 .dg-halter svg { width: 100%; height: auto; overflow: visible; stroke: none; }
 
-.dg-balken { fill: var(--accent); stroke: none; transition: fill var(--t-hover) ease-out; }
-.dg-balken.an { fill: var(--accent-ink); }
+/* Balken tragen --accent-ink, nicht --accent: Im Dunkelmodus ist
+   --accent die tiefe Fläche *unter hellem Text* und steht auf dem
+   Grund bei 1,4 : 1 — als Datenfläche unlesbar. --accent-ink trägt
+   4,53 : 1. Gemessen, nicht geschätzt.
+   Der angetippte Balken wird lauter, nicht bunter: --text ist die
+   neutrale Schriftfarbe, keine zweite Markenfarbe. */
+.dg-balken { fill: var(--accent-ink); stroke: none; transition: fill var(--t-hover) ease-out; }
+.dg-balken.an { fill: var(--text); }
 .dg-treffer { fill: transparent; stroke: none; }
 /* Daten tragen die Hauptfarbe — sie trägt laut Regel 3 Fläche, Linie
-   und Schrift. Gold steckt ausschließlich in --brass und dem Fokusring
-   und bleibt damit der Struktur vorbehalten. */
+   und Schrift. --brass bleibt der Struktur vorbehalten: Trennlinien,
+   aktiver Bereich, Fokus. */
 .dg-linie { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linejoin: round; }
 .dg-punkt { fill: var(--accent-ink); stroke: none; }
 .dg-fadenkreuz { stroke: var(--line-strong); stroke-width: 1; }
@@ -577,7 +633,7 @@ form { margin-bottom: var(--f6); }
   padding: var(--f3) var(--rand) calc(var(--safe-b) + var(--f4));
   background: var(--surface);
   border-top: 1px solid var(--line-strong);
-  border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  border-radius: var(--r) var(--r) 0 0;
   box-shadow: inset 0 1px 0 var(--kante);
   animation: taflIn var(--t-panel) var(--feder);
 }
@@ -606,19 +662,19 @@ form { margin-bottom: var(--f6); }
   width: 100%;
   object-fit: contain;
   border: 1px solid var(--line);
-  border-radius: var(--r-card);
-  background: var(--surface-2);
+  border-radius: var(--r);
+  background: var(--surface);
 }
 .betrachter .btn { margin-bottom: 0; }
 
 /* ── Belege ──────────────────────────────────────────────── */
 
+/* Der Tankblock gehört zum Chip „Tanken" darüber. Eine Linie zeigt
+   das an, ohne eine zweite Flächenebene aufzumachen. */
 .tankblock {
-  padding: var(--f3);
+  padding: var(--f3) 0 0 var(--f3);
   margin-bottom: var(--f3);
-  background: var(--surface);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--r-card);
+  border-left: 1px solid var(--line-strong);
 }
 .tankblock .field:last-of-type { margin-bottom: 0; }
 .tankblock .schalter { padding-bottom: 0; }
@@ -626,15 +682,16 @@ form { margin-bottom: var(--f6); }
 .belegzeile { display: flex; flex-wrap: wrap; gap: var(--f2); margin-bottom: var(--f2); }
 .belegzeile:empty { display: none; }
 
-/* Ein Beleg ist ein Dokument: rechteckig, mit Linie statt weicher Kachel. */
+/* Anfassbar, also mit Radius — ein Beleg wird angetippt, um ihn groß
+   zu sehen. */
 .beleg-daumen {
   position: relative;
   width: 60px; height: 80px;
   padding: 0;
   overflow: hidden;
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
+  border-radius: var(--r);
   cursor: pointer;
   transition: transform 100ms ease-out;
 }
@@ -659,7 +716,7 @@ form { margin-bottom: var(--f6); }
   width: 44px; height: 27px;
   flex: none;
   padding: 2px;
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   transition: background-color var(--t-hover) ease-out, border-color var(--t-hover) ease-out;
@@ -671,8 +728,11 @@ form { margin-bottom: var(--f6); }
   border-radius: 50%;
   transition: transform var(--t-panel) var(--feder), background-color var(--t-hover) ease-out;
 }
-.schalter input:checked + .schalter-bahn { background: var(--accent); border-color: var(--accent-ink); }
-.schalter input:checked + .schalter-bahn .schalter-knopf { transform: translateX(17px); background: var(--auf-accent); }
+/* Ein Schalter trägt keinen Text, der seinen Zustand erklärt — die
+   Bahn muss ihn allein zeigen. Deshalb --accent-ink (4,53 : 1) statt
+   der tiefen Fläche (1,4 : 1). */
+.schalter input:checked + .schalter-bahn { background: var(--accent-ink); border-color: var(--accent-ink); }
+.schalter input:checked + .schalter-bahn .schalter-knopf { transform: translateX(17px); background: var(--ground); }
 .schalter input:focus-visible + .schalter-bahn { outline: 2px solid var(--brass); outline-offset: 2px; }
 .schalter-text { font-size: var(--t-1); line-height: var(--lh-mittel); }
 .schalter-text small { display: block; font-size: var(--t-2); color: var(--muted); margin-top: var(--f1); }
@@ -680,11 +740,10 @@ form { margin-bottom: var(--f6); }
 /* ── Diagnose ────────────────────────────────────────────── */
 
 .statuskarte {
-  padding: var(--f3);
+  padding: var(--f3) 0;
   margin-bottom: var(--f3);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--r-card);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   font: 400 var(--t-2)/1.7 var(--font-mono);
   font-variant-numeric: tabular-nums;
   letter-spacing: .04em;
@@ -725,9 +784,9 @@ form { margin-bottom: var(--f6); }
   max-height: 260px;
   overflow: auto;
   padding: var(--f3);
-  background: var(--surface-2);
+  background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: var(--r-card);
+  border-radius: 0;
   font: 400 var(--t-2)/1.7 var(--font-mono);
   color: var(--muted);
   white-space: pre-wrap;
@@ -750,7 +809,7 @@ form { margin-bottom: var(--f6); }
   padding: var(--f2) var(--f4);
   background: var(--surface);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-interactive);
+  border-radius: var(--r);
   box-shadow: inset 0 1px 0 var(--kante);
   font-size: var(--t-1);
   color: var(--text);

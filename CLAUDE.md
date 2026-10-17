@@ -1,3 +1,4 @@
+
 # Moch — Design System v3.2
 
 Moch soll nicht aussehen wie KI, sondern wie eine Marke, die Technologie außergewöhnlich
@@ -16,7 +17,8 @@ Attribute setzen:
 ```
 
 **Diese Fassung ist in Benutzung:** `bordbuch/` läuft auf `dunkel` + `walnuss`.
-Eine zweite Hauptfarbe im selben Projekt gibt es nicht (Regel 3).
+Eine zweite Hauptfarbe im selben Projekt gibt es nicht (Regel 3). **Bei Walnuss
+entfällt Gold** (Farbtonabstand 30°) — `--brass` trägt dort die Hauptfarbe.
 
 Für ein Artifact oder eine einzelne HTML-Datei: Inhalt von `moch.css` in einen
 `<style>`-Block kopieren. Die Schriften lädt die Datei selbst von Google Fonts.
@@ -29,14 +31,20 @@ das Markup schreibst du selbst gegen das Vokabular unten.
 
 ## Die sieben Regeln, die nie gebrochen werden
 
-1. **Der Grund trägt nie eine Markenfarbe.** Chroma unter 0,012 — gerade genug für eine
-   Temperatur, zu wenig, um als Farbe gelesen zu werden. Nie eine gesättigte Fläche als
-   Hintergrund.
-2. **Die Temperatur kehrt um.** Warmer Grund trägt kühle Schrift, kalter Grund warme.
-   Immer unter 0,015 Chroma — man sieht es nicht, man spürt es.
+1. **Der Grund ist komplementär zur Hauptfarbe.** Grund-Farbton = Hauptfarbton + 180°.
+   Jede Hauptfarbe bringt ihren eigenen Grund mit — Walnuss (55°) steht auf blauem Grund
+   (235°), Petrol (192°) auf warmem (12°). Der Grund steht allein auf der Gegenseite;
+   **Schrift und Hauptfarbe teilen eine Temperatur.**
+2. **Der Grund trägt nie eine Markenfarbe.** Chroma 0,022–0,024 — genug, dass man die
+   Temperatur sieht, zu wenig, um sie zu benennen. **Ton in Ton** (warmer Grund zu warmer
+   Hauptfarbe, etwa Beige zu Braun) ist die Ausnahme und braucht eine Begründung: welchen
+   besonderen Eindruck erzeugt sie, den die komplementäre Fassung nicht erzeugt?
 3. **Genau eine Hauptfarbe pro Projekt.** Kein zweiter Akzent, keine Palette. Die eine
    Farbe trägt Fläche, Linie, Rahmen und Schrift.
-4. **Gold `#FCBE11` ist nur Linie, nie Text.** Auf dunklem Grund trägt es 11,0 : 1, auf
+4. **Gold nur, wenn der Farbtonabstand reicht.** Unter 35° zur Hauptfarbe sind beide nicht
+   als verschiedene Farben lesbar — bei **Walnuss (30°) und Taupe (14°) entfällt Gold**,
+   dort übernimmt die Hauptfarbe die Linienrolle. Wo Gold erlaubt ist (Oxblood, Petrol,
+   Smaragd, Stahlblau): **nur Linie, nie Text.** Auf dunklem Grund trägt es 11,0 : 1, auf
    hellem nur 1,4 : 1. Abgedunkelt würde es oliv. **`--label` ist kein Gold**, sondern
    eine eigene Textrolle — sonst wird aus jedem Eyebrow eine goldene Wand. Gold steckt
    ausschließlich in `--brass` und dem Fokusring.
@@ -91,10 +99,25 @@ kein 110-px-Polster erben.
 **Mindestens 45 % freie Fläche.** Weißraum ist kein Rest, sondern das Material, das
 Premium herstellt — er wird zuerst geplant.
 
-Radien: `--radius` 6 · `--radius-interactive` 10 · `--r-card` 16 · `--r-sheet` 26.
-Konzentrisch: innen = außen − Polster. Ecken laufen als **G2-Superellipse**
+Radius: **`--r` 10 px, der einzige** — siehe „Form folgt Funktion".
+Ecken laufen als **G2-Superellipse**
 (`corner-shape`), nicht als Kreisbogen. **Rahmen statt Schatten** — `box-shadow` nur als
 helle Oberkante (`--kante`).
+
+## Form folgt Funktion
+
+Vor jedem Element steht eine Prüfung: **Was leistet es?** Ein Squircle um ein Zahnrad
+leistet nichts — das Icon ist schon ein Ziel. Eine Fläche hinter einer großen Zahl leistet
+nichts — die Zahl ist schon groß.
+
+- **Ein Radius, `--r` 10 px — und nur, was man drückt, bekommt ihn.** Flächen, Zahlen und
+  Textblöcke haben keine Ecken, weil sie keine Ziele sind. Damit wird Rundung zum Signal
+  statt zur Dekoration; eine Oberfläche, die runde und gerade Kanten mischt, wirkt
+  willkürlich.
+- **Eine Flächenebene.** Gegliedert wird über Linien und Abstand, nicht über gestapelte
+  Hintergründe. Wer drei Flächenhelligkeiten übereinanderlegt, baut Tiefe, wo keine ist.
+- **Eine Zahl steht einfach da.** Kein Kasten, kein Rahmen, kein Hintergrund.
+- **Ein Label gehört zu seinem Wert**, nicht zum Abstand darüber: 2 px darunter, nicht 16.
 
 ## Dichte: wo Premium entsteht
 

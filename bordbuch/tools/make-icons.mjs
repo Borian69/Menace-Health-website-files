@@ -1,9 +1,13 @@
 /* Erzeugt die App-Icons ohne externe Abhängigkeiten.
    Aufruf:  node bordbuch/tools/make-icons.mjs
 
-   Motiv: ein Blatt aus dem Bordbuch. Heller Hemd-Block auf dem Grund, eine
-   Goldlinie oben, darunter drei Zeilen in der Hauptfarbe. Kein Symbol,
+   Motiv: ein Blatt aus dem Bordbuch. Helle Fläche auf dem Grund, eine
+   Haarlinie oben, darunter drei Zeilen in der Hauptfarbe. Kein Symbol,
    kein Verlauf, kein Schatten.
+
+   Bei Walnuss entfällt Gold (Farbtonabstand 30°, Regel 4) — die
+   Haarlinie trägt deshalb --brass, und das ist hier die Hauptfarbe in
+   ihrer hellen Fassung.
 
    Die Farben sind hier als Hexwerte hinterlegt, weil ein PNG-Generator
    keine CSS-Variablen lesen kann; sie stammen unverändert aus
@@ -16,10 +20,10 @@ import { fileURLToPath } from 'node:url';
 
 const AUSGABE = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'icons');
 
-const NACHT   = [0x12, 0x14, 0x17];   // --ground   (dunkel)
-const HEMD    = [0xef, 0xeb, 0xe4];   // --shirt
-const WALNUSS = [0x8c, 0x4e, 0x1e];   // --accent   (dunkel · walnuss)
-const MESSING = [0xfc, 0xbe, 0x11];   // --brass
+const NACHT   = [0x04, 0x0f, 0x16];   // --ground      (dunkel · walnuss)
+const HEMD    = [0xf0, 0xf6, 0xfa];   // --surface     (hell · walnuss)
+const WALNUSS = [0x46, 0x24, 0x0a];   // --accent      (dunkel · walnuss)
+const MESSING = [0xb4, 0x67, 0x29];   // --brass       (dunkel · walnuss)
 const SS      = 3;                    // Überabtastung für weiche Kanten
 
 const klemme = (wert, min, max) => Math.min(max, Math.max(min, wert));

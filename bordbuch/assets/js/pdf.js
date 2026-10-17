@@ -19,19 +19,27 @@ import { log, fehler } from './debug.js';
 /* ── Farben: helles Schema des Design-Systems ────────────────
    Was gelesen, unterschrieben oder gedruckt wird, ist hell. Die Werte
    stehen hier als Zahlen, weil ein PDF keine CSS-Variablen lesen kann;
-   sie stammen unverändert aus design/moch.css ([data-scheme="hell"]
-   und [data-farbe="walnuss"]). Bei einer Token-Änderung hier nachziehen. */
+   sie stammen unverändert aus design/moch.css ([data-farbe="walnuss"]).
+   Bei einer Token-Änderung hier nachziehen.
+
+   Der Grund ist komplementär zur Hauptfarbe: Walnuss steht bei
+   Farbton 55°, der Grund bei 235° — ein sehr blasses Blau. Warme
+   Schrift auf kühlem Grund, wie es Regel 1 verlangt.
+
+   Messing ist hier die Hauptfarbe, nicht Gold: Bei Walnuss liegt der
+   Farbtonabstand zu Gold bei 30° und damit unter den 35°, ab denen
+   beide als verschiedene Farben lesbar sind (Regel 4). */
 
 const FARBE = {
-  grund:   [0.937, 0.922, 0.894],  // #EFEBE4 --ground
-  flaeche: [0.973, 0.961, 0.933],  // #F8F5EE --surface
-  linie:   [0.808, 0.792, 0.761],  // #CECAC2 --line
-  kante:   [0.686, 0.667, 0.635],  // #AFAAA2 --line-strong
-  messing: [0.753, 0.565, 0.039],  // #C0900A --brass (nur Linie)
-  label:   [0.322, 0.349, 0.373],  // #52595F --label (kein Gold mehr)
-  text:    [0.176, 0.204, 0.224],  // #2D3439 --ink
-  leise:   [0.380, 0.404, 0.427],  // #61676D --muted
-  akzent:  [0.612, 0.345, 0.133],  // #9C5822 --accent (walnuss, hell)
+  grund:   [0.898, 0.925, 0.945],  // #E5ECF1 --ground
+  flaeche: [0.941, 0.965, 0.980],  // #F0F6FA --surface
+  linie:   [0.765, 0.800, 0.820],  // #C3CCD1 --line
+  kante:   [0.639, 0.675, 0.698],  // #A3ACB2 --line-strong
+  messing: [0.612, 0.345, 0.133],  // #9C5822 --brass (nur Linie)
+  label:   [0.369, 0.337, 0.318],  // #5E5651 --label
+  text:    [0.224, 0.192, 0.173],  // #39312C --text
+  leise:   [0.424, 0.392, 0.373],  // #6C645F --muted
+  akzent:  [0.612, 0.345, 0.133],  // #9C5822 --accent (walnuss)
 };
 
 const FORMATE = {
@@ -381,7 +389,11 @@ export function erzeugePDF({ eintraege, einstellungen, statistik, bilanz = null,
       if (eintrag.notiz) zusatz.push(...umbrich(eintrag.notiz, 8, arbeitBreite));
     }
 
-    const hoehe = 14 + zeilen.length * 12 + zusatz.length * 10;
+    /* 22 statt 14: Die Trennlinie liegt bei `hoehe - 4`. Mit dem alten
+       Wert kam sie 1 pt über der letzten Grundlinie zu liegen und lief
+       damit mitten durch Werkstatt- und Notizzeile. Jetzt sind es 7 pt
+       darunter — genug für die Unterlängen von g, p und ß. */
+    const hoehe = 22 + zeilen.length * 12 + zusatz.length * 10;
 
     if (seite.y - hoehe < unterkante) {
       seite = dok.neueSeite();
@@ -446,10 +458,6 @@ function kopfzeile(seite, dok, einstellungen) {
 
 function kennzahlen(seite, dok, statistik, einstellungen, bilanz) {
   const y = seite.y;
-  const hoehe = 62;
-
-  if (!dok.druck) seite.flaeche(RAND, y - hoehe, dok.inhaltsbreite, hoehe, FARBE.flaeche);
-  rahmen(seite, RAND, y - hoehe, dok.inhaltsbreite, hoehe);
 
   const werte = [
     ['Kilometerstand', statistik.stand === null ? '—' : `${km(statistik.stand)} km`],
@@ -466,11 +474,28 @@ function kennzahlen(seite, dok, statistik, einstellungen, bilanz) {
     werte.push(['Kosten gesamt', euro(statistik.kosten)]);
   }
 
-  const spaltenBreite = dok.inhaltsbreite / werte.length;
+  /* Eine Zahl steht einfach da: kein Kasten, keine Fläche. Getragen
+     wird der Block von zwei Linien — oben die Hauptfarbe, unten die
+     stille Linie. Das spart im Druck auch den Farbauftrag.
+
+     Drei Spalten, nicht sechs: „Kilometerstand" und „17.10.2024 –
+     30.09.2026" brauchen je rund 145 pt. Bei sechs Spalten blieben
+     86 pt, und die Werte liefen ineinander. */
+  const SPALTEN = 3;
+  const REIHE = 40;
+  const reihen = Math.ceil(werte.length / SPALTEN);
+  const hoehe = reihen * REIHE + 8;
+
+  seite.linie(RAND, y, dok.breite - RAND, y, FARBE.messing);
+  seite.linie(RAND, y - hoehe, dok.breite - RAND, y - hoehe);
+
+  const spaltenBreite = dok.inhaltsbreite / SPALTEN;
   werte.forEach(([label, wert], index) => {
-    const x = RAND + spaltenBreite * index + 14;
-    seite.label(label, x, y - 22);
-    seite.text(wert, x, y - 42, { groesse: 12, farbe: FARBE.text });
+    const x = RAND + spaltenBreite * (index % SPALTEN);
+    const oben = y - 8 - Math.floor(index / SPALTEN) * REIHE;
+    // Das Label gehört zu seinem Wert und steht dicht darüber.
+    seite.label(label, x, oben - 10);
+    seite.text(wert, x, oben - 26, { groesse: 12, farbe: FARBE.text });
   });
 
   return y - hoehe - 26;

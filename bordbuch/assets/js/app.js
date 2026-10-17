@@ -28,6 +28,7 @@ let tafelArt = 'inspektion';
 let tafelId = null;
 let suche = '';
 let filterArt = null;
+let filterOffen = false;
 let kalJahr = new Date().getFullYear();
 let kalMonat = new Date().getMonth();
 let gewaehlterTag = null;
@@ -371,25 +372,48 @@ function verdrahteListe() {
     suche = event.target.value.trim().toLowerCase();
     renderListe();
   });
+  $('#btn-filter-mehr').addEventListener('click', () => {
+    filterOffen = !filterOffen;
+    renderListe();
+  });
 }
 
+/* Auch der Filter zeigt den häufigen Weg zuerst: die fünf Arten, die
+   in diesem Auto am häufigsten vorkommen. Der Rest liegt eine Ebene
+   tiefer — neun gleich laute Schaltflächen sind die Standardlösung
+   jeder App. */
 function renderFilterChips() {
   const halter = $('#filter-chips');
+  const mehrKnopf = $('#btn-filter-mehr');
   halter.textContent = '';
-  const vorhanden = ARTEN.filter((art) => eintraege.some((eintrag) => eintrag.art === art.id));
-  if (vorhanden.length < 2) return;
 
-  for (const art of vorhanden) {
+  const vorhanden = artenNachHaeufigkeit(eintraege)
+    .filter((art) => eintraege.some((eintrag) => eintrag.art === art.id));
+  if (vorhanden.length < 2) {
+    mehrKnopf.hidden = true;
+    return;
+  }
+
+  // Ein gesetzter Filter bleibt sichtbar, auch wenn er hinten liegt.
+  const offen = filterOffen || vorhanden.findIndex((art) => art.id === filterArt) >= ARTEN_SICHTBAR;
+
+  vorhanden.forEach((art, index) => {
     halter.append(el('button', {
       class: 'chip',
       type: 'button',
+      hidden: !offen && index >= ARTEN_SICHTBAR,
       'aria-pressed': String(filterArt === art.id),
       onclick: () => {
         filterArt = filterArt === art.id ? null : art.id;
         renderListe();
       },
     }, art.label));
-  }
+  });
+
+  mehrKnopf.hidden = vorhanden.length <= ARTEN_SICHTBAR;
+  mehrKnopf.textContent = offen
+    ? 'Weniger anzeigen'
+    : `Weitere ${vorhanden.length - ARTEN_SICHTBAR} anzeigen`;
 }
 
 function renderListe() {

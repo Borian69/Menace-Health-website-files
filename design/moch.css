@@ -41,8 +41,8 @@
   --display-wght:600; --display-opsz:72;
 
   /* ---- Form ---- */
-  --radius:calc(var(--m) * .375); --radius-interactive:calc(var(--m) * .625);
-  --r-card:var(--m);              --r-sheet:var(--f4);
+   
+  --r:10px;   /* der einzige Radius, nur fuer Anfassbares */              
   --corner:superellipse(1.2);     /* G2, nicht Kreisbogen */
   --bund:calc(var(--m) * 77.5);   /* Satzspiegel ~1240 */
 
@@ -55,47 +55,120 @@
    FARBE — Grund fast neutral, eine Hauptfarbe, Messing als Linie
    Zwei Fassungen teilen Farbton UND Gamut-Anteil, nie die Chroma.
    ============================================================ */
-:root,:root,[data-scheme="hell"]{
-  --ground:#EFEBE4; --surface:#F8F5EE; --surface-2:#E2DDD6;
-  --line:#CECAC2; --line-strong:#AFAAA2;
-  --text:#2D3439; --muted:#61676D;
-  --brass:#C0900A; --label:#52595F;
-  --accent:#257372; --accent-ink:#257372; --auf-accent:#F8F5EE;
-  --kante:rgba(255,255,255,.55); --glas:rgba(248,245,238,.74);
-  --scrim:rgba(45,52,57,.55);
-  /* Status: Farbton fest, Saettigung nach denselben Regeln wie die Hauptfarben.
-     Farbe allein traegt nie Bedeutung - Status immer zusaetzlich mit Wort. */
-  --success:#25783F; --warning:#8C6323; --error:#AB4D48; --info:#2F6A9E;
-  --shirt:#F8F5EE; --shirt-text:#2D3439; --shirt-muted:#61676D;
-  --accent-2:#AFAAA2;
-}
-[data-scheme="dunkel"]{
-  --ground:#121417; --surface:#1B1D21; --surface-2:#24262B;
-  --line:#2D3036; --line-strong:#44484E;
-  --text:#E0DAD1; --muted:#948E87;
-  --brass:#FCBE11; --label:#AAA49B;
-  --accent:#226A68; --accent-ink:#308D8B; --auf-accent:#E0DAD1;
-  --kante:rgba(255,255,255,.10); --glas:rgba(27,29,33,.74);
-  --scrim:rgba(8,10,12,.62);
-  --success:#398E51; --warning:#A5762B; --error:#C3625C; --info:#4C80B5;
-  --shirt:#24262B; --shirt-text:#E0DAD1; --shirt-muted:#948E87;
-  --accent-2:#44484E;
-}
+:root,
 
 
-/* ---- Hauptfarbe: genau eine je Projekt ---- */
-[data-farbe="walnuss"]{--accent:#9C5822;--accent-ink:#9C5822;--auf-accent:#F8F5EE}
-[data-farbe="oxblood"]{--accent:#AA4B5B;--accent-ink:#AA4B5B;--auf-accent:#F8F5EE}
-[data-farbe="taupe"]{--accent:#8F6123;--accent-ink:#8F6123;--auf-accent:#F8F5EE}
-[data-farbe="stahlblau"]{--accent:#277194;--accent-ink:#277194;--auf-accent:#F8F5EE}
-[data-farbe="petrol"]{--accent:#257372;--accent-ink:#257372;--auf-accent:#F8F5EE}
-[data-farbe="smaragd"]{--accent:#267752;--accent-ink:#267752;--auf-accent:#F8F5EE}
-[data-scheme="dunkel"][data-farbe="walnuss"]{--accent:#8C4E1E;--accent-ink:#BB6C2F;--auf-accent:#E0DAD1}
-[data-scheme="dunkel"][data-farbe="oxblood"]{--accent:#9D4050;--accent-ink:#C2606F;--auf-accent:#E0DAD1}
-[data-scheme="dunkel"][data-farbe="taupe"]{--accent:#80571E;--accent-ink:#A9742B;--auf-accent:#E0DAD1}
-[data-scheme="dunkel"][data-farbe="stahlblau"]{--accent:#216585;--accent-ink:#3F86AA;--auf-accent:#E0DAD1}
-[data-scheme="dunkel"][data-farbe="petrol"]{--accent:#226A68;--accent-ink:#308D8B;--auf-accent:#E0DAD1}
-[data-scheme="dunkel"][data-farbe="smaragd"]{--accent:#226D4B;--accent-ink:#2F8E63;--auf-accent:#E0DAD1}
+/* ============================================================
+   v3.3 . FARBE: der Grund ist komplementaer zur Hauptfarbe
+   Grund-Farbton = Hauptfarbton + 180 Grad. Der Grund steht allein
+   auf der Gegenseite; Schrift und Hauptfarbe teilen eine Temperatur.
+   Ton in Ton (warmer Grund zu warmer Hauptfarbe) ist die Ausnahme
+   und braucht eine Begruendung in der Uebersetzungstabelle.
+   ============================================================ */
+[data-farbe="walnuss"]{   /* Hauptfarbe H 55 . Grund H 235 */
+  --ground:#E5ECF1; --surface:#F0F6FA; --surface-2:#C3CCD1;
+  --line:#C3CCD1; --line-strong:#A3ACB2;
+  --text:#39312C; --muted:#6C645F; --label:#5E5651;
+  --accent:#9C5822; --accent-ink:#9C5822; --auf-accent:#F0F6FA;
+  --brass:#9C5822; --focus:#9C5822;
+}
+[data-farbe="oxblood"]{   /* Hauptfarbe H 12 . Grund H 192 */
+  --ground:#E4EDED; --surface:#EFF7F6; --surface-2:#C2CDCC;
+  --line:#C2CDCC; --line-strong:#A2AEAD;
+  --text:#3A3031; --muted:#6D6364; --label:#5F5556;
+  --accent:#AA4B5B; --accent-ink:#AA4B5B; --auf-accent:#EFF7F6;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-farbe="taupe"]{   /* Hauptfarbe H 71 . Grund H 251 */
+  --ground:#E6ECF2; --surface:#F1F6FA; --surface-2:#C5CBD2;
+  --line:#C5CBD2; --line-strong:#A5ACB3;
+  --text:#37322B; --muted:#6B655E; --label:#5D5750;
+  --accent:#8F6123; --accent-ink:#8F6123; --auf-accent:#F1F6FA;
+  --brass:#8F6123; --focus:#8F6123;
+}
+[data-farbe="stahlblau"]{   /* Hauptfarbe H 233 . Grund H 53 */
+  --ground:#F1E9E5; --surface:#FAF4F0; --surface-2:#D1C9C3;
+  --line:#D1C9C3; --line-strong:#B2A9A3;
+  --text:#2C3439; --muted:#5F686C; --label:#51595E;
+  --accent:#277194; --accent-ink:#277194; --auf-accent:#FAF4F0;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-farbe="petrol"]{   /* Hauptfarbe H 192 . Grund H 12 */
+  --ground:#F2E9E9; --surface:#FAF3F4; --surface-2:#D2C7C8;
+  --line:#D2C7C8; --line-strong:#B3A8A8;
+  --text:#2B3535; --muted:#5E6968; --label:#505A5A;
+  --accent:#257471; --accent-ink:#257471; --auf-accent:#FAF3F4;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-farbe="smaragd"]{   /* Hauptfarbe H 160 . Grund H 340 */
+  --ground:#F0E9ED; --surface:#F9F3F7; --surface-2:#D0C8CD;
+  --line:#D0C8CD; --line-strong:#B1A8AD;
+  --text:#2D3530; --muted:#606863; --label:#525A55;
+  --accent:#267752; --accent-ink:#267752; --auf-accent:#F9F3F7;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-scheme="dunkel"][data-farbe="walnuss"]{
+  --ground:#040F16; --surface:#0C181F; --surface-2:#0C181F;
+  --line:#252F36; --line-strong:#40494F;
+  --text:#E4D4CA; --muted:#92877F; --label:#ADA29B;
+  --accent:#46240A; --accent-ink:#B46729; --auf-accent:#E4D4CA;
+  --brass:#B46729; --focus:#B46729;
+}
+[data-scheme="dunkel"][data-farbe="oxblood"]{
+  --ground:#031312; --surface:#091919; --surface-2:#091919;
+  --line:#233130; --line-strong:#3E4B4A;
+  --text:#E6D2D3; --muted:#948586; --label:#AEA1A2;
+  --accent:#550E20; --accent-ink:#C2606F; --auf-accent:#E6D2D3;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="taupe"]{
+  --ground:#040C15; --surface:#0E1720; --surface-2:#0E1720;
+  --line:#272F37; --line-strong:#414850;
+  --text:#E1D5C8; --muted:#90887E; --label:#ABA39A;
+  --accent:#3F290A; --accent-ink:#A5712A; --auf-accent:#E1D5C8;
+  --brass:#A5712A; --focus:#A5712A;
+}
+[data-scheme="dunkel"][data-farbe="stahlblau"]{
+  --ground:#130803; --surface:#1E130D; --surface-2:#1E130D;
+  --line:#352B26; --line-strong:#4F4540;
+  --text:#CADAE4; --muted:#7F8B92; --label:#9BA7AD;
+  --accent:#0C3244; --accent-ink:#3880A4; --auf-accent:#CADAE4;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="petrol"]{
+  --ground:#140708; --surface:#1F1213; --surface-2:#1F1213;
+  --line:#362A2B; --line-strong:#504445;
+  --text:#C8DCDB; --muted:#7D8D8C; --label:#9AA8A7;
+  --accent:#0C3533; --accent-ink:#2D8784; --auf-accent:#C8DCDB;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="smaragd"]{
+  --ground:#12070E; --surface:#1D1219; --surface-2:#1D1219;
+  --line:#342A31; --line-strong:#4E444A;
+  --text:#CCDCD2; --muted:#808D85; --label:#9CA8A1;
+  --accent:#0C3724; --accent-ink:#2D8B61; --auf-accent:#CCDCD2;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+
+/* Ohne data-farbe gilt Walnuss. */
+:root:not([data-farbe]){
+  --ground:#E5ECF1; --surface:#F3F7FA; --surface-2:#D5DCE1;
+  --line:#D5DCE1; --line-strong:#B6BDC2;
+  --text:#39312C; --muted:#6A6058; --label:#5F554E;
+  --accent:#9C5822; --accent-ink:#9C5822; --auf-accent:#F3F7FA;
+  --brass:#9C5822; --focus:#9C5822;
+}
+:root[data-scheme="dunkel"]:not([data-farbe]){
+  --ground:#040F16; --surface:#0E1A21; --surface-2:#0E1A21;
+  --line:#293439; --line-strong:#3E484D;
+  --text:#E4D4CA; --muted:#A4958B; --label:#BCACA1;
+  --accent:#46240A; --accent-ink:#B46729; --auf-accent:#E4D4CA;
+  --brass:#B46729; --focus:#B46729;
+}
+:root{ --kante:rgba(255,255,255,.10); --glas:rgba(14,26,33,.74);
+       --scrim:rgba(4,15,22,.62);
+       --shirt:var(--surface); --shirt-text:var(--text); --shirt-muted:var(--muted);
+       --success:#25783F; --warning:#8C6323; --error:#AB4D48; --info:#2F6A9E; }
 
 /* ============================================================
    GRUNDLAGEN
@@ -178,23 +251,23 @@ p{margin:0;max-width:62ch}
 
 /* ---- Bildfeld im phi-Verhaeltnis (Premium 5) ---- */
 .bild{aspect-ratio:1.618;background:var(--surface-2);border:1px solid var(--line);
-  border-radius:var(--r-card);overflow:hidden;display:block;width:100%;
+  border-radius:var(--r);overflow:hidden;display:block;width:100%;
   object-fit:cover}
 .bild-hoch{aspect-ratio:.618}
 
 /* ============================================================
    FLÄCHEN UND KOMPONENTEN
    ============================================================ */
-.card{background:var(--surface);border:1px solid var(--line);
-  border-radius:var(--r-card);padding:var(--f4);
+.card{background:none;border:0;border-top:1px solid var(--line);
+  border-radius:0;padding:var(--f4);
   box-shadow:inset 0 1px 0 var(--kante);
   transition:background var(--t-modus) ease,border-color var(--t-modus) ease}
-.card > .inner{border-radius:calc(var(--r-card) - var(--f2));
+.card > .inner{border-radius:calc(var(--r) - var(--f2));
   background:var(--surface-2);border:1px solid var(--line);padding:var(--f3)}
 
 /* Hemd — genau einer pro Ansicht, traegt die wichtigste Aussage */
 .shirt{background:var(--shirt);color:var(--shirt-text);
-  border-radius:var(--r-card);padding:var(--f6) var(--f5);
+  border-radius:var(--r);padding:var(--f6) var(--f5);
   border-top:1px solid var(--brass)}   /* Betonung ueber die Goldkante,
      nicht ueber eine helle Flaeche: die waere im Dunkeln 15:1 gegen den Grund
      und klebt als Aufkleber obenauf. */
@@ -202,7 +275,7 @@ p{margin:0;max-width:62ch}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--f2);
   min-height:44px;padding:calc(var(--f2) + 2px) var(--f4);
-  border-radius:var(--radius-interactive);font:500 var(--t0)/1 var(--font-text);
+  border-radius:var(--r);font:500 var(--t0)/1 var(--font-text);
   cursor:pointer;border:1px solid transparent;text-decoration:none;
   transition:background var(--t-hover) ease-out,color var(--t-hover) ease-out,
              transform 100ms ease-out}
@@ -215,14 +288,14 @@ p{margin:0;max-width:62ch}
 .btn-quiet{background:transparent;color:var(--muted)}
 
 .badge{display:inline-flex;align-items:center;min-height:calc(var(--m)*1.75);
-  padding:var(--f1) var(--f2);border-radius:var(--radius);
+  padding:var(--f1) var(--f2);border-radius:var(--r);
   border:1px solid var(--brass);color:var(--label);
   font:500 var(--t-2)/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
 
 .field{display:flex;flex-direction:column;gap:var(--f1)}
 .field label{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.12em;
   text-transform:uppercase;color:var(--muted)}
-.field input{min-height:44px;padding:var(--f2) var(--f3);border-radius:var(--radius-interactive);
+.field input{min-height:44px;padding:var(--f2) var(--f3);border-radius:var(--r);
   background:var(--ground);border:1px solid var(--line-strong);color:var(--text);
   font:400 var(--t0)/1 var(--font-text)}
 .field input:focus{outline:2px solid var(--brass);outline-offset:2px;

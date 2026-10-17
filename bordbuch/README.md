@@ -63,9 +63,9 @@ Eine Ansicht, ein Ziel: in zehn Sekunden fertig sein.
   sieht sie nicht.
 
 Oben steht der aktuelle Kilometerstand als Hemd-Block — die eine laute Aussage dieser
-Ansicht. Im Dunkeln ist das **keine helle Fläche**: Eine Fläche mit 15 : 1 gegen den
-Grund klebt als Aufkleber obenauf. Die Betonung trägt die Zahl selbst, groß in
-Literata, über einer Goldkante.
+Ansicht. Im Dunkeln ist das **keine Fläche**: Eine Fläche hinter einer großen Zahl
+leistet nichts, die Zahl ist schon groß. Die Betonung trägt die Zahl selbst, in
+Literata, über einer Linie in der Hauptfarbe.
 
 ### Verlauf
 
@@ -73,7 +73,7 @@ Vier Ansichten über denselben Daten:
 
 | Ansicht | Zeigt |
 |---|---|
-| **Liste** | Alle Einträge, neueste zuerst, nach Jahren getrennt. Mit Suche und Filter nach Art. Jede Zeile nennt die Strecke seit dem Eintrag davor, bei Tankungen zusätzlich Liter, Spritpreis und den gemessenen Verbrauch. Antippen öffnet die Tafel zum Ändern oder Löschen |
+| **Liste** | Alle Einträge, neueste zuerst, nach Jahren getrennt. Mit Suche und einem Filter, der wie das Formular die fünf häufigsten Arten zeigt. Jede Zeile nennt die Strecke seit dem Eintrag davor, bei Tankungen zusätzlich Liter, Spritpreis und den gemessenen Verbrauch. Antippen öffnet die Tafel zum Ändern oder Löschen |
 | **Kalender** | Ein Monatsgitter, Wochenstart Montag. Tage mit Einträgen tragen einen Punkt je Eintrag. Ein Tipp zeigt, was an dem Tag war. Öffnet im Monat des jüngsten Eintrags |
 | **Kilometer** | Zwei Diagramme je Jahr: Kilometer je Monat als Balken, aufsummiert als Kurve. Dazu Ø je Monat, Ø je Tag, stärkster Monat, Hochrechnung aufs Jahr und — wenn Kosten erfasst sind — Kosten gesamt und je 100 km |
 | **Verbrauch** | Was der Wagen wirklich braucht: Ø L/100 km, bester und schlechtester Wert, Ø Preis je Liter, Spritkosten je 100 km. Dazu zwei Kurven über die Zeit — Verbrauch je Tankfüllung und Preis je Liter — und eine Tabelle aller Messungen |
@@ -121,7 +121,7 @@ Bibliothek (`assets/js/pdf.js` ist ein kleiner PDF-Schreiber, rund 400 Zeilen).
 
 Zwei Fassungen, wie das Regelwerk es für gedruckte Dokumente verlangt:
 
-- **Versandfassung** — Elfenbein-Grund, zum Verschicken und Ansehen.
+- **Versandfassung** — mit Grundfläche, zum Verschicken und Ansehen.
 - **Druckfassung** (`…-DRUCK.pdf`, in den Einstellungen) — ohne Hintergrundfläche.
   Weiß ist dort kein Farbauftrag. Inhalt und Seitenzahlen sind identisch.
 
@@ -210,14 +210,32 @@ Die App läuft auf dem **Moch-Design-System v3.2** (`../design/moch.css`) im Sch
 Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` oder
 `smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau eine je Projekt.
 
-`assets/app.css` enthält **keinen einzigen Hexwert** und keinen Abstand außerhalb der
-φ-Skala — auch Fehler, Warnung und Erfolg kommen aus den Status-Tokens des Systems. Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 ·
-68 · 110 · 177), Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in
-Literata, alles andere in Archivo, jede Ziffer in IBM Plex Mono.
+**Der Grund ist komplementär zur Hauptfarbe.** Walnuss steht bei Farbton 55°, der
+Grund bei 235° — ein sehr dunkles Blau (`#040F16`). Warme Schrift auf kühlem Grund;
+man sieht es nicht, man spürt es. **Gold entfällt hier**: Zwischen Walnuss und Gold
+liegen 30° Farbtonabstand, unter den 35°, ab denen beide als verschiedene Farben
+lesbar sind. `--brass` trägt deshalb die Hauptfarbe, und Linien, aktiver Bereich und
+Fokus sehen aus wie die Marke, nicht wie ein zweiter Akzent.
 
-**Eingaben sind Linien, keine Kästen** — wie ein Formular auf Papier. Im Fokus wird
-die Linie Gold. Diese vier Zeilen stehen vorerst in `assets/app.css`, weil `moch.css`
-die Felder noch mit Rahmen zeichnet; zieht die Datei nach, fallen sie weg.
+**Form folgt Funktion.** Es gibt genau einen Radius (`--r`, 10 px), und ihn bekommt
+nur, was man drückt. Flächen, Zahlen und Textblöcke haben gerade Kanten. Gegliedert
+wird über Linien und Abstand, nicht über gestapelte Hintergründe — eine Flächenebene.
+Deshalb ist die Liste eine Folge von Linien statt von Kacheln, und eine Kennzahl steht
+einfach da, mit ihrem Label 2 px darüber.
+
+Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 · 68 · 110 · 177),
+Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in Literata, alles
+andere in Archivo, jede Ziffer in IBM Plex Mono.
+
+**Eingaben sind Linien, keine Kästen** — wie ein Formular auf Papier. Im Fokus trägt
+die Linie die Hauptfarbe. Diese vier Zeilen stehen vorerst in `assets/app.css`, weil
+`moch.css` die Felder noch mit Rahmen zeichnet; zieht die Datei nach, fallen sie weg.
+
+`assets/app.css` enthält genau **einen** Hexblock: die vier Statustöne für den
+Dunkelmodus. Das Regelwerk fordert zwei Fassungen je Schema, `moch.css` liefert seit
+dem letzten Umbau nur die helle — die trägt auf diesem Grund 3,4 : 1 statt der
+4,5 : 1, die Fließtext braucht. Gemessen, begründet, und wieder draußen, sobald die
+Datei nachzieht.
 
 Das PDF steht im hellen Schema: Was gelesen, unterschrieben oder gedruckt wird, ist
 hell. Dort ist die Schrift Helvetica — Literata ließe sich nur als eingebettete
