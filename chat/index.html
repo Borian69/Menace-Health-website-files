@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chat</title>
+  <link rel="stylesheet" href="app.css">
+  <script>
+    // Hell/Dunkel vor dem ersten Zeichnen setzen, sonst blitzt die Seite kurz falsch auf.
+    try {
+      var t = JSON.parse(localStorage.getItem('chat.settings') || '{}').theme;
+      if (t === 'hell' || t === 'dunkel') document.documentElement.dataset.theme = t;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <aside id="sidebar">
+    <button type="button" id="new-chat">Neuer Chat</button>
+    <h2>Verlauf</h2>
+    <p id="history-empty" class="hint">Noch keine Chats.</p>
+    <ul id="history"></ul>
+    <button type="button" id="open-settings">Einstellungen</button>
+  </aside>
+
+  <main>
+    <header>
+      <button type="button" id="toggle-sidebar" aria-label="Verlauf ein- oder ausblenden">☰</button>
+      <h1 id="chat-title">Neuer Chat</h1>
+    </header>
+
+    <div id="messages" aria-live="polite"></div>
+
+    <form id="composer">
+      <textarea id="input" rows="3" placeholder="Nachricht schreiben … (Enter sendet, Shift+Enter neue Zeile)"></textarea>
+      <button type="submit" id="send">Senden</button>
+    </form>
+  </main>
+
+  <dialog id="settings">
+    <form method="dialog" id="settings-form">
+      <h2>Einstellungen</h2>
+
+      <label>
+        OpenRouter API-Key
+        <input type="password" name="apiKey" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
+      </label>
+      <p class="hint">
+        Key auf <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> erstellen.
+        Er wird nur in diesem Browser gespeichert und direkt an OpenRouter geschickt.
+      </p>
+
+      <label>
+        Modell
+        <input name="model" spellcheck="false">
+      </label>
+
+      <label>
+        Nachdenken vor der Antwort
+        <select name="reasoning">
+          <option value="">Standard des Modells</option>
+          <option value="none">Aus — schnellste Antwort</option>
+          <option value="low">Wenig</option>
+          <option value="high">Viel</option>
+          <option value="max">Maximal</option>
+        </select>
+      </label>
+
+      <fieldset>
+        <legend>Darstellung</legend>
+        <label><input type="radio" name="theme" value="system"> wie das System</label>
+        <label><input type="radio" name="theme" value="hell"> Hell</label>
+        <label><input type="radio" name="theme" value="dunkel"> Dunkel</label>
+      </fieldset>
+
+      <menu>
+        <button value="cancel">Abbrechen</button>
+        <button value="save">Speichern</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

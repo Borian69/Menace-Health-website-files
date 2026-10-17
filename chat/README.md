@@ -1,0 +1,46 @@
+# Chat
+
+Ein schlichter Chatbot für **DeepSeek V4.1 Flash** über OpenRouter. Aktiver Chat,
+gespeicherter Verlauf, Einstellungen für API-Key und Hell/Dunkel.
+
+Kein Build, kein Framework, keine Abhängigkeiten — drei statische Dateien.
+
+## Starten
+
+- **Lokal:** `chat/index.html` im Browser öffnen (Doppelklick reicht).
+- **Online:** Der Ordner läuft auf jedem Static-Host, z. B. GitHub Pages unter
+  `https://<dein-name>.github.io/Menace-Health-website-files/chat/`.
+
+Dann **Einstellungen → OpenRouter API-Key** eintragen (Key auf
+[openrouter.ai/keys](https://openrouter.ai/keys) erstellen) → Speichern.
+
+## Was die App kann
+
+| | |
+|---|---|
+| **Aktiver Chat** | Antwort erscheint Wort für Wort. Enter sendet, Shift+Enter macht eine neue Zeile. „Stopp“ bricht ab. |
+| **Verlauf** | Jeder Chat wird gespeichert und steht links. Antippen öffnet ihn, ✕ löscht ihn. Auf dem Handy über ☰. |
+| **Einstellungen** | API-Key, Modell, wie viel das Modell vor der Antwort nachdenkt, Darstellung (System / Hell / Dunkel). |
+
+Das Modell ist auf `deepseek/deepseek-v4.1-flash` vorbelegt und lässt sich in
+den Einstellungen gegen jede andere OpenRouter-Modell-ID tauschen.
+
+**Nachdenken:** DeepSeek V4.1 Flash denkt standardmäßig gründlich nach, bevor es
+antwortet. Für schnelle Antworten in den Einstellungen auf „Aus“ stellen.
+
+## Wo die Daten liegen
+
+Alles bleibt im Browser (`localStorage`): Chats unter `chat.chats`, Einstellungen
+samt Key unter `chat.settings`. Die Anfragen gehen direkt vom Browser an OpenRouter,
+ohne Server dazwischen. Ein anderer Browser oder ein anderes Gerät hat einen eigenen,
+leeren Verlauf.
+
+Fehlschläge (falscher Key, kein Guthaben, keine Verbindung) erscheinen als rote
+Meldung; die Frage landet dann wieder im Eingabefeld und lässt sich erneut senden.
+
+## Abweichung vom Moch-Design-System
+
+Diese Fassung nutzt `design/moch.css` **bewusst noch nicht**. Auf Wunsch zuerst
+nur Funktion; das Design kommt in einem zweiten Schritt. Bis dahin gelten eigene,
+schlichte Systemfarben in `app.css` — die Regeln aus `CLAUDE.md` (Farbe, φ-Raum,
+Typografie, Eingaben als Linie) sind hier ausdrücklich noch nicht umgesetzt.
