@@ -1200,10 +1200,12 @@ function verdrahteEinstellungen() {
     melde('Protokoll geleert.');
   });
 
-  $('#btn-neu-laden').addEventListener('click', async () => {
-    const registrierung = await navigator.serviceWorker?.getRegistration();
-    if (registrierung) await registrierung.update();
-    window.location.reload();
+  /* Der Knopf rief bis eben nur update() und reload() auf — und der
+     Reload kam wieder aus demselben Cache. Jetzt wird der Offline-
+     Speicher wirklich geleert. */
+  $('#btn-neu-laden').addEventListener('click', () => {
+    melde('Hole die neue Fassung …');
+    erzwingeNeuladen();
   });
 
   // Läuft das Protokoll mit, wächst die Anzeige live mit.
@@ -1403,13 +1405,53 @@ function klopfen() {
 
 /* ── Offline ─────────────────────────────────────────────── */
 
+/* Die Seite sieht selbst nach, ob es eine neue Fassung gibt. Ohne das
+   prüft der Browser den Worker nur gelegentlich — und eine Änderung
+   erschien auf dem Telefon manchmal tagelang nicht. */
 function registriereWorker() {
   if (!('serviceWorker' in navigator)) return;
+
+  /* Übernimmt ein neuer Worker die Kontrolle, lädt die Seite einmal
+     neu: Alte Shell und neue Module dürfen sich nicht mischen. Das
+     Flag verhindert die Schleife, falls der Worker mehrfach wechselt. */
+  let laedtNeu = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (laedtNeu) return;
+    laedtNeu = true;
+    log('ui', 'Neue Fassung übernimmt, Seite wird neu geladen');
+    window.location.reload();
+  });
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js')
-      .then((registrierung) => log('ui', 'Service Worker bereit', { scope: registrierung.scope }))
+      .then((registrierung) => {
+        log('ui', 'Service Worker bereit', { scope: registrierung.scope });
+        // Einmal beim Start nachfragen — das ist der Auslöser, der bisher fehlte.
+        registrierung.update().catch(() => {});
+      })
       .catch((error) => fehler('ui', 'Service Worker abgelehnt', error));
   });
+}
+
+/** Meldet den Worker ab, wirft die Caches weg und lädt neu. Einträge
+    und Belege bleiben: Die liegen in localStorage und IndexedDB, und
+    die rührt das hier nicht an. */
+async function erzwingeNeuladen() {
+  try {
+    if ('serviceWorker' in navigator) {
+      const registrierungen = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrierungen.map((eintrag) => eintrag.unregister()));
+    }
+    if ('caches' in window) {
+      const namen = await caches.keys();
+      await Promise.all(namen.map((name) => caches.delete(name)));
+    }
+    log('ui', 'Offline-Speicher geleert, lade neu');
+  } catch (error) {
+    fehler('ui', 'Offline-Speicher ließ sich nicht leeren', error);
+  }
+  // Ohne Cache-Buster liefert der HTTP-Cache unter Umständen dieselbe Seite.
+  window.location.replace(`${window.location.pathname}?neu=${Date.now()}`);
 }
 
 start();

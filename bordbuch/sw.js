@@ -3,9 +3,25 @@
 
    Bei Änderungen an einer Datei aus SHELL den Cache-Namen hochzählen —
    und BUILD in assets/js/fassung.js mit; der Selbsttest prüft, dass
-   beide zusammenpassen. */
+   beide zusammenpassen.
 
-const CACHE = 'bordbuch-v6';
+   Zwei Strategien, nach Art der Datei:
+
+   **Code zuerst aus dem Netz** (HTML, CSS, JS). Die Shell entscheidet,
+   welche Module geladen werden — sie muss aktuell sein, sobald eine
+   Verbindung da ist. Bis zur Fassung v7 lief alles cache-zuerst; eine
+   neue Fassung erschien dadurch frühestens beim übernächsten Start,
+   und wer die App nur kurz öffnet, sah sie nie. Offline greift nach
+   FRIST Millisekunden der Cache, die Tiefgarage bleibt also bedient.
+
+   **Alles andere zuerst aus dem Cache** (Icons, Schriften). Die ändern
+   sich praktisch nie und sollen den Start nicht aufhalten. */
+
+const CACHE = 'bordbuch-v7';
+
+/* Wie lange die App auf das Netz wartet, bevor der Cache einspringt.
+   Länger wartet niemand auf ein Serviceheft. */
+const FRIST = 2500;
 
 const SHELL = [
   './',
@@ -73,20 +89,63 @@ self.addEventListener('fetch', (event) => {
 
   if (adresse.origin !== self.location.origin) return;
 
-  /* Zuerst der Cache: Die App startet dadurch sofort, auch bei schlechter
-     Verbindung. Im Hintergrund wird die Datei aufgefrischt, damit die
-     nächste Öffnung aktuell ist. */
-  event.respondWith(
-    caches.match(anfrage).then((treffer) => {
-      const ausDemNetz = fetch(anfrage).then((antwort) => {
-        if (antwort && antwort.ok) {
-          const kopie = antwort.clone();
-          caches.open(CACHE).then((cache) => cache.put(anfrage, kopie));
-        }
-        return antwort;
-      }).catch(() => treffer);
+  /* Den Worker selbst nie beantworten: Sonst könnte sich eine Fassung
+     einnisten, die ihre eigene Ablösung aus dem Cache ausliefert. */
+  if (adresse.pathname.endsWith('/sw.js')) return;
 
-      return treffer || ausDemNetz;
-    }),
-  );
+  const istCode = anfrage.mode === 'navigate'
+    || /\.(html|css|js)$/.test(adresse.pathname)
+    || adresse.pathname.endsWith('/');
+
+  event.respondWith(istCode ? netzZuerst(anfrage) : cacheZuerst(anfrage));
 });
+
+/** Legt eine Antwort im Cache ab, ohne den Aufrufer warten zu lassen. */
+function lege(anfrage, antwort) {
+  if (!antwort || !antwort.ok) return antwort;
+  const kopie = antwort.clone();
+  caches.open(CACHE).then((cache) => cache.put(anfrage, kopie)).catch(() => {});
+  return antwort;
+}
+
+/* Netz zuerst, Cache als Rückfall — und zwar auch dann, wenn das Netz
+   zwar da ist, aber nichts liefert. Ohne die Frist stünde die App in
+   einem Funkloch mit Empfangsbalken minutenlang auf Weiß. */
+function netzZuerst(anfrage) {
+  return new Promise((fertig) => {
+    let erledigt = false;
+    const nimm = (antwort) => {
+      if (erledigt || !antwort) return;
+      erledigt = true;
+      fertig(antwort);
+    };
+
+    const uhr = setTimeout(() => {
+      caches.match(anfrage).then(nimm).catch(() => {});
+    }, FRIST);
+
+    fetch(anfrage)
+      .then((antwort) => {
+        clearTimeout(uhr);
+        lege(anfrage, antwort);
+        nimm(antwort);
+      })
+      .catch(() => {
+        clearTimeout(uhr);
+        caches.match(anfrage)
+          .then((treffer) => nimm(treffer || Response.error()))
+          .catch(() => nimm(Response.error()));
+      });
+  });
+}
+
+/* Cache zuerst, im Hintergrund auffrischen. Für Icons und Schriften:
+   Sie ändern sich praktisch nie und sollen den Start nicht aufhalten. */
+function cacheZuerst(anfrage) {
+  return caches.match(anfrage).then((treffer) => {
+    const ausDemNetz = fetch(anfrage)
+      .then((antwort) => lege(anfrage, antwort))
+      .catch(() => treffer);
+    return treffer || ausDemNetz;
+  });
+}
