@@ -27,7 +27,7 @@ Ehrlichkeit: Sei ehrlich und direkt. Sag offen, wenn etwas falsch, unklar oder k
 
 Länge: Antworte so lang, wie die Frage es verlangt, nicht länger. Kein Vorgeplänkel, keine Wiederholung der Frage, keine Zusammenfassung am Ende, keine Liste möglicher Folgefragen. Eine einfache Frage bekommt eine kurze Antwort, eine komplexe so viel wie nötig. Aber nicht künstlich knapp: Was zum Verstehen gebraucht wird, gehört rein. Ausführlich nur, wenn ich ausdrücklich danach frage.
 
-Format: Die App zeigt reinen Text, Markdown wird nicht umgesetzt. Also keine Sternchen für Fett, keine #-Überschriften, keine Tabellen. Einfache Aufzählungen mit „-“ und Codeblöcke sind in Ordnung.
+Format: Markdown wird dargestellt (fett, kursiv, Listen, Überschriften, Tabellen, Code). Setz es gezielt ein: Fett für das Wichtigste, Listen nur bei echten Aufzählungen, Überschriften nur bei längeren Antworten. Lockere Antworten brauchen meist gar keine Formatierung.
 
 Antworte in der Sprache, in der ich schreibe.`;
 
@@ -151,7 +151,13 @@ function renderHistory() {
 function bubble(role, text) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
-  div.textContent = text;
+  // Nur Antworten des Modells als Markdown; eigene Nachrichten bleiben wörtlich.
+  if (role === 'assistant') {
+    div.classList.add('md');
+    div.innerHTML = renderMarkdown(text);
+  } else {
+    div.textContent = text;
+  }
   return div;
 }
 
@@ -182,10 +188,13 @@ function render() {
   store(STORE.active, current.id);
 }
 
-function scrollToEnd(force) {
+function nearEnd() {
   const el = els.messages;
-  const nearEnd = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  if (force || nearEnd) el.scrollTop = el.scrollHeight;
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+}
+
+function scrollToEnd(force) {
+  if (force || nearEnd()) els.messages.scrollTop = els.messages.scrollHeight;
 }
 
 function setBusy(busy) {
@@ -314,12 +323,29 @@ async function send() {
   saveChat(chat);
   render();
 
-  // Die Antwort ist immer die letzte Blase des Chats — auch wenn
+  // Die Antwort ist immer die letzte Modell-Blase des Chats — auch wenn
   // zwischendurch ein anderer Chat offen war und neu gezeichnet wurde.
-  const answerEl = () => (chat === current ? els.messages.lastElementChild : null);
+  const answerEl = () => {
+    if (chat !== current) return null;
+    const all = els.messages.querySelectorAll('.msg.assistant');
+    return all[all.length - 1] || null;
+  };
   const pending = answerEl();
   pending.classList.add('pending');
   pending.textContent = 'schreibt …';
+
+  // Markdown höchstens einmal pro Bildschirmbild neu setzen, nicht bei
+  // jedem der oft hundert Stücke pro Sekunde.
+  let frame = 0;
+  const paint = () => {
+    frame = 0;
+    const el = answerEl();
+    if (!el || !answer.content) return;
+    const stick = nearEnd();
+    el.classList.remove('pending');
+    el.innerHTML = renderMarkdown(answer.content);
+    if (stick) scrollToEnd(true);
+  };
 
   controller = new AbortController();
   busyChat = chat;
@@ -328,18 +354,14 @@ async function send() {
 
   try {
     await complete(history, controller.signal, ({ content, reasoning }) => {
-      const el = answerEl();
       if (reasoning && !answer.content && !thinking) {
         thinking = true;
+        const el = answerEl();
         if (el) el.textContent = 'denkt nach …';
       }
       if (!content) return;
       answer.content += content;
-      if (el) {
-        el.classList.remove('pending');
-        el.textContent = answer.content;
-        scrollToEnd(false);
-      }
+      if (!frame) frame = requestAnimationFrame(paint);
     });
   } catch (err) {
     if (err.name !== 'AbortError') {
@@ -350,6 +372,8 @@ async function send() {
     controller = null;
     busyChat = null;
     setBusy(false);
+    cancelAnimationFrame(frame);
+    paint();
 
     // Wurde der Chat währenddessen gelöscht, bleibt er gelöscht.
     if (chats.includes(chat)) {
@@ -366,7 +390,6 @@ async function send() {
         }
       } else {
         chat.updated = Date.now();
-        answerEl()?.classList.remove('pending');
       }
       saveChat(chat);
     }
