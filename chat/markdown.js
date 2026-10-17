@@ -87,13 +87,18 @@ function table(lines, i) {
   });
   i += 2;
 
-  const cell = (tag, text, k) => `<${tag}${align[k] || ''}>${inline(text || '')}</${tag}>`;
+  // Reine Zahlen (auch mit Einheit wie % oder €) stehen tabellarisch.
+  const NUMBER = /^[-+−]?[\d.,\s%€$:/]*\d[\d.,\s%€$:/]*$/;
+  const cell = (tag, text, k) => {
+    const html = inline(text || '');
+    return `<${tag}${align[k] || ''}>${NUMBER.test(text || '') ? `<span class="n">${html}</span>` : html}</${tag}>`;
+  };
   let body = '';
   while (i < lines.length && lines[i].trim() && lines[i].includes('|')) {
     const row = cells(lines[i++]);
     body += `<tr>${head.map((_, k) => cell('td', row[k], k)).join('')}</tr>`;
   }
-  const html = `<div class="table"><table><thead><tr>${head.map((h, k) => cell('th', h, k)).join('')}</tr></thead>`
+  const html = `<div class="md-tabelle"><table><thead><tr>${head.map((h, k) => cell('th', h, k)).join('')}</tr></thead>`
     + `<tbody>${body}</tbody></table></div>`;
   return { html, next: i };
 }
@@ -162,8 +167,9 @@ function blocks(lines) {
     }
 
     if ((m = line.match(HEADING))) {
-      // # wird h2: h1 ist der Chat-Titel.
-      const level = Math.min(m[1].length + 1, 6);
+      // # und ## werden h3, alles darunter h4. h1/h2 des Design-Systems
+      // (Instrument Serif, 36–72 px) sind innerhalb einer Antwort zu laut.
+      const level = m[1].length <= 2 ? 3 : 4;
       out += `<h${level}>${inline(m[2])}</h${level}>`;
       i++;
       continue;

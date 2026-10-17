@@ -1,243 +1,349 @@
-/* Bewusst schlicht: erst die Funktion, das Design kommt später. */
+/* ══════════════════════════════════════════════════════════
+   Chat — App-Hülle über dem Moch-Design-System v4.0
+
+   Hier steht Layout. Farben, Schriften, Abstände, Radius und Bewegung
+   kommen aus den Tokens in design/4.0/moch.css. Fassung: Walnuss, wie
+   das Bordbuch (eine Hauptfarbe je Projekt). Gold entfällt bei Walnuss
+   (30°) — --brass trägt die Hauptfarbe.
+
+   Die Signatur:
+   · Der Chat ist das Objekt und damit der Titel: h1 in Instrument
+     Serif, Kennung in Mono darunter. Beim Scrollen wandert er in die
+     Glasleiste.
+   · Der Bruch: Deine Frage in Instrument Serif, die Antwort still in
+     Archivo. Keine Sprechblasen — eine Flächenebene.
+   · Unter jeder Antwort die Datenzeile: Modell, Uhrzeit, Kosten, wie
+     OpenRouter sie meldet. Ihre Linie zieht auf, wenn die Antwort steht.
+   · Eingaben sind Linien; im Fokus zieht die Linie in --accent-ink auf.
+
+   Was hier dazukommt (.verlauf .runde .frage .blatt .md …), ist
+   App-Möblierung. Abweichungen stehen an Ort und Stelle und im README.
+   ══════════════════════════════════════════════════════════ */
+
+[hidden] { display: none !important; }
+
+/* Native Bedienelemente und Scrollbalken im Dunkeln dunkel zeichnen. */
+[data-scheme="dunkel"] { color-scheme: dark; }
 
 :root {
-  color-scheme: light;
-  --bg: #fafafa;
-  --panel: #f0f0f0;
-  --text: #1a1a1a;
-  --muted: #666;
-  --line: #d4d4d4;
-  --user: #e2ebf7;
-  --error: #b3261e;
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --seite-breite: 300px;
+  /* Lesespalte: 66 Zeichen Fließtext (--measure) plus Luft. */
+  --spalte: 720px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="hell"]) {
-    color-scheme: dark;
-    --bg: #1b1b1d;
-    --panel: #242427;
-    --text: #e8e8e8;
-    --muted: #9a9a9a;
-    --line: #3a3a3e;
-    --user: #2a3647;
-    --error: #f2b8b5;
-  }
+body.app {
+  display: grid;
+  grid-template-columns: var(--seite-breite) minmax(0, 1fr);
+  height: 100dvh;
+  overflow: hidden;
 }
 
-:root[data-theme="dunkel"] {
-  color-scheme: dark;
-  --bg: #1b1b1d;
-  --panel: #242427;
-  --text: #e8e8e8;
-  --muted: #9a9a9a;
-  --line: #3a3a3e;
-  --user: #2a3647;
-  --error: #f2b8b5;
-}
-
-* { box-sizing: border-box; }
-
-html, body { height: 100%; margin: 0; }
-
-body {
-  display: flex;
-  background: var(--bg);
-  color: var(--text);
-  font: 16px/1.5 system-ui, sans-serif;
-}
-
-button, input, select, textarea { font: inherit; color: inherit; }
-
-button {
-  padding: 8px 12px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel);
-  cursor: pointer;
-}
+a { color: var(--accent-ink); text-underline-offset: 3px; }
 
 /* ── Verlauf ─────────────────────────────────────────────── */
 
 #sidebar {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  width: 260px;
-  flex-shrink: 0;
-  padding: 12px;
+  min-height: 0;
+  padding: calc(var(--safe-t) + var(--f4)) var(--f4) var(--f4);
+  background: var(--ground);
   border-right: 1px solid var(--line);
-  background: var(--panel);
 }
+#sidebar .marke i { width: var(--f5); }
+#summen { margin-top: var(--f4); }
+#history-empty { margin-top: var(--f5); }
 
-#sidebar h2 { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
-
-#history {
+.verlauf {
   flex: 1;
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  min-height: 0;
+  margin-top: var(--f5);
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  /* Platz für die Linie des aktiven Eintrags links. */
+  margin-left: calc(-1 * var(--f2));
+  padding-left: var(--f2);
 }
 
-#history li { display: flex; gap: 4px; }
-
-#history .open {
-  flex: 1;
+/* Ein Eintrag: Zeit · Titel · Löschen — das .eintrag-Raster des Systems. */
+.verlauf .eintrag {
+  position: relative;
+  grid-template-columns: 52px 1fr auto;
+  align-items: center;
+  padding: var(--f1) 0;
+}
+.verlauf .was {
   min-width: 0;
-  border-color: transparent;
-  background: transparent;
+  min-height: var(--touch);
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--text);
+  font: 500 var(--fs-small)/var(--lh-small) var(--font-text);
   text-align: left;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.verlauf .was > span { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.verlauf .was small { white-space: nowrap; }
+.verlauf .was:focus-visible { outline-offset: 2px; }
+
+/* Der aktive Chat trägt die Linie der Tab-Leiste (.ind): 2 px
+   --accent-ink. Eine Linie, keine Fläche. */
+.verlauf .eintrag.active::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--f2));
+  top: var(--f3);
+  bottom: var(--f3);
+  width: 2px;
+  background: var(--accent-ink);
+}
+.verlauf .eintrag.active .tag { color: var(--accent-ink); }
+
+.verlauf .delete svg { width: 18px; height: 18px; }
+/* Mit Maus erscheint das Löschen erst unter dem Zeiger — der häufige
+   Weg ist Öffnen. Ohne Maus bleibt es sichtbar. */
+@media (hover: hover) {
+  .verlauf .delete { opacity: 0; transition: opacity var(--dur-hover) ease-out; }
+  .verlauf .eintrag:hover .delete,
+  .verlauf .delete:focus-visible { opacity: 1; }
 }
 
-#history li.active .open { border-color: var(--line); background: var(--bg); }
-
-#history .delete { border-color: transparent; background: transparent; color: var(--muted); }
-
-#history-empty[hidden] { display: none; }
-
-/* ── Aktiver Chat ────────────────────────────────────────── */
+/* ── Hauptfläche ─────────────────────────────────────────── */
 
 main {
+  position: relative;
   display: flex;
   flex-direction: column;
-  flex: 1;
   min-width: 0;
+  min-height: 0;
+  background: var(--ground);
 }
 
-header {
+/* Leiste: Glas und Linie erscheinen mit dem Scrollen (--p, System).
+   Abweichung: Das System setzt genau ein Icon-Ziel rechts unten in die
+   Leiste. Der Chat braucht drei — Verlauf links, Neu und Einstellungen
+   rechts —, deshalb stehen sie hier in zwei Gruppen. */
+.leiste-links,
+.leiste-rechts {
+  position: absolute;
+  bottom: 5px;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-bottom: 1px solid var(--line);
+  gap: var(--f1);
 }
-
-header h1 {
-  margin: 0;
-  font-size: 18px;
-  white-space: nowrap;
+.leiste-links { left: var(--f2); }
+.leiste-rechts { right: var(--f2); }
+.leiste .leiste-links .icon-btn,
+.leiste .leiste-rechts .icon-btn { position: static; }
+.leiste .mini {
+  max-width: calc(100% - 220px);
   overflow: hidden;
+  white-space: nowrap;
   text-overflow: ellipsis;
 }
-
 #toggle-sidebar { display: none; }
 
+/* Scrollfläche: oben Safe Area + 92 px wie .seite des Systems; die
+   Lesespalte bleibt mittig, der Rand wächst. */
 #messages {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 16px;
+  overscroll-behavior-y: contain;
+  padding:
+    calc(var(--safe-t) + 92px)
+    max(var(--app-rand), calc((100% - var(--spalte)) / 2))
+    var(--f6);
 }
 
-.msg {
-  max-width: 760px;
-  margin: 0 auto 12px;
-  padding: 8px 12px;
-  border-radius: 8px;
+.app-kopf .kz:empty { display: none; }
+
+/* ── Runden ──────────────────────────────────────────────── */
+
+#runden { margin-top: var(--f6); }
+
+/* Zwischen zwei Runden der Gruppenabstand. Die Runde davor schließt mit
+   ihrer Datenzeile — deren Linie trennt bereits. */
+.frage + .antwort { margin-top: var(--f3); }
+.antwort + .frage,
+.meta + .frage,
+.notice + .frage { margin-top: var(--f5); }
+
+/* Der Bruch: die Frage in Instrument Serif. 26 px — über der
+   Untergrenze des Systems für Display (24 px). */
+.frage {
+  margin: 0;
+  max-width: var(--measure);
+  font: 400 1.625rem/1.15 var(--font-display);
+  letter-spacing: var(--display-track);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  font-synthesis: none;
+}
+/* Eingefügte lange Texte: still in Archivo, sonst steht eine Seite
+   Serife über einer Antwort von drei Zeilen. */
+.frage.lang {
+  font: 500 var(--fs-body)/var(--lh-body) var(--font-text);
+  letter-spacing: 0;
 }
 
-.msg.user { background: var(--user); }
-.msg.assistant { border: 1px solid var(--line); }
-.msg.pending { color: var(--muted); font-style: italic; }
-.msg.error { color: var(--error); border: 1px solid var(--error); }
+.antwort { max-width: var(--measure); overflow-wrap: anywhere; }
 
-/* Formatierte Antworten (Markdown). Vorläufig — wird mit dem Design verfeinert. */
+/* Wartet: Label und Platzhalterzeilen des Systems — kein Spinner. */
+.antwort.pending .lb { margin-bottom: var(--f2); }
+.antwort.pending .placeholder:nth-of-type(1) { width: 92%; }
+.antwort.pending .placeholder:nth-of-type(2) { width: 74%; }
+.antwort.pending .placeholder:nth-of-type(3) { width: 48%; }
 
-.msg.md { white-space: normal; }
-.md > :first-child { margin-top: 0; }
-.md > :last-child { margin-bottom: 0; }
-.md p, .md ul, .md ol, .md pre, .md blockquote, .md .table { margin: 0 0 0.75em; }
-.md h2, .md h3, .md h4, .md h5, .md h6 { margin: 1em 0 0.4em; line-height: 1.3; }
-.md h2 { font-size: 1.25em; }
-.md h3 { font-size: 1.1em; }
-.md h4, .md h5, .md h6 { font-size: 1em; }
-.md ul, .md ol { padding-left: 1.5em; }
-.md li + li { margin-top: 0.25em; }
-.md li > p { margin: 0; }
-.md li > p + p { margin-top: 0.5em; }
-.md li > ul, .md li > ol { margin: 0.25em 0 0; }
-.md code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.9em; padding: 0.1em 0.3em; border-radius: 4px; background: var(--panel); }
-.md pre { padding: 8px 12px; border-radius: 6px; background: var(--panel); overflow-x: auto; white-space: pre; }
-.md pre code { padding: 0; background: none; }
-.md blockquote { margin-left: 0; padding-left: 12px; border-left: 3px solid var(--line); color: var(--muted); }
-.md hr { border: 0; border-top: 1px solid var(--line); margin: 1em 0; }
-.md .table { overflow-x: auto; }
-.md table { border-collapse: collapse; }
-.md th, .md td { padding: 4px 8px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
-.md th { background: var(--panel); }
+/* Datenzeile unter der Antwort: .dataline.offen des Systems. */
+.meta { margin-top: var(--f3); }
 
-.empty { max-width: 760px; margin: 40px auto; color: var(--muted); text-align: center; }
+.notice { margin-top: var(--f3); }
+
+/* ── Leerer Chat ─────────────────────────────────────────── */
+
+.leer p { color: var(--muted); }
+.leer .btn { margin-top: var(--f3); }
+
+/* ── Antworten als Markdown ──────────────────────────────── */
+
+/* Ränder des Systems (p, h3) weg, der Abstand kommt allein aus der
+   nächsten Regel: f3 zwischen Blöcken einer Antwort. */
+.md :where(p, ul, ol, pre, blockquote, hr, h3, h4) { margin: 0; }
+.md > * + * { margin-top: var(--f3); }
+.md > :is(h3, h4):not(:first-child) { margin-top: var(--f4); }
+/* # und ## werden h3 (Archivo 600, System). ### und tiefer h4:
+   ein Zwischentitel in Mono-Versalien wie .lb. h2 des Systems
+   (Instrument Serif, 36–52 px) wäre in einer Antwort zu laut. */
+.md h4 {
+  font: 500 var(--fs-label)/var(--lh-label) var(--font-mono);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--label);
+}
+.md strong { font-weight: 600; }
+
+.md ul, .md ol { padding-left: var(--f4); }
+.md li + li { margin-top: var(--f1); }
+.md li > p + p { margin-top: var(--f2); }
+.md li > :is(ul, ol) { margin-top: var(--f1); }
+.md li::marker { color: var(--accent-ink); }
+
+.md code { font-family: var(--font-mono); font-size: max(.93em, var(--fs-label)); font-variant-ligatures: none; }
+/* Codeblock: eine Linie statt einer zweiten Fläche, ohne Ecken —
+   ein Textblock ist kein Ziel. */
+.md pre {
+  padding: var(--f2) var(--f3);
+  border-left: 1px solid var(--line-strong);
+  font-size: var(--fs-small);
+  line-height: var(--lh-body);
+  overflow-x: auto;
+}
+.md pre code { font-size: inherit; }
+
+.md blockquote {
+  padding-left: var(--f3);
+  border-left: 1px solid var(--brass);
+  color: var(--muted);
+}
+/* Trennlinie wie .haar des Systems, mit einer Stufe mehr Luft. */
+.md hr { height: 1px; background: var(--brass); border: 0; }
+.md > hr { margin: var(--f4) 0; }
+
+.md-tabelle { overflow-x: auto; }
+
+/* ── Eingabe ─────────────────────────────────────────────── */
 
 #composer {
   display: flex;
-  gap: 8px;
-  padding: 12px 16px;
+  align-items: flex-end;
+  gap: var(--f3);
+  flex: none;
+  padding:
+    var(--f2)
+    max(var(--app-rand), calc((100% - var(--spalte)) / 2))
+    calc(var(--f3) + var(--safe-b));
   border-top: 1px solid var(--line);
 }
+/* Das Feld des Systems, über die volle Breite — wie in der
+   Referenz-App (dort als style-Attribut). */
+#composer .field { flex: 1; max-width: none; margin: 0; }
+#input { max-height: 40vh; resize: none; line-height: var(--lh-body); }
 
-#input {
-  flex: 1;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg);
-  resize: vertical;
+/* Hauptaktion erscheint erst, wenn es etwas zu senden gibt (--a,
+   Feder aus moch-motion.js: Bedingt). */
+#send {
+  flex: none;
+  opacity: var(--a, 0);
+  transform: translateX(calc((1 - var(--a, 0)) * 12px));
+  pointer-events: none;
+}
+#send.da { pointer-events: auto; }
+
+/* Toast: im Hauptbereich, nicht über dem Verlauf. */
+@media (min-width: 861px) {
+  .toast { left: calc(var(--seite-breite) + var(--app-rand)); }
 }
 
-/* ── Einstellungen ───────────────────────────────────────── */
+/* ── Einstellungen: Blatt von unten ──────────────────────── */
 
-dialog {
-  width: min(480px, calc(100% - 32px));
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text);
-}
-
-dialog::backdrop { background: rgb(0 0 0 / 0.4); }
-
-dialog h2 { margin-top: 0; }
-
-#settings-form > label { display: block; margin-bottom: 12px; }
-
-#settings-form > label input,
-#settings-form > label select,
-#settings-form > label textarea {
-  display: block;
+/* Ein Blatt ist eine Fläche: keine Ecken (--r-sheet), Linie oben. */
+dialog.blatt {
   width: 100%;
-  margin-top: 4px;
-  padding: 6px 8px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--panel);
+  max-width: 640px;
+  max-height: 92dvh;
+  margin: auto auto 0;
+  padding: var(--f5) var(--app-rand) calc(var(--safe-b) + var(--f4));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface);
+  color: var(--text);
+  border: 0;
+  border-top: 1px solid var(--line-strong);
+  border-radius: var(--r-sheet);
+  box-shadow: inset 0 1px 0 var(--kante);
 }
+dialog.blatt[open] { animation: blattAuf 400ms var(--ease); }
+@keyframes blattAuf { from { transform: translateY(24px); opacity: 0; } }
+/* ::backdrop erbt die Tokens nicht in jedem Browser; der Ersatzwert
+   entspricht --scrim des dunklen Walnuss-Grunds. */
+dialog::backdrop { background: var(--scrim, rgba(11, 27, 37, .62)); }
 
-fieldset { margin: 0 0 12px; border: 1px solid var(--line); border-radius: 6px; }
-fieldset label { display: block; }
+#settings-form h2 { margin: 0 0 var(--f5); }
+#settings-form .field { max-width: none; margin: 0; }
+#settings-form .gruppe > * + * { margin-top: var(--f3); }
+#settings-form .gruppe > .lb + .wahl { margin-top: 0; }
+#settings-form .wahl + .field-msg { margin-top: var(--f2); }
+#f-system { resize: vertical; line-height: var(--lh-body); }
+#reset-system { margin-top: var(--f2); }
 
-menu { display: flex; justify-content: flex-end; gap: 8px; margin: 0; padding: 0; }
+.knopfreihe { display: flex; justify-content: flex-end; gap: var(--f3); margin: var(--f6) 0 0; padding: 0; }
 
-.hint { margin: -8px 0 12px; font-size: 14px; color: var(--muted); }
-#sidebar .hint { margin: 0; }
-a { color: inherit; }
+/* ── Schmal: Verlauf als einschiebbare Spalte ────────────── */
 
-/* ── Schmal: Verlauf als einblendbare Spalte ─────────────── */
-
-@media (max-width: 700px) {
-  #toggle-sidebar { display: inline-block; }
+@media (max-width: 860px) {
+  body.app { grid-template-columns: minmax(0, 1fr); }
+  #toggle-sidebar { display: inline-grid; }
 
   #sidebar {
     position: fixed;
     inset: 0 auto 0 0;
-    z-index: 10;
-    width: min(300px, 85vw);
+    z-index: 40;
+    width: min(320px, 86vw);
     transform: translateX(-100%);
-    transition: transform 0.2s;
+    transition: transform var(--dur-panel) var(--ease);
   }
-
-  body.sidebar-open #sidebar { transform: none; box-shadow: 0 0 0 100vmax rgb(0 0 0 / 0.4); }
+  body.sidebar-open #sidebar { transform: none; }
+  body.sidebar-open::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 35;
+    background: var(--scrim);
+    animation: einblenden var(--dur-panel) var(--ease);
+  }
+  @keyframes einblenden { from { opacity: 0; } }
 }

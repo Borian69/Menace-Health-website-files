@@ -1,94 +1,127 @@
 <!doctype html>
-<html lang="de">
+<html lang="de" data-scheme="dunkel" data-farbe="walnuss">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Chat</title>
+  <meta name="theme-color" content="#0B1B25">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- Das Moch-Design-System v4.0: Tokens, Komponenten, Bewegung. -->
+  <link rel="stylesheet" href="../design/4.0/moch.css">
   <link rel="stylesheet" href="app.css">
   <script>
     // Hell/Dunkel vor dem ersten Zeichnen setzen, sonst blitzt die Seite kurz falsch auf.
     try {
       var t = JSON.parse(localStorage.getItem('chat.settings') || '{}').theme;
-      if (t === 'hell' || t === 'dunkel') document.documentElement.dataset.theme = t;
+      var dunkel = t === 'dunkel' || (t !== 'hell' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.dataset.scheme = dunkel ? 'dunkel' : 'hell';
     } catch (e) {}
   </script>
+  <!-- defer hält die Reihenfolge: erst Bewegung, dann Markdown, dann die App. -->
+  <script src="../design/4.0/moch-motion.js" defer></script>
+  <script src="markdown.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
-<body>
-  <aside id="sidebar">
-    <button type="button" id="new-chat">Neuer Chat</button>
-    <h2>Verlauf</h2>
-    <p id="history-empty" class="hint">Noch keine Chats.</p>
-    <ul id="history"></ul>
-    <button type="button" id="open-settings">Einstellungen</button>
+<body class="app">
+  <aside id="sidebar" aria-label="Verlauf">
+    <div class="marke"><i></i><b>Chat</b><i></i></div>
+    <div class="dataline offen" id="summen" hidden>
+      <span>Chats <b class="n" id="summe-chats">0</b></span>
+      <span>Kosten <b class="n" id="summe-kosten">0</b> US-Cent</span>
+    </div>
+    <p id="history-empty" class="klein muted">Noch keine Chats. Der erste erscheint hier, sobald Du etwas fragst.</p>
+    <div id="history" class="verlauf"></div>
   </aside>
 
   <main>
-    <header>
-      <button type="button" id="toggle-sidebar" aria-label="Verlauf ein- oder ausblenden">☰</button>
-      <h1 id="chat-title">Neuer Chat</h1>
+    <header class="leiste" id="leiste">
+      <div class="leiste-links">
+        <button type="button" class="icon-btn" id="toggle-sidebar" aria-label="Verlauf öffnen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+        </button>
+      </div>
+      <span class="mini" id="mini-titel"></span>
+      <div class="leiste-rechts">
+        <button type="button" class="icon-btn" id="new-chat" aria-label="Neuen Chat beginnen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <button type="button" class="icon-btn" id="open-settings" aria-label="Einstellungen öffnen">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        </button>
+      </div>
     </header>
 
-    <div id="messages" aria-live="polite"></div>
+    <div id="messages">
+      <!-- Das Objekt ist der Titel: der Chat selbst. Beim Scrollen wandert er in die Leiste. -->
+      <div class="app-kopf" id="kopf" data-auftritt>
+        <h1 id="chat-title">Neuer Chat</h1>
+        <div class="kz" id="chat-kennung"></div>
+      </div>
+      <div id="runden" aria-live="polite"></div>
+    </div>
 
     <form id="composer">
-      <textarea id="input" rows="3" placeholder="Nachricht schreiben … (Enter sendet, Shift+Enter neue Zeile)"></textarea>
-      <button type="submit" id="send">Senden</button>
+      <div class="field">
+        <textarea id="input" rows="1" placeholder="Nachricht an DeepSeek …" aria-label="Nachricht"></textarea>
+      </div>
+      <button type="submit" id="send" class="btn btn-primary">Senden</button>
     </form>
+
+    <div class="toast" id="toast" role="status"><span></span></div>
   </main>
 
-  <dialog id="settings">
+  <dialog id="settings" class="blatt" aria-labelledby="settings-titel">
     <form method="dialog" id="settings-form">
-      <h2>Einstellungen</h2>
+      <h2 id="settings-titel">Einstellungen</h2>
 
-      <label>
-        OpenRouter API-Key
-        <input type="password" name="apiKey" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…">
-      </label>
-      <p class="hint">
-        Key auf <a href="https://openrouter.ai/keys" target="_blank" rel="noopener">openrouter.ai/keys</a> erstellen.
-        Er wird nur in diesem Browser gespeichert und direkt an OpenRouter geschickt.
-      </p>
+      <div class="gruppe">
+        <div class="field" id="feld-key">
+          <label for="f-key">OpenRouter API-Key</label>
+          <input id="f-key" type="password" name="apiKey" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…" aria-describedby="m-key">
+          <p class="field-msg" id="m-key">Key auf openrouter.ai/keys erstellen. Er bleibt in diesem Browser und geht nur an OpenRouter.</p>
+        </div>
+      </div>
 
-      <label>
-        Modell
-        <input name="model" spellcheck="false">
-      </label>
+      <div class="gruppe">
+        <div class="field">
+          <label for="f-model">Modell</label>
+          <input id="f-model" name="model" spellcheck="false">
+        </div>
+        <span class="lb" id="lb-reasoning">Nachdenken vor der Antwort</span>
+        <div class="wahl" role="radiogroup" aria-labelledby="lb-reasoning" data-name="reasoning">
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="">Standard</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="none">Aus</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="low">Wenig</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="high">Viel</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="max">Maximal</button>
+        </div>
+        <p class="field-msg">„Aus“ antwortet am schnellsten. „Standard“ lässt DeepSeek gründlich nachdenken.</p>
+      </div>
 
-      <label>
-        Nachdenken vor der Antwort
-        <select name="reasoning">
-          <option value="">Standard des Modells</option>
-          <option value="none">Aus — schnellste Antwort</option>
-          <option value="low">Wenig</option>
-          <option value="high">Viel</option>
-          <option value="max">Maximal</option>
-        </select>
-      </label>
+      <div class="gruppe">
+        <div class="field">
+          <label for="f-system">Antwortstil</label>
+          <textarea id="f-system" name="system" rows="8" spellcheck="false"></textarea>
+          <p class="field-msg">Gilt ab der nächsten Nachricht. Modellname und Datum setzt die App selbst davor.</p>
+        </div>
+        <button type="button" id="reset-system" class="btn btn-quiet">Standard wiederherstellen</button>
+      </div>
 
-      <label>
-        Wie soll das Modell antworten?
-        <textarea name="system" rows="8" spellcheck="false"></textarea>
-      </label>
-      <p class="hint">
-        Gilt für jede neue Nachricht. Modellname und Datum fügt die App selbst hinzu.
-        <button type="button" id="reset-system">Standard wiederherstellen</button>
-      </p>
+      <div class="gruppe">
+        <span class="lb" id="lb-theme">Darstellung</span>
+        <div class="wahl" role="radiogroup" aria-labelledby="lb-theme" data-name="theme">
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="system">System</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="hell">Hell</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-value="dunkel">Dunkel</button>
+        </div>
+      </div>
 
-      <fieldset>
-        <legend>Darstellung</legend>
-        <label><input type="radio" name="theme" value="system"> wie das System</label>
-        <label><input type="radio" name="theme" value="hell"> Hell</label>
-        <label><input type="radio" name="theme" value="dunkel"> Dunkel</label>
-      </fieldset>
-
-      <menu>
-        <button value="cancel">Abbrechen</button>
-        <button value="save">Speichern</button>
+      <menu class="knopfreihe">
+        <button value="cancel" class="btn btn-quiet">Abbrechen</button>
+        <button value="save" class="btn btn-primary">Einstellungen speichern</button>
       </menu>
     </form>
   </dialog>
-
-  <script src="markdown.js"></script>
-  <script src="app.js"></script>
 </body>
 </html>

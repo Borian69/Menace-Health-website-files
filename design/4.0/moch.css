@@ -1,0 +1,766 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600&family=Instrument+Serif&display=swap');
+/* Moch — Design System v4.0 · Einzeldatei für den Skill.
+   ERZEUGT von .design-sync/build.sh aus tokens/tokens.css, tokens/shape.css und der
+   Komponentenschicht in components/controls.html. Nicht von Hand ändern. */
+/* Moch — Design Tokens · v4.0
+   Einzige Quelle aller Werte. Layout benutzt nur Rollen, nie Rohwerte.
+
+     1. KONSTANTEN   nie veränderlich: Messing, Schrift, Typo-Skala, Raum (φ), Raster,
+                     Radius, Bewegung
+     2. FARBE        data-scheme (hell | dunkel) × data-farbe (eine Hauptfarbe je Projekt).
+                     Beide Attribute stehen auf demselben Element, meist <html>.
+                     Ohne data-farbe gilt Amber.
+     3. ABGELEITET   Hemd-Block, Ebenen, Glas, Druck – aus den Rollen berechnet
+
+   Farbregeln (gemessen, nicht geschätzt):
+   - Der Grund ist komplementär zur Hauptfarbe: Grund-Farbton = Hauptfarbton + 180°.
+     Schrift und Hauptfarbe teilen eine Temperatur.
+   - Der Grund ist nie die Hauptfarbe, sondern ihre gedämpfte Gegenfarbe: Chroma hell 0,008–0,012,
+     dunkel 0,022–0,060, L 0,20–0,30 – darunter liest er sich als Schwarz. Referenzen: Bordbuch B3
+     #0F1A26 (gedämpft) und Mappen-Navy #102A43 (satt, Entscheidung Florian 17.10.2026).
+   - Genau eine Hauptfarbe. Gold (--brass) nur als Linie und Fokus, nur bei ≥ 35° Abstand
+     zur Hauptfarbe – bei Walnuss, Taupe und Amber übernimmt die Hauptfarbe die Linienrolle.
+   - Kein Schwarz, kein reines Weiß: das Weiß des Systems ist #FFFDF7 (warm), nie #FFFFFF;
+     kein Kanal unter 3. */
+
+:root{
+  /* ================= 1. KONSTANTEN ================= */
+  --messing:#FCBE11;        /* Bildmarke. Als Linie nur auf dunklem Grund (11,0 : 1)  */
+  --messing-tief:#7A5E1E;   /* Linienfarbe im Druck, Messing auf hellem Grund          */
+
+  /* Schrift: vier Familien, jede mit genau einer Rolle. Selbst gehostet (fonts/fonts.css).
+     Überschrift schmal mit Charakter · Kennzahl ruhig und kräftig · Text still · Ziffern exakt. */
+  --font-display:"Instrument Serif",Georgia,"Times New Roman",serif;  /* Überschriften, Statement */
+  --display-wght:400;       /* Instrument Serif hat nur 400 – nie fett setzen          */
+  --font-zahl:"Literata",Georgia,"Times New Roman",serif;  /* große Kennzahlen, Zählwerk      */
+  --zahl-wght:600; --zahl-opsz:72;
+  --display-opsz:72;        /* Alt-Name (v3.2), wirkt nur auf Literata                 */
+  --font-text:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",Consolas,monospace;
+  --display-min:24px;                       /* darunter nie Display, sondern Archivo 600 */
+  --display-track:calc(.3px - .012em);      /* größenabhängig: klein ≈ 0, groß bis −1 %  */
+  --mark-track:.06em;
+
+  /* Typo-Skala. Instrument Serif läuft schmal, deshalb größer und enger gesetzt als eine
+     breite Antiqua – die Überschrift trägt die Persönlichkeit. */
+  --fs-statement:clamp(4rem, 1.2rem + 11vw, 12.5rem);  --lh-statement:.92;
+  --fs-h1:clamp(3.5rem, 2.9rem + 2.4vw, 4.5rem);      --lh-h1:.96;   /* 56–72 px */
+  --fs-h2:clamp(2.25rem, 1.8rem + 1.6vw, 3.25rem);    --lh-h2:1;     /* 36–52 px */
+  --fs-number:clamp(2.75rem, 2rem + 2.4vw, 4rem);     --lh-number:1; /* Literata 600 */
+  --fs-zaehlwerk:clamp(3.625rem, 3rem + 2vw, 4.5rem);                /* 58–72 px, App-Kennzahl */
+  --fs-h3:1.0625rem;   --lh-h3:1.3;   /* 17 px, Archivo 600 */
+  --fs-body:1.0625rem; --lh-body:1.5; /* 17 px              */
+  --fs-small:.90625rem;--lh-small:1.5;/* 14,5 px            */
+  --fs-label:.75rem;   --lh-label:1.3; --track-label:.14em; /* 12 px, kleinste Größe */
+  --t-body:var(--fs-body); --t-small:var(--fs-small); --t-label:var(--fs-label); /* v3.0-Namen */
+  --measure:66ch;          /* Fließtext */
+  --measure-narrow:42ch;   /* Karten, Spalten, Bildunterschriften */
+  --leading:var(--lh-body);
+
+  /* Raum: φ aus einem Modul. --m wechselt je Medium (Web 16 px, Druck, Overlay, Karte),
+     alle Abstände folgen. 6 · 10 · 16 · 26 · 42 · 68 · 110 · 177 bei --m = 16 px. */
+  --m:16px;
+  --f1:calc(var(--m) * .375);  --f2:calc(var(--m) * .625); --f3:var(--m);
+  --f4:calc(var(--m) * 1.625); --f5:calc(var(--m) * 2.625); --f6:calc(var(--m) * 4.25);
+  --f7:calc(var(--m) * 6.875); --f8:calc(var(--m) * 11.0625);
+  /* 8er-Raster: Bedienelemente und alles, was sich an Icons ausrichtet */
+  --s1:8px;  --s2:16px; --s3:24px; --s4:32px; --s5:48px;
+  --s6:64px; --s7:96px; --s8:128px; --s9:160px;
+
+  /* Raster und Breakpoints. Media Queries lesen keine Variablen – die Werte hier sind
+     verbindlich und werden in den Queries wörtlich verwendet. */
+  --bp-s:480px; --bp-m:720px; --bp-l:1100px; --bp-xl:1440px;
+  --container:1240px;
+  --margin-mobile:var(--s3); --margin-desktop:var(--s5);
+  --gutter:var(--s3);
+  --cols-mobile:4; --cols-tablet:6; --cols-desktop:12;
+  --app-rand:var(--f4);     /* Seitenrand in Apps: 26 px */
+
+  /* Radius: genau einer, Apple-Maß, Kurve G2 (shape.css). Nur, was man anfasst – und was
+     schwebt (Meldung, Blatt) – bekommt ihn. Flächen, Zahlen, Textblöcke haben keine Ecken. */
+  --r:10px;
+  --radius:var(--r); --r-ctrl:var(--r); --r-float:var(--r); --radius-interactive:var(--r); /* Alt-Namen */
+  --r-inner:0px; --r-card:0px; --r-sheet:0px;                  /* Flächen: keine Ecken     */
+  --border:1px;
+  --touch:44px;             /* Mindestmaß jedes Ziels */
+
+  /* Bewegung: Federn nach Apple, kritisch gedämpft. JS-Federn: motion/moch-motion.js.
+     --ease ist die CSS-Näherung derselben Feder für einfache Übergänge. */
+  --spring-damping:1;        --spring-response:.4s;
+  --spring-fling-damping:.85;--spring-fling-response:.4s;   /* nur nach schnellem Wisch */
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --dur-press:90ms; --dur-hover:180ms; --dur-panel:240ms; --dur-feld:280ms;
+  --dur-theme:350ms; --dur-reveal:600ms; --dur-toast:3200ms;
+  --press-scale:.97; --press-scale-chip:.96; --press-scale-icon:.92;
+  /* Staffelung: Dinge kommen nacheinander, nie alle zugleich */
+  --stagger-wort:70ms;      /* Titelwörter steigen auf          */
+  --stagger-gruppe:70ms;    /* Gruppen einer Ansicht            */
+  --stagger-ziffer:45ms;    /* Zählwerk, von links nach rechts  */
+  --stagger-chip:40ms;      /* aufklappende Auswahl             */
+  --stagger-liste:35ms;     /* Listeneinträge                   */
+
+  /* Muster (Cover, Verpackung, Social) */
+  --pattern-light:#EBE3D5; --pattern-dark:#17191D; --pattern-card:#2E3138; --pattern-accent:#55222B;
+}
+
+/* ================= 2. FARBE ================= */
+/* Jede Fassung setzt alle Rollen:
+   --ground --surface --surface-2 --line --line-strong --text --muted --label
+   --accent (Fläche) --accent-ink (Schrift) --auf-accent (Text auf der Fläche)
+   --brass (Gold oder Hauptfarbe in Linienrolle) --focus
+   --success --warning --error --info (Status: Linie, Rahmen, Symbol – nie allein) */
+
+/* ---- hell ---- */
+:root,[data-farbe="amber"]{   
+  --ground:#FFFDF7; --surface:#FFFDF7; --surface-2:#DCD9D0;
+  --line:#DCD9D0; --line-strong:#BAB7AE;
+  --text:#342C25; --muted:#69625B; --label:#5C554F;
+  --accent:#D98A2B; --accent-ink:#8F5C1F; --auf-accent:#141210;   /* 6,8 : 1 */
+  --brass:#8F5C1F; --focus:#8F5C1F;
+}
+[data-farbe="walnuss"]{   /* Hauptfarbe H 55 . Grund H 235 · Gold entfällt (30°) */
+  --ground:#E5ECF1; --surface:#F0F6FA; --surface-2:#C3CCD1;
+  --line:#C3CCD1; --line-strong:#A3ACB2;
+  --text:#39312C; --muted:#6C645F; --label:#5E5651;
+  --accent:#9C5822; --accent-ink:#9C5822; --auf-accent:#F0F6FA;
+  --brass:#9C5822; --focus:#9C5822;
+}
+[data-farbe="oxblood"]{   /* Hauptfarbe H 12 . Grund H 192 */
+  --ground:#E4EDED; --surface:#EFF7F6; --surface-2:#C2CDCC;
+  --line:#C2CDCC; --line-strong:#A2AEAD;
+  --text:#3A3031; --muted:#6D6364; --label:#5F5556;
+  --accent:#AA4B5B; --accent-ink:#AA4B5B; --auf-accent:#EFF7F6;
+  --brass:#B69345; --focus:#AA4B5B;
+}
+[data-farbe="taupe"]{   /* Hauptfarbe H 71 . Grund H 251 · Gold entfällt (14°) */
+  --ground:#E6ECF2; --surface:#F1F6FA; --surface-2:#C5CBD2;
+  --line:#C5CBD2; --line-strong:#A5ACB3;
+  --text:#37322B; --muted:#6B655E; --label:#5D5750;
+  --accent:#8F6123; --accent-ink:#8F6123; --auf-accent:#F1F6FA;
+  --brass:#8F6123; --focus:#8F6123;
+}
+[data-farbe="stahlblau"]{   /* Hauptfarbe H 233 . Grund H 53 */
+  --ground:#F1E9E5; --surface:#FAF4F0; --surface-2:#D1C9C3;
+  --line:#D1C9C3; --line-strong:#B2A9A3;
+  --text:#2C3439; --muted:#5F686C; --label:#51595E;
+  --accent:#277194; --accent-ink:#277194; --auf-accent:#FAF4F0;
+  --brass:#B69345; --focus:#277194;
+}
+[data-farbe="petrol"]{   /* Hauptfarbe H 192 . Grund H 12 */
+  --ground:#F2E9E9; --surface:#FAF3F4; --surface-2:#D2C7C8;
+  --line:#D2C7C8; --line-strong:#B3A8A8;
+  --text:#2B3535; --muted:#5E6968; --label:#505A5A;
+  --accent:#257471; --accent-ink:#257471; --auf-accent:#FAF3F4;
+  --brass:#B69345; --focus:#257471;
+}
+[data-farbe="smaragd"]{   /* Hauptfarbe H 160 . Grund H 340 */
+  --ground:#F0E9ED; --surface:#F9F3F7; --surface-2:#D0C8CD;
+  --line:#D0C8CD; --line-strong:#B1A8AD;
+  --text:#2D3530; --muted:#606863; --label:#525A55;
+  --accent:#267752; --accent-ink:#267752; --auf-accent:#F9F3F7;
+  --brass:#B69345; --focus:#267752;
+}
+:root,[data-farbe]{
+  --success:#2E6B4F; --warning:#8A5A0C; --error:#B23B35; --info:#3B6079;
+}
+
+/* ---- dunkel ----
+   Zwei Rollen der Hauptfarbe: --accent ist die tiefe Fläche, --accent-ink die hellere
+   Schriftfassung. Ausnahme Amber: von Natur aus hell, deshalb helle Fläche mit dunklem Text. */
+[data-scheme="dunkel"]:not([data-farbe]),[data-scheme="dunkel"][data-farbe="amber"]{
+  /* Bordbuch B3 · Blau gedämpft × Amber hell. Text #FFFDF7 17,3 · Sekundär 7,8 · Akzentschrift 9,2 · Text auf Amber in Grundfarbe 6,4 */
+  --ground:#0F1A26; --surface:#16222F; --surface-2:#16222F;
+  --line:#26313D; --line-strong:#3A4654;
+  --text:#FFFDF7; --muted:#A6AEB7; --label:#A6AEB7;
+  --accent:#D98A2B; --accent-ink:#EDB065; --auf-accent:#0F1A26;
+  --brass:#EDB065; --focus:#EDB065;
+}
+[data-scheme="dunkel"][data-farbe="walnuss"]{
+  --ground:#0B1B25; --surface:#12232D; --surface-2:#12232D;
+  --line:#23323B; --line-strong:#364852;
+  --text:#E4D4CA; --muted:#A89C94; --label:#B5AAA3;
+  --accent:#46240A; --accent-ink:#D48448; --auf-accent:#E4D4CA;
+  --brass:#D48448; --focus:#D48448;
+}
+[data-scheme="dunkel"][data-farbe="oxblood"]{
+  --ground:#071D1C; --surface:#0E2624; --surface-2:#0E2624;
+  --line:#203433; --line-strong:#334A48;
+  --text:#E6D2D3; --muted:#AB9C9D; --label:#B7AAAB;
+  --accent:#550E20; --accent-ink:#DF7A88; --auf-accent:#E6D2D3;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="taupe"]{
+  --ground:#0E1A26; --surface:#15222F; --surface-2:#15222F;
+  --line:#26313D; --line-strong:#394654;
+  --text:#E1D5C8; --muted:#A59D93; --label:#B3ABA2;
+  --accent:#3F290A; --accent-ink:#C48E49; --auf-accent:#E1D5C8;
+  --brass:#C48E49; --focus:#C48E49;
+}
+[data-scheme="dunkel"][data-farbe="stahlblau"]{
+  --ground:#24150C; --surface:#2C1D13; --surface-2:#2C1D13;
+  --line:#3B2C24; --line-strong:#524136;
+  --text:#CADAE4; --muted:#94A0A8; --label:#A1ADB3;
+  --accent:#0C3244; --accent-ink:#589FC4; --auf-accent:#CADAE4;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="petrol"]{
+  --ground:#251415; --surface:#2E1B1C; --surface-2:#2E1B1C;
+  --line:#3C2B2C; --line-strong:#533F40;
+  --text:#C8DCDB; --muted:#90A1A0; --label:#9FADAC;
+  --accent:#0C3533; --accent-ink:#4EA4A1; --auf-accent:#C8DCDB;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="smaragd"]{
+  --ground:#22141D; --surface:#2B1B25; --surface-2:#2B1B25;
+  --line:#392B34; --line-strong:#503F49;
+  --text:#CCDCD2; --muted:#94A199; --label:#A1ADA6;
+  --accent:#0C3724; --accent-ink:#4CA77B; --auf-accent:#CCDCD2;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"]{
+  --success:#5FA883; --warning:#D9A441; --error:#E07563; --info:#78A6C4;
+}
+
+/* ---- Alt-Namen (v3.1/v3.2): bestehende Seiten laufen weiter ----
+   elfenbein, champagne → hell · nacht, mitternacht, oxblood, espresso … → dunkel (Amber). */
+[data-scheme="nacht"],[data-scheme="nacht-mitternacht"],[data-scheme="mitternacht"],
+[data-scheme="oxblood"],[data-scheme="espresso"],[data-scheme="champagne-mitternacht"],
+[data-theme="nacht"],[data-theme="mitternacht"],[data-theme="oxblood"],
+.theme-nacht,.theme-mitternacht,.theme-oxblood{
+  --ground:#0F1A26; --surface:#16222F; --surface-2:#16222F;
+  --line:#26313D; --line-strong:#3A4654;
+  --text:#FFFDF7; --muted:#A6AEB7; --label:#A6AEB7;
+  --accent:#D98A2B; --accent-ink:#EDB065; --auf-accent:#0F1A26;
+  --brass:#EDB065; --focus:#EDB065;
+  --success:#5FA883; --warning:#D9A441; --error:#E07563; --info:#78A6C4;
+}
+
+/* ================= 3. ABGELEITET ================= */
+/* Hemd-Block: hell eine dunkle Fläche mit hellem Text. Dunkel KEINE helle Fläche – dort
+   trägt die Zahl selbst die Aussage, über einer Linie in --brass. */
+:root,[data-farbe],[data-scheme],[data-theme],.theme-nacht,.theme-mitternacht,.theme-oxblood{
+  --shirt:var(--text); --shirt-text:var(--ground);
+  --shirt-muted:color-mix(in oklab, var(--ground) 74%, var(--text));
+  --shirt-line:color-mix(in oklab, var(--ground) 30%, var(--text));
+  --scrim:color-mix(in srgb, var(--text) 62%, transparent);
+  --kante:transparent;
+  /* Ebenen aus v3.1: es gibt nur noch eine Flächenebene, die Namen bleiben gültig */
+  --tone-surface:var(--surface); --tone-surface-2:var(--surface-2);
+  --tone-line:var(--line); --tone-line-strong:var(--line-strong); --tone-label:var(--label);
+  --deep-ground:var(--ground); --deep-surface:var(--surface); --deep-surface-2:var(--surface-2);
+  --deep-line:var(--line); --deep-line-strong:var(--line-strong);
+  --deep-text:var(--text); --deep-muted:var(--muted); --deep-label:var(--label);
+  --deep-accent:var(--accent); --deep-focus:var(--focus);
+}
+[data-scheme="dunkel"],[data-scheme="nacht"],[data-scheme="nacht-mitternacht"],[data-scheme="mitternacht"],
+[data-scheme="oxblood"],[data-scheme="espresso"],[data-scheme="champagne-mitternacht"],
+[data-theme="nacht"],[data-theme="mitternacht"],[data-theme="oxblood"],
+.theme-nacht,.theme-mitternacht,.theme-oxblood{
+  --shirt:var(--ground); --shirt-text:var(--text); --shirt-muted:var(--muted); --shirt-line:var(--brass);
+  --scrim:color-mix(in srgb, var(--ground) 62%, transparent);
+  --kante:color-mix(in srgb, var(--text) 9%, transparent);   /* helle Oberkante statt Schatten */
+}
+
+/* Ebenen übernehmen das nächstgelegene Schema. .tone, .deep und .shirt nie auf dasselbe Element
+   wie data-scheme/data-farbe setzen – die Rollen verweisen aufeinander (Zyklus). */
+.tone{
+  --surface:var(--tone-surface); --surface-2:var(--tone-surface-2);
+  --line:var(--tone-line); --line-strong:var(--tone-line-strong); --label:var(--tone-label);
+}
+.deep{
+  --ground:var(--deep-ground); --surface:var(--deep-surface); --surface-2:var(--deep-surface-2);
+  --line:var(--deep-line); --line-strong:var(--deep-line-strong);
+  --text:var(--deep-text); --muted:var(--deep-muted); --label:var(--deep-label);
+  --accent:var(--deep-accent); --focus:var(--deep-focus);
+}
+/* Statement-Block: alle Rollen darin richten sich nach ihm – auch Labels und Buttons */
+.shirt{
+  --ground:var(--shirt); --surface:var(--shirt); --surface-2:var(--shirt);
+  --text:var(--shirt-text); --muted:var(--shirt-muted); --label:var(--shirt-muted);
+  --line:var(--shirt-line); --line-strong:var(--shirt-muted);
+  --focus:var(--shirt-text);
+  /* Hell ist das Hemd dunkel: die Schriftfassung der Hauptfarbe hellt zum Hemdtext hin auf */
+  --accent-ink:color-mix(in oklab, var(--accent) 45%, var(--shirt-text));
+}
+[data-scheme="dunkel"] .shirt{--accent-ink:inherit}
+
+/* Auf jeder Ebene neu berechnet */
+:root,[data-scheme],[data-farbe],[data-theme],.theme-nacht,.theme-mitternacht,.theme-oxblood,.tone,.deep,.shirt{
+  --glass:color-mix(in srgb, var(--ground) 78%, transparent);   /* Leisten über scrollendem Inhalt */
+  --press:color-mix(in srgb, var(--text) 10%, transparent);
+  --hover:color-mix(in srgb, var(--text) 6%, transparent);
+  --disabled:color-mix(in srgb, var(--text) 45%, var(--ground));
+  --grain:color-mix(in srgb-linear, var(--line) 25%, var(--ground)); /* Papierkorn ≈ 1,10 : 1 */
+  /* Alt-Namen, weiter gültig */
+  --brass-line:var(--brass); --brand:var(--accent); --brand-ink:var(--accent-ink);
+  --accent-2:var(--line-strong); --focus-inner:var(--brass);
+}
+
+/* Druck: Grund wird Papier, Linien Messing-tief. Kein reines Weiß – das Papier ist es schon.
+   !important, weil jede Schemafassung (z. B. [data-scheme="dunkel"][data-farbe="amber"]) spezifischer
+   ist als ein Sammelselektor – sonst druckt eine dunkle Seite helle Schrift auf Papier. */
+@media print{
+  :root,[data-scheme],[data-farbe],[data-theme],.theme-nacht,.theme-mitternacht,.theme-oxblood{
+    --m:3.6mm !important;
+    --ground:transparent !important; --surface:transparent !important; --surface-2:transparent !important;
+    --text:#1C1A18 !important; --muted:#4A4642 !important; --label:#4A4642 !important;
+    --line:#B9B2A8 !important; --line-strong:#7A5E1E !important; --brass:#7A5E1E !important; --focus:#1C1A18 !important;
+    --accent-ink:color-mix(in oklab, var(--accent) 55%, #1C1A18) !important;
+    --success:#2E6B4F !important; --warning:#8A5A0C !important; --error:#B23B35 !important; --info:#3B6079 !important;
+    --grain:transparent !important; --kante:transparent !important;
+    --shirt:transparent !important; --shirt-text:#1C1A18 !important; --shirt-muted:#4A4642 !important; --shirt-line:#7A5E1E !important;
+  }
+}
+
+/* @moch-shape:start */
+/* Moch — Formsprache der Ecken · G2
+
+   Eine Ecke aus `border-radius` ist ein Kreisbogen: Die Krümmung springt an der
+   Nahtstelle von 0 (Gerade) auf 1/r (Bogen) und am Ende wieder zurück. Das ist
+   G1 — die Tangente stimmt, die Krümmung nicht. Eine Superellipse läuft mit
+   Krümmung 0 in die Gerade hinein und wieder heraus: G2.
+
+   ACHTUNG BEIM PARAMETER: `superellipse(k)` in CSS nennt nicht den klassischen
+   Exponenten, sondern dessen Logarithmus zur Basis 2. `superellipse(2)` ist der
+   Exponent 4 (das klassische Squircle), `superellipse(4)` wäre Exponent 16 —
+   praktisch ein Rechteck. Jedes k > 1 ist bereits krümmungsstetig.
+
+   GEMESSEN, nicht gerechnet — diagonale Schnitttiefe bei Radius 64 px, per
+   Treffertest an der gerenderten Form abgetastet:
+
+       round (G1)          25,60 px    Faktor 1,00
+       superellipse(1.1)   24,10 px    Faktor 1,06
+       superellipse(1.2)   22,65 px    Faktor 1,13   ← gewählt
+       superellipse(1.3)   21,30 px    Faktor 1,20
+       squircle = se(2)    13,50 px    Faktor 1,90
+       superellipse(4)      3,00 px    Faktor 8,53
+
+   Gewählt ist superellipse(1.2): krümmungsstetig, aber nur 13 % flacher als der
+   Kreisbogen. Bei den Systemradien 2 px und 4 px ist das ein Bruchteil eines
+   Pixels — deshalb bleiben die Radien unverändert bei den Werten des
+   Leitfadens. Es ändert sich die Kurve, nicht das Maß.
+   v4: Es gibt genau einen Radius, --r 10 px (Apple-Maß, tokens.css), nur für Anfassbares
+   und Schwebendes. Die Kurve bleibt diese.
+
+   Wer den stärkeren Squircle-Charakter will, setzt --corner auf
+   superellipse(2) — dann brauchen die Radien Faktor 1,9, also 4 px und 8 px,
+   und das ist eine Abweichung, die nach Kapitel 02 begründet gehört. */
+
+:root{
+  --corner:superellipse(1.2);
+}
+
+/* `corner-shape` wirkt nur dort, wo ein Radius gesetzt ist — überall sonst ist
+   die Regel folgenlos. Deshalb global: jede gerundete Ecke im System ist G2,
+   auch die, die ein Layout später selbst setzt. */
+*,*::before,*::after{ corner-shape:var(--corner) }
+
+/* Ausnahme: echte Kreise und Pillen. Bei border-radius:50 % bzw. 999 px ist der
+   Kreisbogen die gewollte Form — eine Superellipse macht daraus ein Squircle. */
+.is-circle,.is-pill{ corner-shape:round }
+
+/* Engines ohne `corner-shape` zeigen den Kreisbogen. Weil die Radien bei 2 px
+   und 4 px bleiben, ist das Ergebnis dort exakt der Leitfaden — die Form ist
+   dann G1, die Maße stimmen. Kein Layoutunterschied, keine Überrundung. */
+/* @moch-shape:end */
+
+/* @moch-bundle:start · Komponentenschicht v4.0 · Quelle: components/controls.html */
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0}
+body{background:var(--ground);color:var(--text);font-family:var(--font-text);
+  font-size:var(--fs-body);line-height:var(--lh-body);font-kerning:normal;
+  -webkit-font-smoothing:antialiased;
+  transition:background-color var(--dur-theme) ease,color var(--dur-theme) ease}
+/* Jede Ebene setzt ihre Textfarbe selbst */
+[data-scheme],[data-farbe],[data-theme],.theme-nacht,.theme-mitternacht,.theme-oxblood,.tone,.deep,.shirt{color:var(--text)}
+
+/* ==== Typografie: nur Stufen der Skala ==== */
+/* Überschriften: Instrument Serif, schmal, mit Charakter. Nie fett. */
+h1,h2,.display{font-family:var(--font-display);font-weight:var(--display-wght);
+  letter-spacing:var(--display-track);text-wrap:balance;font-synthesis:none}
+.display{font-size:var(--fs-statement);line-height:var(--lh-statement);margin:0 0 var(--s4);max-width:11ch}
+.display-gross{font-size:var(--fs-statement)}
+h1{font-size:var(--fs-h1);line-height:var(--lh-h1);margin:0 0 var(--s3)}
+h2{font-size:var(--fs-h2);line-height:var(--lh-h2);margin:var(--s5) 0 var(--s2)}
+/* Kennzahlen: Literata 600, ruhig und kräftig – der Gegenpol zum schmalen Titel */
+.number{font-family:var(--font-zahl);font-weight:var(--zahl-wght);font-variation-settings:"opsz" var(--zahl-opsz);
+  font-size:var(--fs-number);line-height:var(--lh-number);letter-spacing:-.01em;margin:0;
+  font-variant-numeric:tabular-nums lining-nums}
+h3{font-family:var(--font-text);font-weight:600;font-size:var(--fs-h3);line-height:var(--lh-h3);
+  letter-spacing:0;margin:0 0 var(--s1);text-wrap:balance}
+p{margin:0 0 var(--s2);max-width:var(--measure);text-wrap:pretty}
+.lead{font-size:calc(var(--m) * 1.28);line-height:1.272;color:var(--muted)}
+.small,.klein{font-size:var(--fs-small);line-height:var(--lh-small)}
+.muted{color:var(--muted)}
+/* Schmale Spalten: Silbentrennung (lang="de" am Dokument nötig) */
+.card p,.card li,td,.narrow{hyphens:auto;max-width:var(--measure-narrow)}
+.eyebrow,.lb,th,.field label,.badge{font-family:var(--font-mono);font-weight:500;font-size:var(--fs-label);
+  line-height:var(--lh-label);letter-spacing:var(--track-label);text-transform:uppercase;
+  font-variant-ligatures:none}
+.eyebrow{display:flex;align-items:center;gap:10px;color:var(--label);margin:0 0 var(--s2)}
+.eyebrow::before{content:"";width:16px;height:1px;flex:none;background:var(--line-strong)}
+/* Ein Label gehört zu seinem Wert: 4 px darüber, nicht 16 */
+.lb{display:block;color:var(--label);margin-bottom:4px}
+/* 93 % der Textgröße, aber nie unter 12 px */
+.n{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-variant-ligatures:none;font-size:max(.93em,var(--fs-label))}
+/* Display-Zeilen: Ziffern laufen in der Schrift der Zeile mit */
+h1 .n,h2 .n,.display .n,.number .n,.shirt h3 .n,.zaehlwerk .n{font-family:inherit;font-size:1em;letter-spacing:inherit}
+.rule{height:1px;background:var(--line-strong);margin:var(--s4) 0}
+
+/* ==== Nähe: Abstand kodiert Beziehung ====
+   Zwischen Gruppen immer mindestens zwei φ-Stufen mehr als innerhalb. */
+.stapel-eng  > * + *{margin-top:var(--f2)}   /* innerhalb einer Einheit */
+.stapel      > * + *{margin-top:var(--f4)}   /* verwandte Einheiten     */
+.stapel-weit > * + *{margin-top:var(--f6)}   /* Abschnitte              */
+.gruppe + .gruppe{margin-top:var(--f5)}      /* Gruppen einer App-Ansicht: 42 px */
+.abschnitt{padding:var(--f7) 0}   /* als Klasse, nicht auf section: App-Flächen sind oft <section> */
+.abschnitt > .haar{margin-bottom:var(--f6)}
+
+/* ==== Raster ==== */
+.bund{max-width:var(--container);margin:0 auto;padding:0 var(--f5)}
+.container{max-width:var(--container);margin-inline:auto;padding-inline:var(--margin-mobile)}
+.cols{display:grid;grid-template-columns:repeat(var(--cols-mobile),minmax(0,1fr));gap:var(--gutter)}
+.cols > *{grid-column:1 / -1}
+@media (min-width:720px){
+  .container{padding-inline:var(--margin-desktop)}
+  .cols{grid-template-columns:repeat(var(--cols-tablet),minmax(0,1fr))}
+}
+@media (min-width:1100px){
+  .cols{grid-template-columns:repeat(var(--cols-desktop),minmax(0,1fr))}
+  .cols > *{grid-column:span var(--span,12)}
+}
+.grid{display:grid;gap:var(--s2)}
+.row{display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center;margin:var(--s2) 0 var(--s3)}
+.zwei{display:grid;grid-template-columns:1fr 1fr;gap:var(--f4)}
+/* Goldener Schnitt und Symmetrie */
+.gold{display:grid;grid-template-columns:1fr 1.618fr;gap:var(--f5);align-items:start}
+.gold-kehr{display:grid;grid-template-columns:1.618fr 1fr;gap:var(--f5);align-items:start}
+.mitte{text-align:center}
+.mitte p,.mitte .display{margin-left:auto;margin-right:auto}
+.reihe{display:grid;gap:var(--f3);grid-template-columns:repeat(auto-fit,minmax(calc(var(--m) * 15),1fr))}
+.drei{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--brass);border-bottom:1px solid var(--brass)}
+.drei > *{padding:var(--f5) var(--f4);text-align:center;border-right:1px solid var(--line)}
+.drei > *:last-child{border-right:0}
+.drei .number{display:block;color:var(--accent-ink);margin-bottom:var(--f2)}
+.bild{aspect-ratio:1.618;background:var(--surface-2);border:1px solid var(--line);display:block;width:100%;object-fit:cover}
+.bild-hoch{aspect-ratio:.618}
+/* Bild mit Form: erlaubt, wenn die Form einen Ausschnitt setzt und das Motiv hervorhebt –
+   Bogen oder Kreis, höchstens eine einfache Kontur. Kein Ornament, kein verzierter Rahmen. */
+.bild-bogen{border-radius:999px 999px 0 0;corner-shape:round}
+.bild-rund{border-radius:50%;corner-shape:round}
+.bild-kontur{border-color:var(--brass)}
+@media (max-width:860px){
+  .gold,.gold-kehr,.drei{grid-template-columns:1fr}
+  .drei > *{border-right:0;border-bottom:1px solid var(--line)}
+  .drei > *:last-child{border-bottom:0}
+  .bund{padding:0 var(--f4)}
+}
+
+/* ==== Grafisches Inventar: genau diese Mittel ==== */
+.haar{height:1px;background:var(--brass);border:0;margin:0}
+.doppel{border:0;height:var(--f1);border-top:1px solid var(--brass);border-bottom:1px solid var(--brass);margin:0}
+.marke{display:flex;align-items:center;justify-content:center;gap:var(--f3)}
+.marke i{height:1px;width:var(--f6);background:var(--brass);flex:none}
+.marke b{font:500 var(--fs-label)/1 var(--font-mono);letter-spacing:.3em;text-transform:uppercase;color:var(--label)}
+
+/* ==== Flächen: eine Ebene, gegliedert über Linien ==== */
+/* Karte: Linie oben, keine Fläche, keine Ecken – sie ist kein Ziel */
+.card{background:none;border:0;border-top:1px solid var(--line);border-radius:var(--r-card);padding:var(--f4) 0;
+  box-shadow:inset 0 1px 0 var(--kante)}
+.card > .inner{background:var(--surface);border:1px solid var(--line);padding:var(--f3)}
+.deep{background:var(--ground)}
+/* Statement-Block: genau einer pro Ansicht. Hell eine dunkle Fläche, dunkel die Zahl über der Linie. */
+.shirt{background:var(--shirt);padding:var(--f6) var(--f5);border-top:1px solid var(--shirt-line)}
+.shirt p{color:var(--muted)}
+.shirt h3{font-family:var(--font-display);font-weight:var(--display-wght);font-size:var(--fs-h2);line-height:var(--lh-h2);
+  letter-spacing:var(--display-track);margin:0 0 var(--s2)}
+
+/* ==== Tabellen ==== */
+table{border-collapse:collapse;width:100%;font-size:var(--fs-small)}
+th,td{text-align:left;padding:10px var(--s2);border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--label);font-weight:500}
+thead th{border-bottom-color:var(--brass)}
+td.n{color:var(--muted)}
+table.compact th,table.compact td{padding:6px var(--s1)}
+
+/* ==== Datenzeile · Signatur: Linie in --brass oben, Linie unten ====
+   Mit --d (0…1) zieht die obere Linie von links auf (moch-motion.js: zieheLinie). */
+.dataline{position:relative;display:flex;flex-wrap:wrap;gap:6px 28px;font-family:var(--font-mono);font-variant-numeric:tabular-nums;
+  font-size:var(--fs-label);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--line);padding:12px 0;margin-top:var(--s3)}
+.dataline::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:var(--brass);
+  transform:scaleX(var(--d,1));transform-origin:left}
+.dataline.offen{border-bottom:0;padding-bottom:0}   /* App: nur die obere Linie */
+.dataline b{color:var(--text);font-weight:500}
+
+/* ==== Fokus: Ring in --focus, 3 px Abstand, Innenkante in --brass ==== */
+:focus-visible{outline:2px solid var(--focus);outline-offset:3px;box-shadow:0 0 0 1px var(--brass)}
+
+/* ==== Buttons: 44 px, Rückmeldung beim Drücken ==== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s1);position:relative;overflow:hidden;
+  font-family:var(--font-text);font-size:.9375rem;font-weight:500;line-height:20px;
+  padding:11px 22px;min-height:var(--touch);min-width:var(--touch);
+  border-radius:var(--r);border:1px solid transparent;cursor:pointer;
+  color:var(--text);background:transparent;text-decoration:none;touch-action:manipulation;
+  transition:background-color var(--dur-hover) ease-out,border-color var(--dur-hover) ease-out,
+    color var(--dur-hover) ease-out,transform 160ms var(--ease)}
+.btn:active{transform:scale(var(--press-scale));transition-duration:var(--dur-press)}
+/* Hauptaktion: die Hauptfarbe als Fläche. Genau eine pro Ansicht. */
+.btn-primary{background:var(--accent);color:var(--auf-accent);border-color:var(--accent);font-weight:600}
+.btn-ghost{border-color:var(--line-strong)}
+.btn-quiet{color:var(--muted);padding-left:0}
+.btn-ghost:active,.btn-quiet:active{background:var(--press)}
+.btn-primary:active{background:color-mix(in srgb, var(--accent) 88%, var(--text))}
+.btn-block{display:flex;width:100%;min-height:52px;font-size:1rem}
+@media (hover:hover){ .btn-ghost:hover{background:var(--hover)} .btn-quiet:hover{color:var(--text)}
+  .btn-primary:hover{background:color-mix(in srgb, var(--accent) 92%, var(--text))} }
+/* deaktiviert – erkennbar an Farbe UND Cursor, kein Druckfeedback */
+.btn:disabled,.btn[aria-disabled="true"]{color:var(--disabled);border-color:var(--line);cursor:not-allowed;transform:none;background:transparent}
+/* lädt – Beschriftung bleibt, eine Linie läuft am unteren Rand. Kein Spinner. */
+.btn[aria-busy="true"]{cursor:progress}
+.btn[aria-busy="true"]::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+  background:currentColor;transform-origin:left;animation:moch-laden 1.2s var(--ease) infinite}
+@keyframes moch-laden{0%{transform:scaleX(0)}60%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+/* Icon-Ziel: das Icon ist schon das Ziel – kein Rahmen, keine Fläche */
+.icon-btn{width:var(--touch);height:var(--touch);display:inline-grid;place-items:center;border:0;background:none;
+  color:var(--muted);cursor:pointer;border-radius:var(--r);transition:transform 160ms var(--ease),color var(--dur-hover)}
+.icon-btn:active{transform:scale(var(--press-scale-icon));color:var(--text)}
+.icon-btn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5}
+
+/* ==== Felder: eine Linie, kein Kasten ====
+   Im Fokus zieht eine 2-px-Linie in --accent-ink von links auf. */
+.field{display:flex;flex-direction:column;gap:4px;max-width:340px;margin-bottom:var(--s3)}
+.field label{color:var(--label)}
+.field input,.field textarea,.field select{width:100%;font-family:var(--font-text);font-size:var(--fs-body);
+  padding:8px 0;min-height:var(--touch);color:var(--text);border:0;border-radius:0;
+  border-bottom:1px solid var(--line-strong);
+  background:linear-gradient(var(--accent-ink),var(--accent-ink)) no-repeat left bottom / 0% 2px;
+  transition:background-size var(--dur-feld) var(--ease)}
+.field input.n{font-family:var(--font-mono);font-size:1.25rem}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted);opacity:.75}
+.field input:focus,.field textarea:focus,.field select:focus{outline:0;background-size:100% 2px}
+.field input:focus-visible,.field textarea:focus-visible,.field select:focus-visible{box-shadow:none}
+.field :disabled{color:var(--disabled);border-color:var(--line);cursor:not-allowed}
+/* Meldung unter dem Feld: live, mit Wort – nie Farbe allein */
+.field-msg{display:flex;gap:var(--s1);min-height:20px;margin:4px 0 0;font-size:var(--fs-small);color:var(--muted);
+  transition:color var(--dur-hover)}
+.field-msg::before{content:"";width:3px;flex:none;align-self:stretch;background:transparent}
+.field.has-error input,.field.has-error textarea{background-image:linear-gradient(var(--error),var(--error));background-size:100% 2px}
+.field.has-error .field-msg,.field.is-valid .field-msg{color:var(--text)}
+.field.has-error .field-msg::before{background:var(--error)}
+.field.is-valid .field-msg::before{background:var(--success)}
+
+/* ==== Chips: Auswahl. Die Füllung wächst vom Druckpunkt (--x, --y) aus. ==== */
+.wahl{display:flex;flex-wrap:wrap;gap:var(--f2)}
+.chip{position:relative;min-height:var(--touch);padding:0 16px 0 14px;border-radius:var(--r);border:1px solid var(--line-strong);
+  background:none;color:var(--text);display:inline-flex;align-items:center;gap:9px;font:500 var(--fs-small)/1 var(--font-text);
+  cursor:pointer;overflow:hidden;isolation:isolate;touch-action:manipulation;
+  transition:transform 160ms var(--ease),border-color var(--dur-hover),color var(--dur-hover)}
+.chip svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.5}
+.chip::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--accent);border-radius:inherit;
+  clip-path:circle(0% at var(--x,50%) var(--y,50%));transition:clip-path 380ms var(--ease)}
+.chip:active{transform:scale(var(--press-scale-chip));transition-duration:var(--dur-press)}
+.chip[aria-pressed="true"],.chip[aria-checked="true"]{border-color:var(--accent);color:var(--auf-accent)}
+.chip[aria-pressed="true"]::before,.chip[aria-checked="true"]::before{clip-path:circle(150% at var(--x,50%) var(--y,50%))}
+/* Der häufige Weg zuerst: 3–5 sichtbar, der Rest hinter „Weitere anzeigen“ */
+.mehr-wrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows 320ms var(--ease)}
+.mehr-wrap > div{overflow:hidden}
+.offen > .mehr-wrap{grid-template-rows:1fr}
+.mehr-wrap .wahl{padding-top:var(--f2)}
+.mehr-wrap .chip{opacity:0;transform:translateY(8px);
+  transition:opacity 240ms var(--ease) calc(var(--i,0) * var(--stagger-chip) + 60ms),
+    transform 240ms var(--ease) calc(var(--i,0) * var(--stagger-chip) + 60ms),border-color var(--dur-hover),color var(--dur-hover)}
+.offen > .mehr-wrap .chip{opacity:1;transform:none}
+.mehr{min-height:var(--touch);padding:0;border:0;background:none;color:var(--muted);font:500 var(--fs-small) var(--font-text);
+  cursor:pointer;display:inline-flex;align-items:center;gap:8px;margin-top:4px}
+.mehr svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.6;transition:transform 280ms var(--ease)}
+.offen > .mehr svg{transform:rotate(180deg)}
+
+/* ==== Meldungen: Status trägt immer ein Wort ==== */
+.notice{display:flex;gap:var(--s2);padding:var(--s2) 0;border-top:1px solid var(--line);color:var(--text);max-width:var(--measure)}
+.notice::before{content:"";width:3px;flex:none;align-self:stretch;background:var(--line-strong)}
+.notice > strong,.notice strong{font-weight:600}
+.notice.is-error::before{background:var(--error)}
+.notice.is-success::before{background:var(--success)}
+.notice.is-warning::before{background:var(--warning)}
+.notice.is-info::before{background:var(--info)}
+/* Toast: schwebt, deshalb mit Radius. Erscheint nach einer Handlung, geht nach 3,2 s. */
+.toast{position:fixed;left:var(--app-rand);right:var(--app-rand);bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:30;
+  display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--r-float);
+  background:var(--surface);border:1px solid var(--line-strong);color:var(--text);box-shadow:inset 0 1px 0 var(--kante);
+  opacity:0;transform:translateY(16px);pointer-events:none;transition:opacity 240ms var(--ease),transform 240ms var(--ease)}
+.toast.da{opacity:1;transform:none;pointer-events:auto}
+.toast::before{content:"";width:3px;align-self:stretch;background:var(--accent)}
+.toast b{font-weight:600}
+/* Leerzustand und Platzhalter */
+.empty{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:var(--s5) var(--s3);text-align:center;color:var(--muted)}
+.empty p{margin-inline:auto}
+.placeholder{display:block;height:.9em;margin:.4em 0;background:var(--surface-2);animation:moch-puls 1.6s ease-in-out infinite}
+@keyframes moch-puls{50%{opacity:.55}}
+
+/* ==== Badges: nie gefüllt ==== */
+.badge{display:inline-flex;align-items:center;padding:5px 10px;border:1px solid var(--line-strong);color:var(--label);border-radius:0}   /* kein Ziel, keine Ecken */
+.badge.b-brand{border-color:var(--accent-ink);color:var(--text)}
+.badge.b-brass{border-color:var(--brass);color:var(--text)}
+.badge.b-red{border-color:var(--error);color:var(--text)}
+
+/* ==== Navigation (Web): Leiste ab 880 px, darunter Menü ohne JavaScript ==== */
+.site-nav{display:flex;align-items:center;gap:var(--s2);min-height:56px}
+.site-nav .brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;
+  min-height:var(--touch);margin-right:auto;font-weight:600}
+.site-nav .brand span{font-weight:400;color:var(--muted)}
+.site-nav .links{display:flex;gap:var(--s1);list-style:none;margin:0;padding:0}
+.site-nav .links a{display:flex;align-items:center;min-height:var(--touch);padding:0 12px;color:var(--text);
+  text-decoration:none;font-size:var(--fs-small);font-weight:500;border-radius:var(--r)}
+.site-nav .links a[aria-current="page"],.site-nav .links a[aria-current="true"]{text-decoration:underline;
+  text-decoration-color:var(--brass);text-decoration-thickness:1px;text-underline-offset:6px}
+.site-nav .links a:active{background:var(--press)}
+.site-nav-menu{display:none;position:relative}
+.site-nav-menu > summary{list-style:none;display:flex;align-items:center;min-height:var(--touch);padding:0 14px;
+  border:1px solid var(--line-strong);border-radius:var(--r);cursor:pointer;font-size:var(--fs-small);font-weight:500}
+.site-nav-menu > summary::-webkit-details-marker{display:none}
+.site-nav-menu[open] > summary{background:var(--press)}
+.site-nav-menu .links{position:absolute;right:0;top:calc(100% + var(--s1));z-index:20;flex-direction:column;
+  min-width:220px;padding:var(--s1);background:var(--surface);border:1px solid var(--line);border-radius:var(--r-float)}
+.site-nav-menu .links a{min-height:48px}
+@media (hover:hover){ .site-nav .links a:hover{background:var(--hover)} }
+@media (max-width:879px){ .site-nav > .links{display:none} .site-nav-menu{display:block} }
+/* Transluzente Leiste (Web): Tiefe über Kante, nie Schatten */
+.bar{position:sticky;top:0;z-index:12;padding:var(--f3) var(--f5);background:var(--glass);
+  -webkit-backdrop-filter:blur(20px) saturate(130%);backdrop-filter:blur(20px) saturate(130%);
+  border-bottom:1px solid var(--line);box-shadow:inset 0 1px 0 var(--kante);
+  display:flex;gap:var(--f4);align-items:center;flex-wrap:wrap}
+
+/* ================= REGISTER DOKUMENT =================
+   Für Unterlagen, die allgemeingültig funktionieren müssen (Bewerbung, Lebenslauf, Brief):
+   keine plakative Display-Serife. Überschriften in Archivo-Versalien gesperrt, Zwischentitel
+   in Mono über einer Linie in --brass. Zahlensatz bleibt tabellarisch. */
+[data-register="dokument"]{--font-display:var(--font-text);--display-wght:600;--display-track:.16em}
+[data-register="dokument"] h1,[data-register="dokument"] .display{text-transform:uppercase;
+  font-size:clamp(1.75rem, 1.2rem + 2vw, 2.75rem);line-height:1.1;max-width:none}
+[data-register="dokument"] h2{font:500 var(--fs-label)/1.3 var(--font-mono);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--text);padding-bottom:6px;border-bottom:1px solid var(--brass);margin:var(--f5) 0 var(--f3)}
+
+/* ================= APP-SCHICHT (aus Bordbuch B3) ================= */
+/* App-Rahmen: body.app nimmt das Seitenpolster weg */
+body.app{padding:0;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+
+/* App-Kopf: das Objekt ist der Titel. Kein App-Name, keine Linie darüber.
+   Abstand oben = Safe Area + 92 px. Beim Scrollen (--p 0…1) wandert er in die Leiste. */
+.app-kopf{transform-origin:left bottom;opacity:calc(1 - var(--p,0) * 1.4)}
+.app-kopf h1{font-size:max(var(--fs-h1),3.625rem);line-height:.94;letter-spacing:-.012em;margin:0}
+.app-kopf .kz{font:500 var(--fs-label)/1.4 var(--font-mono);letter-spacing:var(--track-label);color:var(--muted);
+  margin-top:6px;text-transform:uppercase}
+/* Auftritt: Wörter steigen nacheinander auf (moch-motion.js: zeigeTitel) */
+.wort{display:inline-block}
+[data-auftritt] .wort{opacity:0;transform:translateY(.45em);
+  transition:opacity 520ms var(--ease) calc(var(--i,0) * var(--stagger-wort)),
+    transform 620ms var(--ease) calc(var(--i,0) * var(--stagger-wort))}
+[data-auftritt].an .wort{opacity:1;transform:none}
+[data-auftritt] .kz{opacity:0;transition:opacity 500ms var(--ease) 260ms}
+[data-auftritt].an .kz{opacity:1}
+
+/* Leiste oben: Glas, erscheint mit dem Scrollen (--p) */
+.leiste{position:absolute;inset:0 0 auto;z-index:5;height:calc(74px + env(safe-area-inset-top,0px));
+  padding-top:calc(env(safe-area-inset-top,0px) + 20px);display:flex;align-items:center;justify-content:center}
+.leiste::before{content:"";position:absolute;inset:0;background:var(--glass);
+  -webkit-backdrop-filter:blur(20px) saturate(130%);backdrop-filter:blur(20px) saturate(130%);opacity:var(--p,0)}
+.leiste::after{content:"";position:absolute;inset:auto 0 0;height:1px;background:var(--line);opacity:var(--p,0)}
+.leiste .mini{position:relative;font:400 1.25rem/1 var(--font-display);opacity:var(--p,0);
+  transform:translateY(calc((1 - var(--p,0)) * 6px))}
+.leiste .icon-btn{position:absolute;right:14px;bottom:5px}
+
+/* Seiten nebeneinander, wischbar (moch-motion.js: Seiten) */
+.app-rahmen{position:relative;height:100vh;height:100dvh;overflow:hidden;background:var(--ground)}
+.seiten{position:absolute;inset:0;display:flex;touch-action:pan-y;will-change:transform}
+.seite{flex:0 0 100%;height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;
+  padding:calc(env(safe-area-inset-top,0px) + 92px) var(--app-rand) 200px}
+.seite::-webkit-scrollbar{display:none}
+
+/* Gestaffelter Auftritt: .rein wird .da (Gruppen 70 ms, Listen 35 ms) */
+.rein{opacity:0;transform:translateY(12px)}
+.rein.da{opacity:1;transform:none;transition:opacity 420ms var(--ease),transform 420ms var(--ease)}
+
+/* Zählwerk: jede Ziffer eine Walze, Literata 600. Rollt von links nach rechts, 45 ms versetzt. */
+.zaehlwerk{display:flex;align-items:baseline;font-family:var(--font-zahl);font-weight:var(--zahl-wght);
+  font-variation-settings:"opsz" var(--zahl-opsz);font-size:var(--fs-zaehlwerk);line-height:1;letter-spacing:-.01em}
+.zaehlwerk .zw{display:inline-flex;height:1em;overflow:hidden}
+.zaehlwerk .ziffer{display:inline-block;width:.62em;height:1em;overflow:hidden;text-align:center}
+.zaehlwerk .ziffer > span{display:block;will-change:transform}
+.zaehlwerk .ziffer i{display:block;height:1em;font-style:normal;font-variant-numeric:tabular-nums lining-nums}
+.zaehlwerk .punkt{width:.26em;text-align:center}
+.einheit{font:500 .8125rem var(--font-mono);letter-spacing:var(--track-label);color:var(--muted);margin-left:10px}
+
+/* Bemaßung: vom letzten zum nächsten Ereignis, wie eine Maßlinie in der Zeichnung.
+   --wert 0…1 setzt moch-motion.js (Feder). */
+.mass{margin-top:var(--f4)}
+.mass .spur{position:relative;height:16px}
+.mass .spur::before{content:"";position:absolute;left:0;right:0;top:8px;height:1px;background:var(--line-strong)}
+.mass .fill{position:absolute;left:0;top:7px;height:3px;width:100%;background:var(--accent-ink);
+  transform-origin:left;transform:scaleX(var(--wert,0))}
+.mass .tick{position:absolute;top:2px;width:1px;height:13px;background:var(--muted)}
+.mass .tick:first-child{left:0} .mass .tick:last-child{right:0}
+.mass .jetzt{position:absolute;top:0;left:calc(var(--wert,0) * 100%);width:2px;height:17px;margin-left:-1px;background:var(--accent-ink)}
+.mass .unten{display:flex;justify-content:space-between;gap:var(--f2);margin-top:8px;font:500 var(--fs-label)/1.4 var(--font-mono);
+  letter-spacing:.06em;color:var(--muted)}
+.mass .unten b{color:var(--text);font-weight:500}
+.mass .rest{color:var(--accent-ink)}
+
+/* Bedingte Hauptaktion: erscheint erst, wenn es etwas Gültiges zu speichern gibt (--a 0…1) */
+.aktion{position:absolute;left:var(--app-rand);right:var(--app-rand);bottom:calc(86px + env(safe-area-inset-bottom,0px));z-index:4;
+  transform:translateY(calc((1 - var(--a,0)) * 24px));opacity:var(--a,0);pointer-events:none}
+.aktion.da{pointer-events:auto}
+
+/* Liste: Datum · Was · Wert, getrennt durch Linien */
+.monat + .monat{margin-top:var(--f5)}
+.monat > .lb{padding-bottom:10px;border-bottom:1px solid var(--line);margin-bottom:0}
+.eintrag{display:grid;grid-template-columns:52px 1fr auto;gap:14px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line)}
+.eintrag .tag{font:500 .8125rem var(--font-mono);color:var(--muted)}
+.eintrag .was{font-weight:500}
+.eintrag .was small{display:block;color:var(--muted);font-weight:400;font-size:.84375rem;margin-top:2px}
+.eintrag .wert{font:500 .875rem var(--font-mono);text-align:right}
+.eintrag.neu{animation:moch-neu 900ms var(--ease)}
+@keyframes moch-neu{from{background:color-mix(in srgb, var(--accent) 22%, transparent)}to{background:transparent}}
+
+/* Tab-Leiste unten: Glas, Mono-Versalien, eine Linie gleitet zum aktiven Tab */
+.tabs{position:absolute;inset:auto 0 0;z-index:5;height:calc(72px + env(safe-area-inset-bottom,0px));
+  padding-bottom:env(safe-area-inset-bottom,0px);display:flex}
+.tabs::before{content:"";position:absolute;inset:0;background:var(--glass);
+  -webkit-backdrop-filter:blur(20px) saturate(130%);backdrop-filter:blur(20px) saturate(130%);border-top:1px solid var(--line)}
+.tabs button{position:relative;flex:1;border:0;background:none;cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;font:500 var(--fs-label)/1 var(--font-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);transition:color var(--dur-hover)}
+.tabs button[aria-selected="true"]{color:var(--text)}
+.tabs svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.5}
+.tabs .ind{position:absolute;top:0;left:0;width:36px;height:2px;background:var(--accent-ink);will-change:transform}
+
+/* ==== Medien: dieselbe Datei, anderes Modul ==== */
+.medium-overlay{--m:2.2vh;padding:var(--f6);text-shadow:0 1px calc(var(--m) / 4) rgba(8,10,12,.45)}
+.medium-karte{--m:2.6mm;width:85mm;height:55mm;padding:var(--f4);display:flex;flex-direction:column;
+  justify-content:space-between;border:1px solid var(--line)}
+
+/* ==== Papierkorn: nur auf dem Fond, nie auf Flächen, nie im Druck ==== */
+.grain{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+.grain.is-page{position:fixed}
+
+/* ==== Barrierefreiheit: nicht verhandelbar ==== */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition-duration:1ms!important;animation-duration:1ms!important;transition-delay:0ms!important}
+  .btn:active,.chip:active,.icon-btn:active{transform:none}
+  .placeholder{animation:none}
+}
+@media (prefers-reduced-transparency:reduce){
+  .bar,.leiste::before,.tabs::before{background:var(--surface);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
+@media (prefers-contrast:more){
+  .card,.notice,.eintrag{border-color:var(--line-strong)}
+  .field input,.field textarea{border-bottom-color:var(--text)}
+}
+@media print{
+  body{background:none;padding:0}
+  .grain{display:none}
+  .bar,.leiste,.tabs,.aktion,.toast{display:none}
+  .card,.eintrag{break-inside:avoid}
+}
+/* @moch-bundle:end */
