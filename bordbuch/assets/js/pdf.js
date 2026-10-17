@@ -5,27 +5,41 @@
    hinlegen kann. Ein Screenshot ist das nicht, und eine 300-KB-Bibliothek
    für vier Textspalten wäre unverhältnismäßig.
 
-   Gestaltung: Elfenbein-Theme. Was gelesen, unterschrieben oder gedruckt
-   wird, ist hell — so steht es im Leitfaden. Schrift ist Helvetica: die
-   vorgesehene Ersatzschrift, wo die Hausschriften nicht eingebettet
-   werden können. Ihre Ziffern sind alle gleich breit, Zahlenspalten
-   stehen also von selbst in einer Flucht. */
+   Gestaltung: das helle Schema des Design-Systems. Was gelesen,
+   unterschrieben oder gedruckt wird, ist hell. Schrift ist Helvetica —
+   Literata und Archivo ließen sich nur als eingebettete Schriftdateien
+   verwenden, und die wiegen mehr als die ganze App. Helveticas Ziffern
+   sind alle gleich breit, Zahlenspalten stehen also von selbst in einer
+   Flucht. Begründet in referenz/UEBERSETZUNGSTABELLE.md. */
 
 import { euro, km, liter, verbrauchZahl, spritZahl, formatDatum } from './util.js';
 import { artVon } from './eintraege.js';
 import { log, fehler } from './debug.js';
 
-/* ── Farben (Elfenbein-Theme) ────────────────────────────── */
+/* ── Farben: helles Schema des Design-Systems ────────────────
+   Was gelesen, unterschrieben oder gedruckt wird, ist hell. Die Werte
+   stehen hier als Zahlen, weil ein PDF keine CSS-Variablen lesen kann;
+   sie stammen unverändert aus design/moch.css ([data-farbe="walnuss"]).
+   Bei einer Token-Änderung hier nachziehen.
+
+   Der Grund ist komplementär zur Hauptfarbe: Walnuss steht bei
+   Farbton 55°, der Grund bei 235° — ein sehr blasses Blau. Warme
+   Schrift auf kühlem Grund, wie es Regel 1 verlangt.
+
+   Messing ist hier die Hauptfarbe, nicht Gold: Bei Walnuss liegt der
+   Farbtonabstand zu Gold bei 30° und damit unter den 35°, ab denen
+   beide als verschiedene Farben lesbar sind (Regel 4). */
 
 const FARBE = {
-  grund:   [0.957, 0.933, 0.890],  // #F4EEE3 Elfenbein
-  flaeche: [0.988, 0.980, 0.957],  // #FCFAF4 Pergament
-  linie:   [0.812, 0.749, 0.651],  // #CFBFA6 Sand
-  messing: [0.831, 0.675, 0.322],  // #D4AC52 Messing
-  text:    [0.086, 0.067, 0.055],  // #16110E Tinte
-  leise:   [0.369, 0.322, 0.271],  // #5E5245 Asche
-  walnuss: [0.353, 0.243, 0.153],  // #5A3E27 Walnuss Tief
-  oxblood: [0.369, 0.133, 0.149],  // #5E2226 Oxblood Tief
+  grund:   [0.898, 0.925, 0.945],  // #E5ECF1 --ground
+  flaeche: [0.941, 0.965, 0.980],  // #F0F6FA --surface
+  linie:   [0.765, 0.800, 0.820],  // #C3CCD1 --line
+  kante:   [0.639, 0.675, 0.698],  // #A3ACB2 --line-strong
+  messing: [0.612, 0.345, 0.133],  // #9C5822 --brass (nur Linie)
+  label:   [0.369, 0.337, 0.318],  // #5E5651 --label
+  text:    [0.224, 0.192, 0.173],  // #39312C --text
+  leise:   [0.424, 0.392, 0.373],  // #6C645F --muted
+  akzent:  [0.612, 0.345, 0.133],  // #9C5822 --accent (walnuss)
 };
 
 const FORMATE = {
@@ -168,7 +182,7 @@ class Seite {
   }
 
   /** Versal-Label im Stil der Mono-Beschriftungen der Oberfläche. */
-  label(inhalt, x, y, { farbe = FARBE.leise, align = 'links', groesse = 7.5 } = {}) {
+  label(inhalt, x, y, { farbe = FARBE.label, align = 'links', groesse = 7.5 } = {}) {
     return this.text(inhalt, x, y, { groesse, farbe, sperrung: groesse * 0.14, align, versal: true, fett: true });
   }
 
@@ -375,7 +389,11 @@ export function erzeugePDF({ eintraege, einstellungen, statistik, bilanz = null,
       if (eintrag.notiz) zusatz.push(...umbrich(eintrag.notiz, 8, arbeitBreite));
     }
 
-    const hoehe = 14 + zeilen.length * 12 + zusatz.length * 10;
+    /* 22 statt 14: Die Trennlinie liegt bei `hoehe - 4`. Mit dem alten
+       Wert kam sie 1 pt über der letzten Grundlinie zu liegen und lief
+       damit mitten durch Werkstatt- und Notizzeile. Jetzt sind es 7 pt
+       darunter — genug für die Unterlängen von g, p und ß. */
+    const hoehe = 22 + zeilen.length * 12 + zusatz.length * 10;
 
     if (seite.y - hoehe < unterkante) {
       seite = dok.neueSeite();
@@ -388,7 +406,7 @@ export function erzeugePDF({ eintraege, einstellungen, statistik, bilanz = null,
     seite.text(formatDatum(eintrag.datum, { kurz: true }), spalte.datum, y, { groesse: 9.5, farbe: FARBE.text });
     seite.text(`${km(eintrag.km)}`, spalte.km + 60, y, { groesse: 9.5, align: 'rechts', farbe: FARBE.text });
 
-    seite.label(art.label, spalte.arbeit, y + 0.5, { groesse: 6.5, farbe: FARBE.walnuss });
+    seite.label(art.label, spalte.arbeit, y + 0.5, { groesse: 6.5, farbe: FARBE.akzent });
     let textY = y - 11;
     for (const zeile of zeilen) {
       seite.text(zeile, spalte.arbeit, textY, { groesse: 9.5, farbe: FARBE.text });
@@ -440,10 +458,6 @@ function kopfzeile(seite, dok, einstellungen) {
 
 function kennzahlen(seite, dok, statistik, einstellungen, bilanz) {
   const y = seite.y;
-  const hoehe = 62;
-
-  if (!dok.druck) seite.flaeche(RAND, y - hoehe, dok.inhaltsbreite, hoehe, FARBE.flaeche);
-  rahmen(seite, RAND, y - hoehe, dok.inhaltsbreite, hoehe);
 
   const werte = [
     ['Kilometerstand', statistik.stand === null ? '—' : `${km(statistik.stand)} km`],
@@ -460,11 +474,28 @@ function kennzahlen(seite, dok, statistik, einstellungen, bilanz) {
     werte.push(['Kosten gesamt', euro(statistik.kosten)]);
   }
 
-  const spaltenBreite = dok.inhaltsbreite / werte.length;
+  /* Eine Zahl steht einfach da: kein Kasten, keine Fläche. Getragen
+     wird der Block von zwei Linien — oben die Hauptfarbe, unten die
+     stille Linie. Das spart im Druck auch den Farbauftrag.
+
+     Drei Spalten, nicht sechs: „Kilometerstand" und „17.10.2024 –
+     30.09.2026" brauchen je rund 145 pt. Bei sechs Spalten blieben
+     86 pt, und die Werte liefen ineinander. */
+  const SPALTEN = 3;
+  const REIHE = 40;
+  const reihen = Math.ceil(werte.length / SPALTEN);
+  const hoehe = reihen * REIHE + 8;
+
+  seite.linie(RAND, y, dok.breite - RAND, y, FARBE.messing);
+  seite.linie(RAND, y - hoehe, dok.breite - RAND, y - hoehe);
+
+  const spaltenBreite = dok.inhaltsbreite / SPALTEN;
   werte.forEach(([label, wert], index) => {
-    const x = RAND + spaltenBreite * index + 14;
-    seite.label(label, x, y - 22);
-    seite.text(wert, x, y - 42, { groesse: 12, farbe: FARBE.text });
+    const x = RAND + spaltenBreite * (index % SPALTEN);
+    const oben = y - 8 - Math.floor(index / SPALTEN) * REIHE;
+    // Das Label gehört zu seinem Wert und steht dicht darüber.
+    seite.label(label, x, oben - 10);
+    seite.text(wert, x, oben - 26, { groesse: 12, farbe: FARBE.text });
   });
 
   return y - hoehe - 26;
@@ -522,7 +553,7 @@ function belegAnhang(dok, eintraege, belege) {
     const seite = dok.neueSeite();
     const oben = dok.hoehe - RAND;
 
-    seite.label('Beleg', RAND, oben - 10, { farbe: FARBE.walnuss, groesse: 9 });
+    seite.label('Beleg', RAND, oben - 10, { farbe: FARBE.akzent, groesse: 9 });
     seite.linie(RAND, oben - 20, dok.breite - RAND, oben - 20, FARBE.messing);
 
     const kopf = `${formatDatum(eintrag.datum)} \xB7 ${km(eintrag.km)} km \xB7 ${artVon(eintrag.art).label}`;

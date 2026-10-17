@@ -1,0 +1,363 @@
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600&display=swap');
+
+/* ============================================================
+   MOCH 3.0 — ein System, alle Medien
+   Web · Motion · Overlay · Print · Visitenkarte
+   Alles leitet sich aus einem Modul --m und der Zahl phi ab.
+   ============================================================ */
+
+:root{
+  /* ---- Das Modul. Einziger Wert, der je Medium wechselt. ---- */
+  --m:16px;
+
+  /* ---- Raum: phi-Potenzen des Moduls ---- */
+  --f1:calc(var(--m) / 2.618);   /* m / phi²  ~  6   */
+  --f2:calc(var(--m) / 1.618);   /* m / phi   ~ 10   */
+  --f3:var(--m);                 /*           ~ 16   */
+  --f4:calc(var(--m) * 1.618);   /*           ~ 26   */
+  --f5:calc(var(--m) * 2.618);   /*           ~ 42   */
+  --f6:calc(var(--m) * 4.236);   /*           ~ 68   */
+  --f7:calc(var(--m) * 6.854);   /*           ~110   */
+  --f8:calc(var(--m) * 11.09);   /*           ~177   */
+
+  /* ---- Schrift: Schrittweite wurzel(phi). Jede zweite Stufe = Raumskala. ---- */
+  --t-2:calc(var(--m) / 1.618);  /*  ~ 10   Label, Mono-Versalien */
+  --t-1:calc(var(--m) / 1.272);  /*  ~ 12,5 Sekundaertext         */
+  --t0:var(--m);                 /*  ~ 16   Fliesstext            */
+  --t1:calc(var(--m) * 1.272);   /*  ~ 20,5 Lead, h3              */
+  --t2:calc(var(--m) * 1.618);   /*  ~ 26   h2                    */
+  --t3:calc(var(--m) * 2.058);   /*  ~ 33   h1 klein              */
+  --t4:calc(var(--m) * 2.618);   /*  ~ 42   Display               */
+  --t5:calc(var(--m) * 3.330);   /*  ~ 53,5 Display gross         */
+  --t6:calc(var(--m) * 4.236);   /*  ~ 68   Plakat                */
+
+  /* ---- Zeilenabstand: phi, wurzel(phi), vierte wurzel(phi) ---- */
+  --lh-text:1.618; --lh-mittel:1.272; --lh-display:1.128;
+
+  /* ---- Schriftfamilien: genau drei ---- */
+  --font-display:"Literata",Georgia,serif;
+  --font-text:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --font-mono:"IBM Plex Mono",Consolas,monospace;
+  --display-wght:600; --display-opsz:72;
+
+  /* ---- Form ---- */
+   
+  --r:10px;   /* der einzige Radius, nur fuer Anfassbares */              
+  --corner:superellipse(1.2);     /* G2, nicht Kreisbogen */
+  --bund:calc(var(--m) * 77.5);   /* Satzspiegel ~1240 */
+
+  /* ---- Bewegung: Apple-Federn, kritisch gedaempft ---- */
+  --feder:cubic-bezier(.32,.72,0,1);
+  --t-hover:180ms; --t-panel:240ms; --t-reveal:600ms; --t-modus:350ms;
+}
+
+/* ============================================================
+   FARBE — Grund fast neutral, eine Hauptfarbe, Messing als Linie
+   Zwei Fassungen teilen Farbton UND Gamut-Anteil, nie die Chroma.
+   ============================================================ */
+:root,
+
+
+/* ============================================================
+   v3.3 . FARBE: der Grund ist komplementaer zur Hauptfarbe
+   Grund-Farbton = Hauptfarbton + 180 Grad. Der Grund steht allein
+   auf der Gegenseite; Schrift und Hauptfarbe teilen eine Temperatur.
+   Ton in Ton (warmer Grund zu warmer Hauptfarbe) ist die Ausnahme
+   und braucht eine Begruendung in der Uebersetzungstabelle.
+   ============================================================ */
+[data-farbe="walnuss"]{   /* Hauptfarbe H 55 . Grund H 235 */
+  --ground:#E5ECF1; --surface:#F0F6FA; --surface-2:#C3CCD1;
+  --line:#C3CCD1; --line-strong:#A3ACB2;
+  --text:#39312C; --muted:#6C645F; --label:#5E5651;
+  --accent:#9C5822; --accent-ink:#9C5822; --auf-accent:#F0F6FA;
+  --brass:#9C5822; --focus:#9C5822;
+}
+[data-farbe="oxblood"]{   /* Hauptfarbe H 12 . Grund H 192 */
+  --ground:#E4EDED; --surface:#EFF7F6; --surface-2:#C2CDCC;
+  --line:#C2CDCC; --line-strong:#A2AEAD;
+  --text:#3A3031; --muted:#6D6364; --label:#5F5556;
+  --accent:#AA4B5B; --accent-ink:#AA4B5B; --auf-accent:#EFF7F6;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-farbe="taupe"]{   /* Hauptfarbe H 71 . Grund H 251 */
+  --ground:#E6ECF2; --surface:#F1F6FA; --surface-2:#C5CBD2;
+  --line:#C5CBD2; --line-strong:#A5ACB3;
+  --text:#37322B; --muted:#6B655E; --label:#5D5750;
+  --accent:#8F6123; --accent-ink:#8F6123; --auf-accent:#F1F6FA;
+  --brass:#8F6123; --focus:#8F6123;
+}
+[data-farbe="stahlblau"]{   /* Hauptfarbe H 233 . Grund H 53 */
+  --ground:#F1E9E5; --surface:#FAF4F0; --surface-2:#D1C9C3;
+  --line:#D1C9C3; --line-strong:#B2A9A3;
+  --text:#2C3439; --muted:#5F686C; --label:#51595E;
+  --accent:#277194; --accent-ink:#277194; --auf-accent:#FAF4F0;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-farbe="petrol"]{   /* Hauptfarbe H 192 . Grund H 12 */
+  --ground:#F2E9E9; --surface:#FAF3F4; --surface-2:#D2C7C8;
+  --line:#D2C7C8; --line-strong:#B3A8A8;
+  --text:#2B3535; --muted:#5E6968; --label:#505A5A;
+  --accent:#257471; --accent-ink:#257471; --auf-accent:#FAF3F4;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-farbe="smaragd"]{   /* Hauptfarbe H 160 . Grund H 340 */
+  --ground:#F0E9ED; --surface:#F9F3F7; --surface-2:#D0C8CD;
+  --line:#D0C8CD; --line-strong:#B1A8AD;
+  --text:#2D3530; --muted:#606863; --label:#525A55;
+  --accent:#267752; --accent-ink:#267752; --auf-accent:#F9F3F7;
+  --brass:#B69345; --focus:#B69345;
+}
+[data-scheme="dunkel"][data-farbe="walnuss"]{
+  --ground:#040F16; --surface:#0C181F; --surface-2:#0C181F;
+  --line:#252F36; --line-strong:#40494F;
+  --text:#E4D4CA; --muted:#92877F; --label:#ADA29B;
+  --accent:#46240A; --accent-ink:#B46729; --auf-accent:#E4D4CA;
+  --brass:#B46729; --focus:#B46729;
+}
+[data-scheme="dunkel"][data-farbe="oxblood"]{
+  --ground:#031312; --surface:#091919; --surface-2:#091919;
+  --line:#233130; --line-strong:#3E4B4A;
+  --text:#E6D2D3; --muted:#948586; --label:#AEA1A2;
+  --accent:#550E20; --accent-ink:#C2606F; --auf-accent:#E6D2D3;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="taupe"]{
+  --ground:#040C15; --surface:#0E1720; --surface-2:#0E1720;
+  --line:#272F37; --line-strong:#414850;
+  --text:#E1D5C8; --muted:#90887E; --label:#ABA39A;
+  --accent:#3F290A; --accent-ink:#A5712A; --auf-accent:#E1D5C8;
+  --brass:#A5712A; --focus:#A5712A;
+}
+[data-scheme="dunkel"][data-farbe="stahlblau"]{
+  --ground:#130803; --surface:#1E130D; --surface-2:#1E130D;
+  --line:#352B26; --line-strong:#4F4540;
+  --text:#CADAE4; --muted:#7F8B92; --label:#9BA7AD;
+  --accent:#0C3244; --accent-ink:#3880A4; --auf-accent:#CADAE4;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="petrol"]{
+  --ground:#140708; --surface:#1F1213; --surface-2:#1F1213;
+  --line:#362A2B; --line-strong:#504445;
+  --text:#C8DCDB; --muted:#7D8D8C; --label:#9AA8A7;
+  --accent:#0C3533; --accent-ink:#2D8784; --auf-accent:#C8DCDB;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+[data-scheme="dunkel"][data-farbe="smaragd"]{
+  --ground:#12070E; --surface:#1D1219; --surface-2:#1D1219;
+  --line:#342A31; --line-strong:#4E444A;
+  --text:#CCDCD2; --muted:#808D85; --label:#9CA8A1;
+  --accent:#0C3724; --accent-ink:#2D8B61; --auf-accent:#CCDCD2;
+  --brass:#FCBE11; --focus:#FCBE11;
+}
+
+/* Ohne data-farbe gilt Walnuss. */
+:root:not([data-farbe]){
+  --ground:#E5ECF1; --surface:#F3F7FA; --surface-2:#D5DCE1;
+  --line:#D5DCE1; --line-strong:#B6BDC2;
+  --text:#39312C; --muted:#6A6058; --label:#5F554E;
+  --accent:#9C5822; --accent-ink:#9C5822; --auf-accent:#F3F7FA;
+  --brass:#9C5822; --focus:#9C5822;
+}
+:root[data-scheme="dunkel"]:not([data-farbe]){
+  --ground:#040F16; --surface:#0E1A21; --surface-2:#0E1A21;
+  --line:#293439; --line-strong:#3E484D;
+  --text:#E4D4CA; --muted:#A4958B; --label:#BCACA1;
+  --accent:#46240A; --accent-ink:#B46729; --auf-accent:#E4D4CA;
+  --brass:#B46729; --focus:#B46729;
+}
+:root{ --kante:rgba(255,255,255,.10); --glas:rgba(14,26,33,.74);
+       --scrim:rgba(4,15,22,.62);
+       --shirt:var(--surface); --shirt-text:var(--text); --shirt-muted:var(--muted);
+       --success:#25783F; --warning:#8C6323; --error:#AB4D48; --info:#2F6A9E; }
+
+/* ============================================================
+   GRUNDLAGEN
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box;corner-shape:var(--corner)}
+.is-circle,.is-pill{corner-shape:round}
+
+body{margin:0;background:var(--ground);color:var(--text);
+  font:400 var(--t0)/var(--lh-text) var(--font-text);
+  font-optical-sizing:auto;
+  transition:background var(--t-modus) ease,color var(--t-modus) ease}
+
+.bund{max-width:var(--bund);margin:0 auto;padding:0 var(--f5)}
+
+h1,h2,h3{margin:0}
+.display,h1{font-family:var(--font-display);font-weight:var(--display-wght);
+  font-size:var(--t4);line-height:var(--lh-display);letter-spacing:0;
+  font-variation-settings:"opsz" var(--display-opsz)}
+.display-gross{font-size:var(--t5)}
+h2{font:600 var(--t2)/var(--lh-mittel) var(--font-text);letter-spacing:-.01em}
+h3{font:600 var(--t1)/var(--lh-mittel) var(--font-text)}
+p{margin:0;max-width:62ch}
+.lead{font-size:var(--t1);line-height:var(--lh-mittel);color:var(--muted)}
+.klein{font-size:var(--t-1)}
+.muted{color:var(--muted)}
+.eyebrow{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.16em;
+  text-transform:uppercase;color:var(--label)}
+.n{font-family:var(--font-mono);font-size:.93em;font-variant-numeric:tabular-nums}
+.display .n,h1 .n{font-family:inherit;font-size:1em}
+
+/* ============================================================
+   NÄHE — Abstand kodiert Beziehung (Figma 12)
+   Zwischen Gruppen immer mindestens zwei phi-Stufen mehr als innerhalb.
+   ============================================================ */
+.stapel-eng  > * + *{margin-top:var(--f2)}   /* innerhalb einer Einheit */
+.stapel      > * + *{margin-top:var(--f4)}   /* verwandte Einheiten     */
+.stapel-weit > * + *{margin-top:var(--f6)}   /* Abschnitte              */
+.abschnitt{padding:var(--f7) 0}        /* NICHT auf section: eine App-Flaeche ist
+                                           oft ein <section> und braucht kein Polster */
+.abschnitt > .haar{margin-bottom:var(--f6)}
+
+/* ============================================================
+   GRAFISCHES INVENTAR — kuratiert, nicht gesammelt (Premium 4)
+   Genau diese vier Mittel. Keine weiteren erfinden.
+   ============================================================ */
+.haar{height:1px;background:var(--brass);border:0;margin:0}
+.doppel{border:0;height:var(--f1);
+  border-top:1px solid var(--brass);border-bottom:1px solid var(--brass);margin:0}
+.marke{display:flex;align-items:center;justify-content:center;gap:var(--f3)}
+.marke i{height:1px;width:var(--f6);background:var(--brass);flex:none}
+.marke b{font:500 var(--t-2)/1 var(--font-mono);letter-spacing:.3em;
+  text-transform:uppercase;color:var(--label)}
+.dataline{display:flex;gap:var(--f4);flex-wrap:wrap;padding:var(--f2) 0;
+  border-top:1px solid var(--brass);border-bottom:1px solid var(--line);
+  font:400 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.dataline b{font-weight:500;color:var(--text)}
+
+/* ============================================================
+   LAYOUT — Goldener Schnitt und Symmetrie
+   ============================================================ */
+.gold{display:grid;grid-template-columns:1fr 1.618fr;gap:var(--f5);align-items:start}
+.gold-kehr{display:grid;grid-template-columns:1.618fr 1fr;gap:var(--f5);align-items:start}
+.mitte{text-align:center}
+.mitte p,.mitte .display{margin-left:auto;margin-right:auto}
+.drei{display:grid;grid-template-columns:repeat(3,1fr);
+  border-top:1px solid var(--brass);border-bottom:1px solid var(--brass)}
+.drei > *{padding:var(--f5) var(--f4);text-align:center;
+  border-right:1px solid var(--line)}
+.drei > *:last-child{border-right:0}
+.drei .zahl{font-family:var(--font-display);font-weight:var(--display-wght);
+  font-size:var(--t6);line-height:1;color:var(--accent-ink);display:block;
+  margin-bottom:var(--f2);font-variation-settings:"opsz" var(--display-opsz)}
+.drei .lb{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted)}
+
+/* ---- Rhythmus: gleiche Elemente, gleicher Abstand (Figma 9) ---- */
+.reihe{display:grid;gap:var(--f3);
+  grid-template-columns:repeat(auto-fit,minmax(calc(var(--m)*15),1fr))}
+
+/* ---- Bildfeld im phi-Verhaeltnis (Premium 5) ---- */
+.bild{aspect-ratio:1.618;background:var(--surface-2);border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden;display:block;width:100%;
+  object-fit:cover}
+.bild-hoch{aspect-ratio:.618}
+
+/* ============================================================
+   FLÄCHEN UND KOMPONENTEN
+   ============================================================ */
+.card{background:none;border:0;border-top:1px solid var(--line);
+  border-radius:0;padding:var(--f4);
+  box-shadow:inset 0 1px 0 var(--kante);
+  transition:background var(--t-modus) ease,border-color var(--t-modus) ease}
+.card > .inner{border-radius:calc(var(--r) - var(--f2));
+  background:var(--surface-2);border:1px solid var(--line);padding:var(--f3)}
+
+/* Hemd — genau einer pro Ansicht, traegt die wichtigste Aussage */
+.shirt{background:var(--shirt);color:var(--shirt-text);
+  border-radius:var(--r);padding:var(--f6) var(--f5);
+  border-top:1px solid var(--brass)}   /* Betonung ueber die Goldkante,
+     nicht ueber eine helle Flaeche: die waere im Dunkeln 15:1 gegen den Grund
+     und klebt als Aufkleber obenauf. */
+.shirt .eyebrow{color:inherit;opacity:.82}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--f2);
+  min-height:44px;padding:calc(var(--f2) + 2px) var(--f4);
+  border-radius:var(--r);font:500 var(--t0)/1 var(--font-text);
+  cursor:pointer;border:1px solid transparent;text-decoration:none;
+  transition:background var(--t-hover) ease-out,color var(--t-hover) ease-out,
+             transform 100ms ease-out}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+.btn-primary{background:var(--accent);color:var(--auf-accent);
+  border-color:var(--accent-ink)}
+.btn-ghost{background:transparent;color:var(--accent-ink);
+  border-color:var(--accent-ink)}
+.btn-quiet{background:transparent;color:var(--muted)}
+
+.badge{display:inline-flex;align-items:center;min-height:calc(var(--m)*1.75);
+  padding:var(--f1) var(--f2);border-radius:var(--r);
+  border:1px solid var(--brass);color:var(--label);
+  font:500 var(--t-2)/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
+
+.field{display:flex;flex-direction:column;gap:var(--f1)}
+.field label{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted)}
+.field input{min-height:44px;padding:var(--f2) var(--f3);border-radius:var(--r);
+  background:var(--ground);border:1px solid var(--line-strong);color:var(--text);
+  font:400 var(--t0)/1 var(--font-text)}
+.field input:focus{outline:2px solid var(--brass);outline-offset:2px;
+  border-color:transparent}
+
+table{border-collapse:collapse;width:100%;font-size:var(--t-1)}
+th,td{border-bottom:1px solid var(--line);padding:var(--f2) var(--f3);text-align:right}
+th:first-child,td:first-child{text-align:left;padding-left:0}
+th:last-child,td:last-child{padding-right:0}
+thead th{font:500 var(--t-2)/var(--lh-mittel) var(--font-mono);letter-spacing:.12em;
+  text-transform:uppercase;color:var(--label);border-bottom-color:var(--brass)}
+tbody tr:last-child td{border-bottom:0}
+
+/* Transluzente Leiste — Tiefe ueber Kante, nie Schatten */
+.bar{position:sticky;top:0;z-index:12;padding:var(--f3) var(--f5);
+  background:var(--glas);backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid var(--line);box-shadow:inset 0 1px 0 var(--kante);
+  display:flex;gap:var(--f4);align-items:center;flex-wrap:wrap}
+
+/* ============================================================
+   MEDIEN — dieselbe Datei, anderes Modul
+   ============================================================ */
+@media(max-width:860px){
+  :root{--m:15px}
+  .gold,.gold-kehr{grid-template-columns:1fr}
+  .drei{grid-template-columns:1fr}
+  .drei > *{border-right:0;border-bottom:1px solid var(--line)}
+  .drei > *:last-child{border-bottom:0}
+  .bund{padding:0 var(--f4)}
+}
+
+/* Overlay fuer Film und Motion: Modul an die Bildhoehe gebunden,
+   damit die Typografie in jeder Aufloesung gleich gross wirkt. */
+.medium-overlay{--m:2.2vh;padding:var(--f6);
+  text-shadow:0 1px calc(var(--m)/4) rgba(0,0,0,.45)}
+.medium-overlay .haar,.medium-overlay .doppel{opacity:.9}
+
+/* Visitenkarte 85 x 55 mm */
+.medium-karte{--m:2.6mm;width:85mm;height:55mm;padding:var(--f4);
+  display:flex;flex-direction:column;justify-content:space-between;
+  border:1px solid var(--line);border-radius:calc(var(--m)*.6)}
+
+@media print{
+  :root{--m:3.6mm;
+    --ground:#FFFFFF;--surface:#FFFFFF;--surface-2:#F2EEE8;
+    --kante:transparent;--glas:transparent}
+  body{background:none}
+  .bar{position:static;backdrop-filter:none;border:0}
+  .card{break-inside:avoid}
+  .bund{padding:0}
+}
+
+/* ============================================================
+   BARRIEREFREIHEIT — nicht verhandelbar
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important;transition-duration:120ms!important}
+  .btn:active{transform:none}
+}
+@media (prefers-reduced-transparency:reduce){
+  .bar{background:var(--surface);backdrop-filter:none}
+}
+@media (prefers-contrast:more){
+  :root{--line:var(--line-strong);--muted:var(--text)}
+}

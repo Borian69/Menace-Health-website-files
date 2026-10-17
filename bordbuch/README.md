@@ -23,7 +23,7 @@ https://<dein-name>.github.io/Menace-Health-website-files/bordbuch/
 ```
 
 Wichtig: **Das Verzeichnis `design/` muss mitveröffentlicht werden** — die App lädt
-von dort ihre Tokens und Schriften.
+von dort `moch.css`, also Tokens, Raumskala und Schriften.
 
 ### 2. Auf den Startbildschirm legen
 
@@ -47,8 +47,11 @@ Eine Ansicht, ein Ziel: in zehn Sekunden fertig sein.
 - **Kilometerstand** — darunter steht sofort, wie viel seit dem letzten Eintrag
   gefahren wurde. Ein Stand unter dem letzten wird angemeckert, aber nicht verboten:
   Tachos werden getauscht, und die App weiß nicht alles besser.
-- **Arbeit** — neun Chips (Inspektion, Ölwechsel, Reifen, HU/AU, Bremsen, Reparatur,
-  Tanken, Pflege, Sonstiges). Ein Tipp füllt die Beschreibung vor.
+- **Arbeit** — sichtbar sind die **fünf Arten, die in diesem Auto am häufigsten
+  vorkommen**, gezählt aus den eigenen Einträgen. Die übrigen vier liegen hinter
+  *Weitere anzeigen*; eine gewählte Art bleibt immer sichtbar. Neun gleich laute
+  Schaltflächen wären die Standardlösung jeder App — hier steht der häufige Weg
+  zuerst. Ein Tipp füllt die Beschreibung vor.
 - **Beim Tanken** erscheinen zwei zusätzliche Felder: getankte Liter und bezahlter
   Betrag, dazu der Schalter *Vollgetankt*. Das Kosten-Feld aus dem Klappbereich
   verschwindet dann — zwei Felder für dieselbe Zahl wären eine Falle.
@@ -59,8 +62,10 @@ Eine Ansicht, ein Ziel: in zehn Sekunden fertig sein.
 - **Kosten, Werkstatt, Notiz** liegen zugeklappt darunter. Wer sie nicht braucht,
   sieht sie nicht.
 
-Oben steht der aktuelle Kilometerstand als heller Block — die eine laute Aussage
-dieser Ansicht.
+Oben steht der aktuelle Kilometerstand als Hemd-Block — die eine laute Aussage dieser
+Ansicht. Im Dunkeln ist das **keine Fläche**: Eine Fläche hinter einer großen Zahl
+leistet nichts, die Zahl ist schon groß. Die Betonung trägt die Zahl selbst, in
+Literata, über einer Linie in der Hauptfarbe.
 
 ### Verlauf
 
@@ -68,7 +73,7 @@ Vier Ansichten über denselben Daten:
 
 | Ansicht | Zeigt |
 |---|---|
-| **Liste** | Alle Einträge, neueste zuerst, nach Jahren getrennt. Mit Suche und Filter nach Art. Jede Zeile nennt die Strecke seit dem Eintrag davor, bei Tankungen zusätzlich Liter, Spritpreis und den gemessenen Verbrauch. Antippen öffnet die Tafel zum Ändern oder Löschen |
+| **Liste** | Alle Einträge, neueste zuerst, nach Jahren getrennt. Mit Suche und einem Filter, der wie das Formular die fünf häufigsten Arten zeigt. Jede Zeile nennt die Strecke seit dem Eintrag davor, bei Tankungen zusätzlich Liter, Spritpreis und den gemessenen Verbrauch. Antippen öffnet die Tafel zum Ändern oder Löschen |
 | **Kalender** | Ein Monatsgitter, Wochenstart Montag. Tage mit Einträgen tragen einen Punkt je Eintrag. Ein Tipp zeigt, was an dem Tag war. Öffnet im Monat des jüngsten Eintrags |
 | **Kilometer** | Zwei Diagramme je Jahr: Kilometer je Monat als Balken, aufsummiert als Kurve. Dazu Ø je Monat, Ø je Tag, stärkster Monat, Hochrechnung aufs Jahr und — wenn Kosten erfasst sind — Kosten gesamt und je 100 km |
 | **Verbrauch** | Was der Wagen wirklich braucht: Ø L/100 km, bester und schlechtester Wert, Ø Preis je Liter, Spritkosten je 100 km. Dazu zwei Kurven über die Zeit — Verbrauch je Tankfüllung und Preis je Liter — und eine Tabelle aller Messungen |
@@ -116,7 +121,7 @@ Bibliothek (`assets/js/pdf.js` ist ein kleiner PDF-Schreiber, rund 400 Zeilen).
 
 Zwei Fassungen, wie das Regelwerk es für gedruckte Dokumente verlangt:
 
-- **Versandfassung** — Elfenbein-Grund, zum Verschicken und Ansehen.
+- **Versandfassung** — mit Grundfläche, zum Verschicken und Ansehen.
 - **Druckfassung** (`…-DRUCK.pdf`, in den Einstellungen) — ohne Hintergrundfläche.
   Weiß ist dort kein Farbauftrag. Inhalt und Seitenzahlen sind identisch.
 
@@ -144,7 +149,7 @@ nur ein Problem sucht, schaltet den Rest ab. Bei eingeschaltetem Diagramm-Bereic
 stehen die Rohwerte unter den Balken, bei eingeschaltetem Kalender das Datum in jeder
 Zelle.
 
-**Selbsttest** prüft fünfzehn Dinge und sagt bei jedem, was herauskam:
+**Selbsttest** prüft siebzehn Dinge und sagt bei jedem, was herauskam:
 
 | Prüfung | Fängt was ab |
 |---|---|
@@ -153,6 +158,7 @@ Zelle.
 | Zahlen einlesen | „123.456 km“, „1.234,56“ |
 | Datum rechnen | Schaltjahr, Sommerzeit, Jahreswechsel |
 | Eingaben prüfen | falsches Datum, negativer Stand, unbekannte Art |
+| Formular schaltet um | drückt *Tanken* wirklich: erscheinen Liter und Betrag, weicht das Kostenfeld |
 | Reihenfolge und Kennzahlen | Sortierung, Fahrleistung, Kostensumme |
 | Ausreißer erkennen | rückwärts laufender Tacho |
 | Monatsverteilung | Summe der Monate, monoton steigende Kurve |
@@ -163,6 +169,7 @@ Zelle.
 | Verbrauch rechnen | Voll-zu-Voll, Teilbetankung, vergessene Füllung, einzelner Tank |
 | Belege ablegen | IndexedDB schreiben, lesen, als JPEG-Bytes holen, löschen |
 | Fassung und Offline-Speicher | `BUILD` gegen den Cache-Namen in `sw.js` |
+| Keine unbehandelten Fehler | Fehler aus Klick-Handlern, die sonst nur still im Protokoll stehen |
 
 **Testdaten** legen zwei Jahre Fahrzeugleben an — mit Sommer-Winter-Verlauf, damit
 die Jahreskurve etwas zu zeigen hat. Sie tragen eine Markierung und lassen sich mit
@@ -193,18 +200,53 @@ Einstellungen zeigen vorher an, wie viel die Ablage belegt.
 
 ## Gestaltung
 
-Die App liegt auf dem **Moch-Design-System** (`../design/styles.css`) im Fond *Nacht*.
-Sie bringt keine eigenen Farben und keine eigenen Schriften mit — `assets/app.css`
-enthält keinen einzigen Hexwert, nur Tokens. Das PDF steht im Elfenbein-Theme: Was
-gelesen, unterschrieben oder gedruckt wird, ist hell.
+Die App läuft auf dem **Moch-Design-System v3.2** (`../design/moch.css`) im Schema
+`dunkel` mit der Hauptfarbe `walnuss` — beides steht als Attribut am `<html>`-Element:
 
-Jede Abweichung vom Regelwerk ist in `../referenz/UEBERSETZUNGSTABELLE.md` begründet.
+```html
+<html lang="de" data-scheme="dunkel" data-farbe="walnuss">
+```
+
+Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` oder
+`smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau eine je Projekt.
+
+**Der Grund ist komplementär zur Hauptfarbe.** Walnuss steht bei Farbton 55°, der
+Grund bei 235° — ein sehr dunkles Blau (`#040F16`). Warme Schrift auf kühlem Grund;
+man sieht es nicht, man spürt es. **Gold entfällt hier**: Zwischen Walnuss und Gold
+liegen 30° Farbtonabstand, unter den 35°, ab denen beide als verschiedene Farben
+lesbar sind. `--brass` trägt deshalb die Hauptfarbe, und Linien, aktiver Bereich und
+Fokus sehen aus wie die Marke, nicht wie ein zweiter Akzent.
+
+**Form folgt Funktion.** Es gibt genau einen Radius (`--r`, 10 px), und ihn bekommt
+nur, was man drückt. Flächen, Zahlen und Textblöcke haben gerade Kanten. Gegliedert
+wird über Linien und Abstand, nicht über gestapelte Hintergründe — eine Flächenebene.
+Deshalb ist die Liste eine Folge von Linien statt von Kacheln, und eine Kennzahl steht
+einfach da, mit ihrem Label 2 px darüber.
+
+Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 · 68 · 110 · 177),
+Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in Literata, alles
+andere in Archivo, jede Ziffer in IBM Plex Mono.
+
+**Eingaben sind Linien, keine Kästen** — wie ein Formular auf Papier. Im Fokus trägt
+die Linie die Hauptfarbe. Diese vier Zeilen stehen vorerst in `assets/app.css`, weil
+`moch.css` die Felder noch mit Rahmen zeichnet; zieht die Datei nach, fallen sie weg.
+
+`assets/app.css` enthält genau **einen** Hexblock: die vier Statustöne für den
+Dunkelmodus. Das Regelwerk fordert zwei Fassungen je Schema, `moch.css` liefert seit
+dem letzten Umbau nur die helle — die trägt auf diesem Grund 3,4 : 1 statt der
+4,5 : 1, die Fließtext braucht. Gemessen, begründet, und wieder draußen, sobald die
+Datei nachzieht.
+
+Das PDF steht im hellen Schema: Was gelesen, unterschrieben oder gedruckt wird, ist
+hell. Dort ist die Schrift Helvetica — Literata ließe sich nur als eingebettete
+Schriftdatei verwenden, und die wiegt mehr als die ganze App.
+
+Jede Abweichung vom Regelwerk ist in `../referenz/UEBERSETZUNGSTABELLE.md` mit Wunsch,
+Risiko und Umsetzung begründet.
 
 Ohne Netzverbindung greifen beim ersten Start die Ersatzschriften — das Layout bleibt
 stabil, der Charakter geht verloren. Nach dem ersten Laden liegen die Schriften im
 Cache des Service Workers.
-
----
 
 ## Dateien
 
@@ -226,7 +268,7 @@ bordbuch/
     belege.js               Belegablage in IndexedDB
     demo.js                 Testdaten
     debug.js                Protokoll und Bereichsschalter
-    selbsttest.js           Die dreizehn Prüfungen
+    selbsttest.js           Die siebzehn Prüfungen
     fassung.js              BUILD — muss zum Cache-Namen in sw.js passen
   tools/make-icons.mjs      Erzeugt die App-Icons: node tools/make-icons.mjs
 ```

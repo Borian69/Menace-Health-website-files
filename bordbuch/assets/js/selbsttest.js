@@ -6,14 +6,14 @@
    entfernt wird. */
 
 import { toKm, toCents, toMilliliter, istISO, tageZwischen, plusTage, isoVon, formatDatum, liter } from './util.js';
-import { normalisiere, sortiere, statistik, monateFuerJahr, ausreisser, nachTag, ARTEN } from './eintraege.js';
+import { normalisiere, sortiere, statistik, monateFuerJahr, ausreisser, nachTag, ARTEN, ARTEN_SICHTBAR, artenNachHaeufigkeit } from './eintraege.js';
 import { gitter } from './kalender.js';
 import { balken, kurve } from './diagramm.js';
 import { erzeugePDF, testSeite, _intern } from './pdf.js';
 import { messungen, verbrauchsBilanz } from './verbrauch.js';
 import * as belege from './belege.js';
-import { ladeEinstellungen, speicherInfo } from './store.js';
-import { log, fehler } from './debug.js';
+import { ladeEinstellungen, ladeEintraege, speicherInfo } from './store.js';
+import { log, fehler, protokollListe } from './debug.js';
 import { BUILD } from './fassung.js';
 
 const pruefe = (bedingung, meldung) => {
@@ -88,6 +88,57 @@ const TESTS = [
       pruefe(eintrag && eintrag.art === 'sonstiges', 'Unbekannte Art wurde nicht aufgefangen.');
       pruefe(eintrag.kosten === null, 'Fehlende Kosten müssen null sein.');
       return `${ARTEN.length} Arten verfügbar`;
+    },
+  },
+  {
+    /* Prüft das Formular selbst, nicht nur die Rechnung dahinter: Wenn beim
+       Tanken die Felder für Liter und Betrag ausbleiben, ist der gemessene
+       Verbrauch nichts wert — und genau das sieht man einer grünen
+       Rechenprüfung nicht an. */
+    name: 'Formular schaltet um',
+    bereich: 'eintrag',
+    async lauf() {
+      const chips = [...document.querySelectorAll('#arten-chips .chip')];
+      pruefe(chips.length === ARTEN.length,
+        `Art-Schaltflächen fehlen: ${chips.length} von ${ARTEN.length}.`);
+
+      const sichtbar = chips.filter((chip) => !chip.hidden).length;
+      const mehrKnopf = document.querySelector('#btn-mehr-arten');
+      pruefe(sichtbar === ARTEN_SICHTBAR || sichtbar === chips.length,
+        `Sichtbar sind ${sichtbar} Arten — erwartet ${ARTEN_SICHTBAR} oder alle ${chips.length}.`);
+      pruefe(!mehrKnopf.hidden, 'Der Knopf für die restlichen Arten fehlt.');
+
+      const haeufigste = artenNachHaeufigkeit(ladeEintraege().map(normalisiere).filter(Boolean));
+      pruefe(chips[0].dataset.art === haeufigste[0].id,
+        `Vorn steht ${chips[0].dataset.art}, häufigste ist ${haeufigste[0].id}.`);
+
+      const tanken = chips.find((chip) => chip.dataset.art === 'tanken');
+      pruefe(tanken, 'Die Art „Tanken“ fehlt im Formular.');
+      const vorher = chips.find((chip) => chip.getAttribute('aria-pressed') === 'true');
+      const text = document.querySelector('#f-text').value;
+      // Eine selbst getippte Beschreibung darf die Auswahl nicht überschreiben.
+      const vorbelegbar = !text || ARTEN.some((art) => art.standard === text);
+
+      try {
+        tanken.click();
+        pruefe(!document.querySelector('#tank-felder').hidden,
+          'Beim Tanken erscheinen Liter und Betrag nicht.');
+        pruefe(document.querySelector('#feld-kosten').hidden,
+          'Kostenfeld und Tankbetrag stehen gleichzeitig da — zwei Felder für dieselbe Zahl.');
+        pruefe(document.querySelector('#f-text').value === (vorbelegbar ? 'Getankt' : text),
+          'Die Beschreibung wurde nicht richtig vorbelegt.');
+
+        chips.find((chip) => chip.dataset.art === 'inspektion').click();
+        pruefe(document.querySelector('#tank-felder').hidden,
+          'Der Tankblock bleibt stehen, obwohl nicht getankt wurde.');
+        pruefe(!document.querySelector('#feld-kosten').hidden,
+          'Das Kostenfeld kehrt nicht zurück.');
+      } finally {
+        if (vorher) vorher.click();
+        document.querySelector('#f-text').value = text;
+      }
+
+      return `${sichtbar} von ${chips.length} Arten sichtbar, Tankfelder schalten`;
     },
   },
   {
@@ -322,6 +373,23 @@ const TESTS = [
         `Fassung und Cache passen nicht zusammen: ${BUILD} gegen ${treffer[1]}`);
       const registrierung = await navigator.serviceWorker.getRegistration();
       return `${BUILD} · Service Worker ${registrierung ? 'aktiv' : 'nicht registriert'}`;
+    },
+  },
+  {
+    /* Steht zuletzt, damit auch die Fehler auffallen, die einer der Tests
+       über sich selbst auslöst. Ein Fehler in einem Klick-Handler erreicht
+       den Aufrufer nie — er landet nur hier. */
+    name: 'Keine unbehandelten Fehler',
+    bereich: 'ui',
+    async lauf() {
+      const seitenStart = Date.now() - Math.round(performance.now());
+      const offen = protokollListe().filter((eintrag) => eintrag.fehler
+        && eintrag.t >= seitenStart
+        && String(eintrag.nachricht).startsWith('Unbehandelt'));
+      pruefe(offen.length === 0, offen.length
+        ? `${offen.length}× — zuerst: ${JSON.stringify(offen[0].daten)}`
+        : '');
+      return 'Seit dem Start kein Fehler aus der Oberfläche';
     },
   },
 ];

@@ -1,233 +1,251 @@
-# Moch — Design System
 
-Du arbeitest im Moch-Design-System. Dieses Dokument ist verbindlich: Was hier steht,
-gilt. Was hier nicht steht, erfindest du nicht.
-
-**Einbinden:** `@import url("./design/styles.css")` — oder die Datei direkt verlinken.
-Sie lädt Schriften, Tokens, Formsprache und Komponentenschicht in der richtigen
-Reihenfolge. Gerenderte Seiten erhalten nur die @import-Hülle dieser Datei.
-
-**Es gibt keine importierbaren Komponenten.** Kein `<Button variant="primary">`. Dies ist
-ein Token- und Klassensystem — du schreibst das Markup selbst gegen das Vokabular unten.
-
-## Die Marke in einem Satz
+# Moch — Design System v3.2
 
 Moch soll nicht aussehen wie KI, sondern wie eine Marke, die Technologie außergewöhnlich
 gut beherrscht. Premium heißt nicht Luxus: schnell, präzise, hochwertig, zuverlässig.
-Drei Achsen: **ruhig statt laut · warm statt steril · präzise statt gefällig.**
 
-## Acht Signatur-Regeln — nie brechen
+**Prüffrage für jedes Element: Belegt es etwas, oder schmückt es nur?**
 
-1. **Zahlensatz.** Jede Ziffer monospaced und tabellarisch, optisch 93 % der Textgröße
-   (`.n`). Ausnahme: in Display-Zeilen laufen Ziffern in der Display-Schrift mit — das
-   erledigt die Komponentenschicht automatisch, schreib `.n` ruhig überall.
-2. **Datenzeile.** Metadaten zwischen Messing- und Sandlinie (`.dataline`), unter jedem
-   veröffentlichten Bild und Film.
-3. **Der Bruch.** Fette Didone laut über stiller Grotesk leise — Serife gegen serifenlos.
-   Nie beides in der Mitte, nie beide Gattungen in derselben Rolle.
-4. **Hemd-Block.** Genau eine helle Fläche pro Ansicht trägt die wichtigste Aussage
-   (`.shirt`).
-5. **Ein Fond, ein Akzent.** Nacht, Mitternacht oder Oxblood — nie zwei. Walnuss oder
-   Oxblood — nie beide gesättigt.
-6. **Messing nur als Linie.** Haarlinien, Labels, Fokus. Nie Fläche, nie Verlauf, nie
-   Metalleffekt.
-7. **Der Beweis in Zahlen.** Keine Superlative. Jede Leistungsaussage nennt eine messbare
-   Größe.
-8. **Der eingefrorene Sturzflug.** Die Bildmarke zeigt Geschwindigkeit nie durch Effekte —
-   nur durch die Haltung.
+## So wendest du es an
 
-Alles andere ist Hygiene und darf begründet abweichen.
-**Prüffrage: Erkennt jemand die Arbeit ohne Logo als Moch? Dann ist es Signatur.**
-
-## Themes — ein Fond pro Ansicht
+In diesem Repo liegt das System unter `design/moch.css`. Einbinden und zwei
+Attribute setzen:
 
 ```html
-<html data-theme="nacht">        <!-- Bühne: Web, Produkt, Dashboard, Social · 60 % -->
-<html data-theme="mitternacht">  <!-- Präsentation, Cover, Technik · 30 % -->
-<html data-theme="oxblood">      <!-- nur Cover und Kapiteltrenner · 10 % -->
-<html>                           <!-- ohne Attribut: Elfenbein — Dokument, Print -->
+<html data-scheme="dunkel" data-farbe="walnuss">
+<link rel="stylesheet" href="../design/moch.css">
 ```
 
-**Im Zweifel:** Wird es gezeigt, ist es dunkel. Wird es gelesen, unterschrieben oder
-gedruckt, ist es Elfenbein. Taucht Oxblood häufiger auf als Mitternacht, kippt die Marke
-ins Dekorative.
+**Diese Fassung ist in Benutzung:** `bordbuch/` läuft auf `dunkel` + `walnuss`.
+Eine zweite Hauptfarbe im selben Projekt gibt es nicht (Regel 3). **Bei Walnuss
+entfällt Gold** (Farbtonabstand 30°) — `--brass` trägt dort die Hauptfarbe.
 
-## Farbe — nur Tokens, nie Hex
+Für ein Artifact oder eine einzelne HTML-Datei: Inhalt von `moch.css` in einen
+`<style>`-Block kopieren. Die Schriften lädt die Datei selbst von Google Fonts.
 
-`--ground` Grundfläche · `--surface` Karten · `--surface-2` eingelassen · `--line` Linien ·
-`--line-strong` starke Trennung · `--text` · `--muted` Sekundärtext · `--brand` Walnuss ·
-`--brand-ink` (nur dunkle Themes) · `--accent-2` Oxblood · `--brass` Messing textsicher ·
-`--brass-line` Messing als Linie · `--shirt` Hemd ·
-`--pattern-light` / `-dark` / `-card` / `-accent` ·
-Status: `--success` `--warning` `--error` `--info` — nie als Markenfarbe.
+`data-scheme`: `hell` (Standard) oder `dunkel`.
+`data-farbe`: `walnuss` · `oxblood` · `taupe` · `stahlblau` · `petrol` · `smaragd`.
 
-**Kein `#FFFFFF`, kein `#000000`** — nirgends. Weiß existiert nur als unbedruckte
-Druckfassung. Braun ist Akzent, nie Grundfläche.
-Mengenverhältnis **70 Fond / 22 Flächen / 6 Akzent / 2 Messing**, mindestens 45 % freie
-Fläche in Marketing-Layouts.
+**Es gibt keine importierbaren Komponenten.** Dies ist ein Token- und Klassensystem;
+das Markup schreibst du selbst gegen das Vokabular unten.
 
-**Lautstärke: höchstens zwei laute Elemente pro Ansicht.** Laut sind die Display-Zeile,
-`.shirt`, `.btn-primary` und eine gesättigte Akzentfläche. Brauchst du Hemd-Block und
-große Zeile: **die Zeile gehört in den Block hinein, nicht daneben** — dann zählen beide
-als eines.
+## Die sieben Regeln, die nie gebrochen werden
 
-## Kontrast — nur freigegebene Kombinationen
+1. **Der Grund ist komplementär zur Hauptfarbe.** Grund-Farbton = Hauptfarbton + 180°.
+   Jede Hauptfarbe bringt ihren eigenen Grund mit — Walnuss (55°) steht auf blauem Grund
+   (235°), Petrol (192°) auf warmem (12°). Der Grund steht allein auf der Gegenseite;
+   **Schrift und Hauptfarbe teilen eine Temperatur.**
+2. **Der Grund trägt nie eine Markenfarbe.** Chroma 0,022–0,024 — genug, dass man die
+   Temperatur sieht, zu wenig, um sie zu benennen. **Ton in Ton** (warmer Grund zu warmer
+   Hauptfarbe, etwa Beige zu Braun) ist die Ausnahme und braucht eine Begründung: welchen
+   besonderen Eindruck erzeugt sie, den die komplementäre Fassung nicht erzeugt?
+3. **Genau eine Hauptfarbe pro Projekt.** Kein zweiter Akzent, keine Palette. Die eine
+   Farbe trägt Fläche, Linie, Rahmen und Schrift.
+4. **Gold nur, wenn der Farbtonabstand reicht.** Unter 35° zur Hauptfarbe sind beide nicht
+   als verschiedene Farben lesbar — bei **Walnuss (30°) und Taupe (14°) entfällt Gold**,
+   dort übernimmt die Hauptfarbe die Linienrolle. Wo Gold erlaubt ist (Oxblood, Petrol,
+   Smaragd, Stahlblau): **nur Linie, nie Text.** Auf dunklem Grund trägt es 11,0 : 1, auf
+   hellem nur 1,4 : 1. Abgedunkelt würde es oliv. **`--label` ist kein Gold**, sondern
+   eine eigene Textrolle — sonst wird aus jedem Eyebrow eine goldene Wand. Gold steckt
+   ausschließlich in `--brass` und dem Fokusring.
+5. **Kein Schwarz, kein Weiß.** Kein Kanal unter 3 oder über 250.
+6. **Der Beweis in Zahlen.** Keine Superlative, kein „innovativ", kein „revolutionär".
+   Jede Leistungsaussage nennt eine messbare Größe.
+7. **Genau ein Fokuspunkt pro Ansicht.** Ein Hemd-Block (`.shirt`), eine große
+   Display-Zeile — nicht beides nebeneinander.
 
-Was nicht in dieser Liste steht, ist nicht freigegeben.
+## Farbe
 
-| Vordergrund | Hintergrund | Verhältnis | Freigabe |
-|---|---|---|---|
-| Elfenbein | Nacht / Mitternacht / Oxblood | 15,2–16,2 : 1 | AAA — jede Größe |
-| Elfenbein | Kohle `--surface` | 12,6 : 1 | AAA — Text auf Karten |
-| Leinen `--muted` | Nacht | 7,9 : 1 | AAA — Sekundärtext |
-| Messing `--brass` | Nacht | 9,0 : 1 | AAA — Labels, Links |
-| Elfenbein | Walnuss `--brand` | 6,7 : 1 | AA — Button-Text |
-| Tinte | Hemd `--shirt` | 16,5 : 1 | AAA — Hemd-Block |
-| Tinte `--text` | Elfenbein | 16,2 : 1 | AAA — jede Größe |
-| Asche `--muted` | Elfenbein | 6,6 : 1 | AA — Sekundärtext |
-| Walnuss Tief | Elfenbein | 8,4 : 1 | AAA — Links, Buttons |
-| Messing Tief `--brass` | Elfenbein | 5,3 : 1 | AA — Labels im hellen Theme |
+Zwei Fassungen einer Farbe teilen **Farbton und Gamut-Anteil**, nie die absolute Chroma.
+Wer eine Farbe nur aufhellt, entsättigt sie relativ — sie wird pastellig und wirkt billig.
 
-**Nur Linien, nie Text:** Messing auf Elfenbein 1,9 : 1 · Kante auf Nacht 2,1 : 1 · Naht
-auf Nacht 1,5 : 1 · Sand auf Elfenbein 1,6 : 1. Eine fette Schrift ändert daran nichts —
-Strichstärke ändert kein Kontrastverhältnis.
+Im Dunkelmodus trennen sich zwei Rollen: `--accent` ist die **tiefe Fläche**, die hellen
+Text trägt; `--accent-ink` die **hellere Schriftfassung** auf dem Grund. Im Hellmodus
+genügt eine Fassung.
 
-**Fokus** ist immer Messing, 2 px, 2 px Abstand, in beiden Themes:
-`outline:2px solid var(--brass-line); outline-offset:2px`. Kein Bedienelement verliert
-seinen sichtbaren Fokus. **Farbe allein trägt nie Bedeutung** — Status braucht zusätzlich
-Text oder Form.
+Hauptfarben sind gesättigt auf min(85 % des Gamuts, Deckel 0,125 warm / 0,090 kalt).
+Beide Grenzen sind gemessen, nicht geschätzt.
+
+| Token | Rolle |
+|---|---|
+| `--ground` `--surface` `--surface-2` | Grundfläche, Karten, eingelassen |
+| `--line` `--line-strong` | Linien, starke Trennung |
+| `--text` `--muted` | Text, Sekundärtext |
+| `--accent` `--accent-ink` `--auf-accent` | Hauptfarbe: Fläche, Schrift, Text darauf |
+| `--brass` | Gold — ausschließlich Linien und Fokus |
+| `--label` | Label- und Eyebrow-Text (kein Gold) |
+| `--success` `--warning` `--error` `--info` | Status, je Schema zwei Fassungen |
+| `--shirt` `--shirt-text` | Hemd-Block |
+
+## Raum: φ
+
+Layout-Abstände sind Potenzen von φ: **6 · 10 · 16 · 26 · 42 · 68 · 110 · 177**
+(`--f1` bis `--f8`). Alles leitet sich aus einem Modul `--m` ab — deshalb trägt dieselbe
+Datei alle Medien:
+
+| Medium | `--m` |
+|---|---|
+| Web | 16px |
+| Filmbild, Overlay | `2.2vh` (Klasse `.medium-overlay`) |
+| Visitenkarte 85 × 55 mm | 2,6mm (Klasse `.medium-karte`) |
+| Druck | 3,6mm (automatisch per `@media print`) |
+
+**Nähe kodiert Beziehung.** Der Abstand *zwischen* Gruppen ist immer mindestens zwei
+φ-Stufen größer als *innerhalb*: `.stapel-eng` (10) innerhalb einer Einheit, `.stapel`
+(26) zwischen verwandten, `.abschnitt` (110) zwischen Abschnitten. **Das Polster hängt an
+der Klasse, nicht am `section`-Element** — App-Flächen sind oft `<section>` und sollen
+kein 110-px-Polster erben.
+
+**Mindestens 45 % freie Fläche.** Weißraum ist kein Rest, sondern das Material, das
+Premium herstellt — er wird zuerst geplant.
+
+Radius: **`--r` 10 px, der einzige** — siehe „Form folgt Funktion".
+Ecken laufen als **G2-Superellipse**
+(`corner-shape`), nicht als Kreisbogen. **Rahmen statt Schatten** — `box-shadow` nur als
+helle Oberkante (`--kante`).
+
+## Form folgt Funktion
+
+Vor jedem Element steht eine Prüfung: **Was leistet es?** Ein Squircle um ein Zahnrad
+leistet nichts — das Icon ist schon ein Ziel. Eine Fläche hinter einer großen Zahl leistet
+nichts — die Zahl ist schon groß.
+
+- **Ein Radius, `--r` 10 px — und nur, was man drückt, bekommt ihn.** Flächen, Zahlen und
+  Textblöcke haben keine Ecken, weil sie keine Ziele sind. Damit wird Rundung zum Signal
+  statt zur Dekoration; eine Oberfläche, die runde und gerade Kanten mischt, wirkt
+  willkürlich.
+- **Eine Flächenebene.** Gegliedert wird über Linien und Abstand, nicht über gestapelte
+  Hintergründe. Wer drei Flächenhelligkeiten übereinanderlegt, baut Tiefe, wo keine ist.
+- **Eine Zahl steht einfach da.** Kein Kasten, kein Rahmen, kein Hintergrund.
+- **Ein Label gehört zu seinem Wert**, nicht zum Abstand darüber: 2 px darunter, nicht 16.
+
+## Dichte: wo Premium entsteht
+
+Acht Abstandsstufen nützen nichts ohne die Regel, welche wann gilt. **Premium entsteht im
+Abstand zwischen Gruppen, nicht innerhalb.** In Bedienoberflächen:
+
+| Ebene | Stufe |
+|---|---|
+| Innerhalb einer Zeile (Chips, Icon + Text) | `--f2` 10 |
+| Zwischen Feldern einer Gruppe | `--f3` 16 |
+| **Zwischen Gruppen** | `--f5` 42 |
+| Über einer tragenden Kennzahl | `--f5` 42 |
+| Zwischen Abschnitten | `--f6` 68 bis `--f7` 110 |
+
+Wer zwischen Gruppen bei 16 px bleibt, bekommt ein dichtes Standard-Interface — technisch
+regelkonform, aber ohne Haltung.
+
+## Der häufige Weg zuerst
+
+**Neun gleich laute Schaltflächen sind kein Premium**, auch wenn keine davon „laut" im
+Sinne der Lautstärke-Regel ist. Ein 3×3-Raster identischer Kacheln ist die Standardlösung
+jeder App.
+
+Zeige, was oft gebraucht wird — drei bis fünf Einträge. Der Rest liegt eine Ebene tiefer
+hinter „Weitere anzeigen". Einfachheit ist nicht Minimalismus: nicht alles verstecken,
+sondern den häufigen Weg zuerst.
+
+## Eingaben sind Linien, keine Kästen
+
+Ein Feld bekommt eine **Grundlinie**, keinen umlaufenden Rahmen — wie ein Formular auf
+Papier. Im Fokus wird die Linie Gold. Das unterscheidet eine Oberfläche von tausend
+anderen und kostet nichts.
+
+```css
+input{background:transparent;border:0;border-bottom:1px solid var(--line-strong)}
+input:focus{outline:0;border-bottom-color:var(--brass)}
+```
+
+## Der Hemd-Block im Dunkelmodus
+
+`.shirt` ist **keine helle Fläche**, wenn der Grund dunkel ist. Eine Fläche mit
+15 : 1 gegen den Grund klebt als Aufkleber obenauf — während jede Karte daneben bei
+1,1 : 1 liegt. Im Dunkeln trägt die Aussage **die Zahl selbst**: groß, in `--font-display`,
+über einer Goldlinie. Die Betonung kommt aus der Kante, nicht aus der Helligkeit.
 
 ## Typografie
 
-`--font-display` **Abril Fatface** · `--font-text` **Archivo** · `--font-mono`
-**IBM Plex Mono**. Keine vierte Familie. Zeilenabstand immer 1,5. Drei Größen:
-17 / 14,5 / 11 px. Zeilenlänge max. 66 Zeichen. Kein Kursiv, kein Blocksatz.
+**Literata** (Display, variabel opsz 7–72) · **Archivo** (Text) · **IBM Plex Mono**
+(Zahlen, Labels). Keine vierte Familie.
 
-Abril hat **nur Schnitt 400** und ist reine Display-Schrift:
+Größen folgen √φ: 10 · 12,5 · 16 · 20,5 · 26 · 33 · 42 · 53,5 (`--t-2` bis `--t5`).
+Jede zweite Stufe trifft exakt die Raumskala.
 
-- **Erst ab 24 px** (`--display-min`) — darunter Archivo 600. Bei 16 px wird die fette
-  Didone unruhig. `h3` ist deshalb bewusst nicht Display.
-- **Laufweite `--display-track` (+1,2 %)**, nie negativ — die Punzen laufen sonst zu.
-- **Nie im Fließtext**, nie als Sekundärtext, nie in Tabellen, nie in Labels.
+Zeilenabstand aus φ: **1,618** Fließtext · **1,272** Lead und Überschriften ·
+**1,128** Display.
 
-`h1` und `h2` sind bereits richtig gesetzt. Nicht überschreiben.
+Laufweite größenabhängig: `calc(.3px - .012em)` — große Schrift enger, kleine weiter.
+Nie ein fester Wert für alle Größen.
 
-## Raum
-
-**Layout-Abstände** — Sektionen, Blöcke, Spalten, Karten — sind Vielfache von 8:
-`--s1` 8px bis `--s9` 160px. Dort keine Zwischenwerte.
-**Ausgenommen: Polster in Bedienelementen** (4–12 px). Ein Button mit 11 px Polster trifft
-die geforderten 44 px Höhe; 8 oder 16 wären falsch. Dort zählt das Außenmaß auf dem Raster.
-
-Radius `--radius` 2 px strukturell, `--radius-interactive` 4 px interaktiv.
-**Die Ecke läuft als G2-Superellipse** statt als Kreisbogen — `corner-shape` liegt global
-auf `*`, du musst nichts tun. Setz nur die Radius-Tokens, nie eigene Werte.
-**Rahmen statt Schatten** — `box-shadow` kommt im System nicht vor. Linien 1 px.
-Seitenrand mobil 24 px (unter 720 px), Dokumentrand A4 18–20 mm.
+**Der Bruch ist die Signatur:** Serifen-Display laut über stiller Grotesk leise.
+Jede Ziffer monospaced und tabellarisch (`.n`), optisch 93 % der Textgröße — außer in
+der Display-Zeile, dort läuft sie mit.
 
 ## Klassenvokabular
 
-Genau diese Namen existieren. Keine weiteren erfinden. Für eigenes Layout `var(--s*)` und
-die Farbtokens.
+Genau diese Namen existieren — keine weiteren erfinden:
 
 | Klasse | Zweck |
 |---|---|
-| `.eyebrow` | Mono-Versalien in Messing über der Überschrift |
-| `.n` | **jede Ziffer** — monospaced, tabellarisch, 93 % |
-| `.muted` | Sekundärtext |
-| `.rule` | Messing-Haarlinie als Trenner |
-| `.card` | Fläche mit Linie, ohne Schatten |
+| `.bund` | Satzspiegel, zentriert |
+| `.display` `.display-gross` | Display-Zeile in Literata |
+| `.eyebrow` | Mono-Versalien über der Überschrift |
+| `.n` | jede Ziffer |
+| `.lead` `.klein` `.muted` | Lead, kleiner Text, Sekundärtext |
+| `.haar` `.doppel` | Goldlinie, Doppellinie |
+| `.marke` | Wortmarke mit Flankenlinien |
+| `.dataline` | Datenzeile unter Bild und Film |
+| `.card` + `.inner` | Fläche mit Linie, eingelassene Ebene |
 | `.shirt` | Hemd-Block — genau einer pro Ansicht |
-| `.dataline` / `.lb` | Datenzeile zwischen Messing- und Sandlinie |
-| `.grid` / `.row` | Layout, Abstände aus dem 8er-Raster |
-| `.btn` + `.btn-primary` / `.btn-ghost` / `.btn-quiet` | Höhe 44 px, genau ein Primary pro Abschnitt |
-| `.field` | Label über dem Feld, nie Placeholder als Label-Ersatz |
-| `.badge` + `.b-brand` / `.b-brass` / `.b-red` | rechteckig, 1 px Rahmen, **nie gefüllt** |
-| `.is-circle` / `.is-pill` | Ausnahme: echter Kreisbogen statt G2 |
+| `.btn` + `.btn-primary` / `.btn-ghost` / `.btn-quiet` | genau ein Primary je Abschnitt |
+| `.badge` `.field` | Badge mit Goldrahmen, Feld mit Label darüber |
+| `.gold` `.gold-kehr` | Spaltenteilung 1 : 1,618 |
+| `.drei` | symmetrisches Dreifeld mit Kennzahlen |
+| `.reihe` | gleichmäßiges Raster |
+| `.bild` `.bild-hoch` | Bildfeld im φ-Verhältnis |
+| `.stapel-eng` `.stapel` | Abstandsgruppen (siehe Nähe) |
+| `.abschnitt` | Abschnittspolster 110 px — **als Klasse, nicht auf `section`** |
+| `.medium-overlay` `.medium-karte` | Filmbild-Overlay, Visitenkarte |
 
-`h1`/`h2`/`h3`, `p`, `table`/`th`/`td` sind bereits gestylt — nicht überschreiben.
+`h2`, `h3`, `p`, `table` sind bereits gestylt — nicht überschreiben.
 
-```html
-<p class="eyebrow">Modul 01</p>
-<h1>Vier Stunden werden acht Minuten.</h1>
-<div class="rule"></div>
-<div class="grid" style="grid-template-columns:1fr 1fr;gap:var(--s2)">
-  <div class="card">
-    <h3>Angebotsautomatisierung</h3>
-    <p class="muted" style="font-size:14.5px">Laufzeit <span class="n">8</span> Minuten
-      statt <span class="n">4</span> Stunden.</p>
-  </div>
-  <div class="shirt"><h3>Der Beweis steht in Zahlen.</h3></div>
-</div>
-<button class="btn btn-primary">Angebot anfordern</button>
-```
-
-## Marke
-
-`design/brand/*.svg` sind freigestellt und ohne festen Farbwert — der Pfad übernimmt
-`currentColor`. Nie in der Datei umfärben, nie verzerren, nie mit Schatten versehen, nie in
-eine Form einsperren.
-
-Bildmarke = 0,85 × Wortbreite · Abstand 1,4 × Versalhöhe · **optische Achse 62 %, nie
-mathematisch mittig** · Schutzraum 1,5 × Versalhöhe · Mindestgröße 140 px mit Deskriptor,
-24 px Bildmarke allein.
-
-Deskriptor (STUDIOS, PRODUKTION …): Versalhöhe 6 %, **Breite 32 % fix**, Mitte 53 %,
-Grundlinie 12 % unter MOCH, 6–12 Zeichen. Die Breite bleibt gleich, nur die Laufweite
-ändert sich. Immer serifenlos — **nie in der Display-Schrift.**
-
-## Muster
-
-Ton in Ton, Kontrast max. 1,20 : 1 — gemessen, nicht geschätzt. Immer als SVG, nie als
-CSS-Verlauf (PDF-Viewer färben ihn falsch), nie als Pixelbild. Nie hinter Fließtext,
-höchstens eines pro Dokument, nie zweifarbig, nie auf Walnuss- oder Messingflächen.
+**Die Token-Namen hier sind exakt die aus `moch.css` und `tokens/tokens.css`.** Farbrollen:
+`--ground` `--surface` `--surface-2` `--line` `--line-strong` `--text` `--muted` `--label`
+`--accent` `--accent-ink` `--auf-accent` `--brass` `--shirt` `--scrim` `--kante`.
+Schriftfamilien heißen `--font-display` `--font-text` `--font-mono` — nicht `--text`,
+das ist die Textfarbe.
 
 ## Bewegung
 
-Hover 180 ms ease-out (nur Farbwechsel) · Panel 240 ms ease-out +8 px · Reveal 600 ms ease
-+14 px · Theme 350 ms ease · Seitenwechsel 200 ms linear.
-Keine Parallaxe, kein Bounce, keine Auto-Karussells, nichts fliegt herein. Muster bewegen
-sich nie. `prefers-reduced-motion` wird immer respektiert.
+Nach Apple: Federn statt fester Kurven, **kritisch gedämpft** (kein Nachfedern), Response
+0,3–0,4 s. Rückmeldung **beim Drücken**, nicht beim Loslassen. Animationen starten vom
+sichtbaren Wert und bleiben jederzeit unterbrechbar. Ein Wisch landet dort, wohin er
+zeigt (Momentum-Projektion `v/1000 · d/(1−d)`, d = 0,998). An Grenzen Gummiband statt
+hartem Stopp. Touch-Ziele mindestens 44 × 44 px.
 
-## Gedruckte Dokumente
-
-Immer **zwei Fassungen**: Versandfassung nach Regelwerk und Druckfassung **ohne
-Hintergrundfläche** (`…-DRUCK.pdf`). Inhalt und Seitenzahlen identisch. In der Druckfassung
-ist Weiß keine Farbe, sondern die Abwesenheit von Farbauftrag.
-Eine fette Didone trägt viel Farbe auf: in der Druckfassung **eine Display-Zeile pro
-Seite**, nur auf Titel- und Kapitelseiten.
+Keine Parallaxe, kein Bounce, keine Auto-Karussells. `prefers-reduced-motion`,
+`prefers-reduced-transparency` und `prefers-contrast` werden immer respektiert — das
+steht in `moch.css` bereits drin.
 
 ## Sprache
 
-Professionell, aber nahbar. Kurze Hauptsätze. Nutzen im ersten Satz, Beweis im zweiten.
-Keine Superlative, kein „innovativ", kein „revolutionär". Im B2B gesiezt, im persönlichen
-Kontext geduzt — nie gemischt innerhalb eines Dokuments. Button-Beschriftungen sind
+Kurze Hauptsätze. Nutzen im ersten Satz, Beweis im zweiten. Button-Beschriftungen sind
 Handlungen, nie Substantive: „Angebot anfordern", nicht „Anfrage".
 
-> Nicht: „Wir revolutionieren Ihre Geschäftsprozesse mit modernster KI-Technologie."
-> Sondern: „Ihre Angebotserstellung dauert heute vier Stunden. Nach der Automatisierung
-> acht Minuten."
+Nicht: „Wir revolutionieren Ihre Prozesse mit KI."
+Sondern: „Ihre Angebotserstellung dauert heute vier Stunden. Nach der Automatisierung
+acht Minuten."
 
-## Wenn du abweichen musst
+## Abweichen
 
-Radius, Abstände und Schriftgrößen sind Hygiene und dürfen begründet abweichen — die acht
-Signatur-Regeln nicht. **Jede Abweichung gehört in die Übersetzungstabelle**
-(`referenz/UEBERSETZUNGSTABELLE.md`): Wunsch, Risiko, Umsetzung.
+Jede Abweichung von diesen Regeln wird **begründet und notiert**, nicht stillschweigend
+vorgenommen. Wenn eine Regel im konkreten Fall nicht trägt, sag das — und schreib dazu,
+was stattdessen gilt und warum.
 
-1. **Wunsch** — wörtlich notieren, ohne ihn zu bewerten.
-2. **Risiko** — konkret benennen, was im professionellen Einsatz dagegen spricht.
-   „Gefällt mir nicht" ist kein Eintrag.
-3. **Umsetzung** — die Empfindung retten, die Form ersetzen.
-   **Bleibt diese Spalte leer, gehört die Idee nicht ins System.**
+## Die Prüffrage
 
-**Eine Abweichung, die nur im Code-Kommentar begründet ist, gilt als nicht begründet** —
-wer nur die Komponente liest, kennt die ursprüngliche Regel dann nicht mehr.
-
-## Weiterführend
-
-- `referenz/Moch-Design-System_Uebergabe.pdf` — die vollständige Fassung mit Begründungen,
-  Messwerten und allen 14 Kapiteln. Extrahieren mit
-  `pdftotext -enc UTF-8 <datei>.pdf -` (ohne `-layout`).
-- `referenz/karten/` — 16 eigenständige HTML-Seiten, die jede Regel zeigen. Im Browser
-  öffnen, wenn du unsicher bist, wie etwas aussehen soll.
-- `referenz/UEBERSETZUNGSTABELLE.md` — alle bisherigen Abweichungen mit Begründung.
+**Erkennt jemand die Arbeit ohne Logo als Moch?** Wenn nicht, fehlt die Signatur. Sie
+besteht aus: Goldlinie als Struktur · Datenzeile in Mono-Versalien · der Bruch zwischen
+lauter Serifenzahl und stiller Grotesk · durchgehend tabellarischer Zahlensatz ·
+Eingaben als Linie. Diese fünf kosten nichts und machen den Unterschied zwischen einem
+System und einer Standardoberfläche.

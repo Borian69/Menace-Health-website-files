@@ -5,7 +5,7 @@
    und BUILD in assets/js/fassung.js mit; der Selbsttest prüft, dass
    beide zusammenpassen. */
 
-const CACHE = 'bordbuch-v2';
+const CACHE = 'bordbuch-v6';
 
 const SHELL = [
   './',
@@ -29,11 +29,7 @@ const SHELL = [
   'assets/icons/icon-512.png',
   'assets/icons/apple-touch-icon.png',
   // Das Design-System liegt eine Ebene höher und gehört genauso dazu.
-  '../design/styles.css',
-  '../design/fonts.css',
-  '../design/tokens.css',
-  '../design/shape.css',
-  '../design/bundle.css',
+  '../design/moch.css',
 ];
 
 self.addEventListener('install', (event) => {
