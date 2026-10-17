@@ -8,8 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <!-- Das Moch-Design-System v4.0: Tokens, Komponenten, Bewegung. -->
-  <link rel="stylesheet" href="../design/4.0/moch.css">
-  <link rel="stylesheet" href="app.css">
+  <link rel="stylesheet" href="../design/4.0/moch.css?v=4.0.1">
+  <link rel="stylesheet" href="app.css?v=4.0.1">
   <script>
     // Hell/Dunkel vor dem ersten Zeichnen setzen, sonst blitzt die Seite kurz falsch auf.
     try {
@@ -18,10 +18,12 @@
       document.documentElement.dataset.scheme = dunkel ? 'dunkel' : 'hell';
     } catch (e) {}
   </script>
+  <!-- ?v= bei jeder Änderung hochzählen: GitHub Pages lässt Dateien 10 Minuten im Cache,
+       ohne neue Nummer mischt das Handy sonst alte und neue Dateien. -->
   <!-- defer hält die Reihenfolge: erst Bewegung, dann Markdown, dann die App. -->
-  <script src="../design/4.0/moch-motion.js" defer></script>
-  <script src="markdown.js" defer></script>
-  <script src="app.js" defer></script>
+  <script src="../design/4.0/moch-motion.js?v=4.0.1" defer></script>
+  <script src="markdown.js?v=4.0.1" defer></script>
+  <script src="app.js?v=4.0.1" defer></script>
 </head>
 <body class="app">
   <aside id="sidebar" aria-label="Verlauf">
