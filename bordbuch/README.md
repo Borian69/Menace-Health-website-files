@@ -182,6 +182,11 @@ nicht, und genau die Fehler will man später sehen.
 **PDF-Testseite** prüft Schrift, Umlaute, Eurozeichen, Ziffernflucht und Klammern,
 ohne dass ein einziger Eintrag nötig ist.
 
+**Neue Fassung holen** leert den Offline-Speicher und lädt die App neu. Einträge und
+Belege bleiben: Die liegen in `localStorage` und IndexedDB, und die rührt der Knopf
+nicht an. Nötig ist er im Normalfall nicht — er ist der Notausgang, falls doch einmal
+eine Fassung hängenbleibt.
+
 ---
 
 ## Daten
@@ -278,3 +283,17 @@ bordbuch/
 Wird eine Datei aus der `SHELL`-Liste in `sw.js` geändert, müssen **beide** Zähler
 hoch: `CACHE` in `sw.js` und `BUILD` in `assets/js/fassung.js`. Sonst behält ein
 installiertes Telefon die alte Fassung. Der Selbsttest prüft genau das.
+
+**Wie ein Update ankommt.** Code — HTML, CSS, JS — holt der Service Worker **zuerst
+aus dem Netz**, alles andere zuerst aus dem Cache. Die Shell entscheidet, welche
+Module geladen werden; sie muss aktuell sein, sobald eine Verbindung da ist. Offline
+springt nach 2,5 Sekunden der Cache ein, die Tiefgarage bleibt also bedient.
+
+Dazu fragt die Seite beim Start selbst nach einer neuen Fassung (`registration
+.update()`) und lädt einmal neu, sobald ein neuer Worker übernimmt — sonst mischten
+sich alte Shell und neue Module.
+
+Bis `v7` lief alles cache-zuerst und ohne diese Nachfrage. Gemessen: Eine neue
+Fassung brauchte **zwei** vollständige Starts, bis sie zu sehen war. Wer die App nur
+kurz öffnet, erreichte den zweiten nie und blieb auf einem alten Stand. Seit `v7`
+genügt **ein** Neuladen (im Versuch 90 ms), und offline startet die App unverändert.
