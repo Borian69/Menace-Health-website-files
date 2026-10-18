@@ -4,7 +4,9 @@
    Hier steht Layout. Farben, Schriften, Abstände, Radius und Bewegung
    kommen aus den Tokens in design/4.0/moch.css. Fassung: Walnuss, wie
    das Bordbuch (eine Hauptfarbe je Projekt). Gold entfällt bei Walnuss
-   (30°) — --brass trägt die Hauptfarbe.
+   (30°); --brass ist dort seit dem Stand vom 18.10. eine neutrale
+   Linie (--line-strong). Die Hauptfarbe bleibt Fläche, Schrift und
+   die Fokuslinie der Felder.
 
    Die Signatur:
    · Der Chat ist das Objekt und damit der Titel: h1 in Instrument
