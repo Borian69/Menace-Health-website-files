@@ -62,10 +62,14 @@ Eine Ansicht, ein Ziel: in zehn Sekunden fertig sein.
 - **Kosten, Werkstatt, Notiz** liegen zugeklappt darunter. Wer sie nicht braucht,
   sieht sie nicht.
 
-Oben steht der aktuelle Kilometerstand als Hemd-Block — die eine laute Aussage dieser
-Ansicht. Im Dunkeln ist das **keine Fläche**: Eine Fläche hinter einer großen Zahl
-leistet nichts, die Zahl ist schon groß. Die Betonung trägt die Zahl selbst, in
-Literata, über einer Linie in der Hauptfarbe.
+Über dem Formular steht das Fahrzeug als Titel — **das Objekt ist der Titel, nicht
+der Name der App**. Darunter der Kilometerstand als **Zählwerk**: Beim Start rollt
+jede Ziffer einzeln hoch, 45 ms versetzt. Es folgt die Datenzeile (Einträge, erfasste
+Kilometer, letzter Eintrag), deren Linie von links aufzieht, und die **Bemaßung**:
+gefahrene Kilometer des laufenden Jahres gegen die Hochrechnung aufs Jahresende.
+
+**Die Hauptaktion erscheint erst, wenn es etwas Gültiges zu speichern gibt** — sobald
+Datum und Kilometerstand stimmen, federt „Eintrag speichern" herein.
 
 ### Verlauf
 
@@ -205,7 +209,8 @@ Einstellungen zeigen vorher an, wie viel die Ablage belegt.
 
 ## Gestaltung
 
-Die App läuft auf dem **Moch-Design-System v3.2** (`../design/moch.css`) im Schema
+Die App läuft auf dem **Moch-Design-System v4.0** (`../design/moch.css` und
+`../design/moch-motion.js`) im Schema
 `dunkel` mit der Hauptfarbe `walnuss` — beides steht als Attribut am `<html>`-Element:
 
 ```html
@@ -216,11 +221,14 @@ Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` o
 `smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau eine je Projekt.
 
 **Der Grund ist komplementär zur Hauptfarbe.** Walnuss steht bei Farbton 55°, der
-Grund bei 235° — ein sehr dunkles Blau (`#040F16`). Warme Schrift auf kühlem Grund;
-man sieht es nicht, man spürt es. **Gold entfällt hier**: Zwischen Walnuss und Gold
+Grund bei 235° — ein dunkles Blau (`#0B1B25`). Warme Schrift auf kühlem Grund; man
+sieht es nicht, man spürt es. **Gold entfällt hier**: Zwischen Walnuss und Gold
 liegen 30° Farbtonabstand, unter den 35°, ab denen beide als verschiedene Farben
-lesbar sind. `--brass` trägt deshalb die Hauptfarbe, und Linien, aktiver Bereich und
-Fokus sehen aus wie die Marke, nicht wie ein zweiter Akzent.
+lesbar sind. `--brass` ist deshalb `--line-strong` — eine stille Linie.
+
+**Vier Schriftrollen.** Überschriften in **Instrument Serif** (nie fett, die Schrift
+hat nur einen Schnitt), die große Kennzahl in Archivo 600, Fließtext in Archivo,
+jede Ziffer und jedes Label in IBM Plex Mono.
 
 **Form folgt Funktion.** Es gibt genau einen Radius (`--r`, 10 px), und ihn bekommt
 nur, was man drückt. Flächen, Zahlen und Textblöcke haben gerade Kanten. Gegliedert
@@ -229,21 +237,19 @@ Deshalb ist die Liste eine Folge von Linien statt von Kacheln, und eine Kennzahl
 einfach da, mit ihrem Label 2 px darüber.
 
 Abstände sind `--f1` bis `--f8` (6 · 10 · 16 · 26 · 42 · 68 · 110 · 177),
-Schriftgrößen `--t-2` bis `--t6`. Die Zahl im Hemd-Block läuft in Literata, alles
-andere in Archivo, jede Ziffer in IBM Plex Mono.
+Schriftgrößen stehen als Rollen bereit (`--fs-h1`, `--fs-zaehlwerk`, `--fs-body`,
+`--fs-label`), nicht als Zahlen.
 
-**Eingaben sind Linien, keine Kästen** — wie ein Formular auf Papier. Im Fokus trägt
-die Linie die Hauptfarbe. Diese vier Zeilen stehen vorerst in `assets/app.css`, weil
-`moch.css` die Felder noch mit Rahmen zeichnet; zieht die Datei nach, fallen sie weg.
+**Eingaben sind Linien, keine Kästen** — wie ein Formular auf Papier. Im Fokus zieht
+eine 2-px-Linie in der Hauptfarbe von links auf, und die Meldung darunter sagt live,
+was fehlt. Seit der 4.0 steht das im System; die App hat ihre eigene Fassung gestrichen.
 
-`assets/app.css` enthält genau **einen** Hexblock: die vier Statustöne für den
-Dunkelmodus. Das Regelwerk fordert zwei Fassungen je Schema, `moch.css` liefert seit
-dem letzten Umbau nur die helle — die trägt auf diesem Grund 3,4 : 1 statt der
-4,5 : 1, die Fließtext braucht. Gemessen, begründet, und wieder draußen, sobald die
-Datei nachzieht.
+`assets/app.css` enthält **keinen einzigen Hexwert** mehr. Auch die vier Statustöne
+nicht: Das System liefert sie wieder in zwei Fassungen je Schema (gemessen
+5,76–7,80 : 1 auf diesem Grund).
 
 Das PDF steht im hellen Schema: Was gelesen, unterschrieben oder gedruckt wird, ist
-hell. Dort ist die Schrift Helvetica — Literata ließe sich nur als eingebettete
+hell. Dort ist die Schrift Helvetica — Instrument Serif ließe sich nur als eingebettete
 Schriftdatei verwenden, und die wiegt mehr als die ganze App.
 
 Jede Abweichung vom Regelwerk ist in `../referenz/UEBERSETZUNGSTABELLE.md` mit Wunsch,

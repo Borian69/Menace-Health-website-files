@@ -98,14 +98,18 @@ const TESTS = [
     name: 'Formular schaltet um',
     bereich: 'eintrag',
     async lauf() {
-      const chips = [...document.querySelectorAll('#arten-chips .chip')];
+      /* Seit der 4.0 stehen die häufigen Arten im ersten Behälter, der
+         Rest in .mehr-wrap — zusammen müssen es alle sein. */
+      const offen = [...document.querySelectorAll('#arten-chips .chip')];
+      const versteckt = [...document.querySelectorAll('#arten-chips-2 .chip')];
+      const chips = [...offen, ...versteckt];
       pruefe(chips.length === ARTEN.length,
         `Art-Schaltflächen fehlen: ${chips.length} von ${ARTEN.length}.`);
 
-      const sichtbar = chips.filter((chip) => !chip.hidden).length;
+      const sichtbar = offen.length;
       const mehrKnopf = document.querySelector('#btn-mehr-arten');
-      pruefe(sichtbar === ARTEN_SICHTBAR || sichtbar === chips.length,
-        `Sichtbar sind ${sichtbar} Arten — erwartet ${ARTEN_SICHTBAR} oder alle ${chips.length}.`);
+      pruefe(sichtbar === ARTEN_SICHTBAR,
+        `Offen stehen ${sichtbar} Arten — erwartet ${ARTEN_SICHTBAR}.`);
       pruefe(!mehrKnopf.hidden, 'Der Knopf für die restlichen Arten fehlt.');
 
       const haeufigste = artenNachHaeufigkeit(ladeEintraege().map(normalisiere).filter(Boolean));
@@ -138,7 +142,7 @@ const TESTS = [
         document.querySelector('#f-text').value = text;
       }
 
-      return `${sichtbar} von ${chips.length} Arten sichtbar, Tankfelder schalten`;
+      return `${sichtbar} von ${chips.length} Arten offen, Tankfelder schalten`;
     },
   },
   {

@@ -17,7 +17,7 @@
    **Alles andere zuerst aus dem Cache** (Icons, Schriften). Die ändern
    sich praktisch nie und sollen den Start nicht aufhalten. */
 
-const CACHE = 'bordbuch-v7';
+const CACHE = 'bordbuch-v8';
 
 /* Wie lange die App auf das Netz wartet, bevor der Cache einspringt.
    Länger wartet niemand auf ein Serviceheft. */
@@ -46,6 +46,7 @@ const SHELL = [
   'assets/icons/apple-touch-icon.png',
   // Das Design-System liegt eine Ebene höher und gehört genauso dazu.
   '../design/moch.css',
+  '../design/moch-motion.js',
 ];
 
 self.addEventListener('install', (event) => {
