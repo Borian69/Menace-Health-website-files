@@ -41,6 +41,18 @@ let offenerBeleg = null;    // im Betrachter
    Ziffer der App — Signatur-Regel 1. */
 const zahl = (text) => el('span', { class: 'n', text: String(text) });
 
+/* ── Bewegung ────────────────────────────────────────────────
+   moch-motion.js stellt window.Moch bereit: Zählwerk, Bemaßung,
+   Toast, bedingte Aktion, wischbare Seiten. Die App läuft auch ohne
+   — dann steht jede Zahl sofort da, statt zu zählen. */
+const M = window.Moch || null;
+let zaehlwerk = null;     // rollt den Kilometerstand hoch
+let jahresMass = null;    // Bemaßung über das laufende Jahr
+let aktion = null;        // Hauptaktion, erscheint bei gültiger Eingabe
+let toast = null;         // Meldung nach einer Handlung
+let seiten = null;        // Tab-Leiste und Wischen
+let kopfUpdate = [];      // Titel in die Leiste schieben
+
 /* ── Start ───────────────────────────────────────────────── */
 
 function start() {
@@ -62,16 +74,45 @@ function start() {
   verdrahteBelege();
   verdrahteEinstellungen();
 
+  starteBewegung();
   zeichneAlles();
   registriereWorker();
 
   // Bilder, auf die kein Eintrag mehr zeigt, belegen sonst für immer Platz.
   belege.raeumeAuf(eintraege);
+
+  /* Auftritt: erst der Titel, dann die Gruppen versetzt, dann rollt die
+     Zahl und die Datenzeile zieht auf. Nie alles zugleich. */
+  if (M) {
+    const los = () => {
+      M.zeigeTitel($('#s-ein .app-kopf'));
+      M.staffel($$('#s-ein .gruppe'), 70, 120);
+      setTimeout(() => {
+        renderStand();
+        M.zieheLinie($$('.dataline'));
+      }, 220);
+    };
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(los);
+    else los();
+  }
+}
+
+/* Baut die Bausteine aus moch-motion.js auf. Fehlt die Datei, bleibt
+   jede Referenz null und die App zeichnet ohne Bewegung. */
+function starteBewegung() {
+  if (!M) return;
+  zaehlwerk = M.Zaehlwerk($('#zw'), 0);
+  jahresMass = M.Mass($('#mass'), 0, 1);
+  aktion = M.Bedingt($('#aktion'));
+  toast = M.Toast($('#toast'));
+  M.chipDruck(document);
+  for (const kopf of $$('.app-kopf h1')) M.titelWoerter(kopf);
 }
 
 function zeichneAlles() {
   const fertig = messe('ui', 'Alles neu aufgebaut');
   baueArtChips($('#arten-chips'), () => neuArt, (id) => { neuArt = id; });
+  renderKopf();
   renderStand();
   renderLetzte();
   renderListe();
@@ -89,11 +130,47 @@ function sichere() {
 
 /* ── Bereiche und Ansichten ──────────────────────────────── */
 
+const TABS = ['neu', 'verlauf'];
+
 function verdrahteTabs() {
-  for (const knopf of $$('.tabbar button')) {
-    knopf.addEventListener('click', () => zeigeTab(knopf.dataset.tab));
+  const knoepfe = $$('.tabs button');
+
+  /* Die Seiten liegen nebeneinander und werden gewischt — das
+     übernimmt moch-motion.js samt gleitender Linie unter dem Tab. */
+  if (M) {
+    seiten = M.Seiten({
+      rahmen: $('#rahmen'),
+      track: $('#seiten'),
+      tabs: knoepfe,
+      ind: $('#ind'),
+      onWechsel: (index, war) => {
+        const name = TABS[index];
+        document.body.dataset.tab = name;
+        if (index !== war) M.zeigeTitel($$('.app-kopf')[index]);
+        if (index === 1 && war !== 1) M.staffel($$('#liste-halter .eintrag'), 35, 40);
+        // Die Hauptaktion gehört zum Formular, nicht zum Verlauf.
+        $('#aktion').style.visibility = index === 0 ? '' : 'hidden';
+        // Der Mini-Titel wechselt mit der Seite; M.kopf schiebt nur.
+        $('#leiste-titel').textContent = index === 0 ? fahrzeugName() : 'Verlauf';
+        if (kopfUpdate[index]) kopfUpdate[index]();
+        if (name === 'verlauf') {
+          renderDiagramme();
+          renderVerbrauchsDiagramme();
+        }
+        log('ui', 'Bereich gewechselt', { bereich: name });
+      },
+    });
+    kopfUpdate = [
+      M.kopf($('#s-ein'), $('#leiste'), null),
+      M.kopf($('#s-ver'), $('#leiste'), null),
+    ];
+  } else {
+    for (const knopf of knoepfe) {
+      knopf.addEventListener('click', () => zeigeTab(knopf.dataset.tab));
+    }
   }
-  for (const knopf of $$('.segment button')) {
+
+  for (const knopf of $$('#ansicht-wahl button')) {
     knopf.addEventListener('click', () => zeigeAnsicht(knopf.dataset.ansicht));
   }
   $('#btn-einstellungen').addEventListener('click', oeffneEinstellungen);
@@ -108,12 +185,18 @@ function verdrahteTabs() {
 }
 
 function zeigeTab(name) {
+  const index = Math.max(0, TABS.indexOf(name));
+  if (seiten) { seiten.gehe(index); return; }
+
+  // Ohne moch-motion.js: schlichtes Umschalten, damit die App läuft.
   document.body.dataset.tab = name;
-  for (const knopf of $$('.tabbar button')) {
-    knopf.setAttribute('aria-current', String(knopf.dataset.tab === name));
+  for (const [i, knopf] of $$('.tabs button').entries()) {
+    knopf.setAttribute('aria-selected', String(i === index));
   }
+  $('#s-ein').hidden = index !== 0;
+  $('#s-ver').hidden = index !== 1;
+  $('#aktion').style.visibility = index === 0 ? '' : 'hidden';
   log('ui', 'Bereich gewechselt', { bereich: name });
-  // Die Diagramme brauchen eine sichtbare Breite — vorher ist sie null.
   if (name === 'verlauf') {
     renderDiagramme();
     renderVerbrauchsDiagramme();
@@ -126,8 +209,11 @@ function zeigeAnsicht(name) {
   $('#ansicht-kalender').hidden = name !== 'kalender';
   $('#ansicht-verlauf').hidden = name !== 'verlauf';
   $('#ansicht-verbrauch').hidden = name !== 'verbrauch';
-  for (const knopf of $$('.segment button')) {
-    knopf.setAttribute('aria-selected', String(knopf.dataset.ansicht === name));
+  for (const knopf of $$('#ansicht-wahl button')) {
+    const an = knopf.dataset.ansicht === name;
+    knopf.setAttribute('aria-selected', String(an));
+    // Der Chip des Systems liest aria-pressed, die Rolle tab aria-selected.
+    knopf.setAttribute('aria-pressed', String(an));
   }
   log('ui', 'Ansicht gewechselt', { ansicht: name });
   if (name === 'verlauf') renderDiagramme();
@@ -140,51 +226,64 @@ function zeigeAnsicht(name) {
    gezählt aus seinen eigenen Einträgen. Gezählt und sortiert wird in
    eintraege.js, damit der Selbsttest dieselbe Reihenfolge prüfen kann wie
    die Oberfläche sie zeichnet. */
+/* Zwei Behälter, wie das System sie vorsieht: die häufigen Arten
+   stehen offen, der Rest liegt in .mehr-wrap und klappt auf. Die
+   Gruppe trägt .offen, der Knopf nur die Beschriftung. */
 function baueArtChips(halter, holeArt, setzeArt) {
   const imFormular = halter.id === 'arten-chips';
+  const gruppe = $(imFormular ? '#arbeit' : '#b-arbeit');
+  const zweiter = $(imFormular ? '#arten-chips-2' : '#b-arten-2');
   const mehrKnopf = $(imFormular ? '#btn-mehr-arten' : '#btn-b-mehr-arten');
   const sortiert = artenNachHaeufigkeit(eintraege);
   const aktuell = holeArt();
 
-  // Eine Art, die gerade gewählt ist, bleibt sichtbar — sonst verschwände
-  // die eigene Auswahl hinter einem Knopf.
-  const gewaehltVersteckt = sortiert.findIndex((art) => art.id === aktuell) >= ARTEN_SICHTBAR;
-  let offen = gewaehltVersteckt;
+  const baueChip = (art) => el('button', {
+    class: 'chip',
+    type: 'button',
+    'data-art': art.id,
+    'aria-pressed': String(art.id === aktuell),
+    onclick: () => {
+      setzeArt(art.id);
+      for (const anderer of gruppe.querySelectorAll('.chip')) {
+        anderer.setAttribute('aria-pressed', String(anderer.dataset.art === art.id));
+      }
+      // Beschreibung nur füllen, solange nichts Eigenes drinsteht.
+      const feld = imFormular ? $('#f-text') : $('#b-text');
+      const vorbelegt = ARTEN.some((eintrag) => eintrag.standard === feld.value);
+      if (!feld.value || vorbelegt) feld.value = art.standard;
+      zeigeTankfelder(imFormular);
+      if (imFormular) pruefeFormular();
+    },
+  }, icon(art.pfad, { size: 18 }), art.label);
 
   halter.textContent = '';
-  for (const art of sortiert) {
-    const knopf = el('button', {
-      class: 'chip',
-      type: 'button',
-      'data-art': art.id,
-      'aria-pressed': String(art.id === aktuell),
-      onclick: () => {
-        setzeArt(art.id);
-        for (const anderer of halter.querySelectorAll('.chip')) {
-          anderer.setAttribute('aria-pressed', String(anderer.dataset.art === art.id));
-        }
-        // Beschreibung nur füllen, solange nichts Eigenes drinsteht.
-        const feld = imFormular ? $('#f-text') : $('#b-text');
-        const vorbelegt = ARTEN.some((eintrag) => eintrag.standard === feld.value);
-        if (!feld.value || vorbelegt) feld.value = art.standard;
-        zeigeTankfelder(imFormular);
-      },
-    }, icon(art.pfad, { size: 16 }), art.label);
-    halter.append(knopf);
-  }
+  zweiter.textContent = '';
+  sortiert.forEach((art, index) => {
+    const chip = baueChip(art);
+    if (index < ARTEN_SICHTBAR) halter.append(chip);
+    else { chip.style.setProperty('--i', String(index - ARTEN_SICHTBAR)); zweiter.append(chip); }
+  });
 
-  const zeige = () => {
-    const chips = [...halter.querySelectorAll('.chip')];
-    chips.forEach((chip, i) => { chip.hidden = !offen && i >= ARTEN_SICHTBAR; });
-    mehrKnopf.hidden = chips.length <= ARTEN_SICHTBAR;
-    mehrKnopf.textContent = offen
-      ? 'Weniger anzeigen'
-      : `Weitere ${chips.length - ARTEN_SICHTBAR} anzeigen`;
-    log('ui', 'Arten-Auswahl aufgebaut', { sichtbar: offen ? chips.length : ARTEN_SICHTBAR, offen });
+  const versteckt = sortiert.length - ARTEN_SICHTBAR;
+  mehrKnopf.hidden = versteckt <= 0;
+  const beschriftung = (offen) => {
+    const span = mehrKnopf.querySelector('span');
+    if (span) span.textContent = offen ? 'Weniger anzeigen' : `Weitere ${versteckt} anzeigen`;
   };
 
-  mehrKnopf.onclick = () => { offen = !offen; zeige(); };
-  zeige();
+  // Eine gewählte Art, die hinten liegt, bleibt sichtbar.
+  const gewaehltVersteckt = sortiert.findIndex((art) => art.id === aktuell) >= ARTEN_SICHTBAR;
+  gruppe.classList.toggle('offen', gewaehltVersteckt);
+  mehrKnopf.setAttribute('aria-expanded', String(gewaehltVersteckt));
+  beschriftung(gewaehltVersteckt);
+
+  mehrKnopf.onclick = () => {
+    const offen = gruppe.classList.toggle('offen');
+    mehrKnopf.setAttribute('aria-expanded', String(offen));
+    beschriftung(offen);
+  };
+
+  log('ui', 'Arten-Auswahl aufgebaut', { sichtbar: ARTEN_SICHTBAR, versteckt });
 }
 
 /* Beim Tanken erscheinen Liter und Betrag oben im Formular. Der Betrag
@@ -214,23 +313,47 @@ function verdrahteFormular() {
   $('#f-datum').addEventListener('change', zeigeKmHinweis);
 }
 
+/* Die Hauptaktion erscheint erst, wenn es etwas Gültiges zu speichern
+   gibt: ein Datum und ein Kilometerstand. Ohne das stünde ein Knopf
+   da, der nichts tut. */
+function pruefeFormular() {
+  const gueltig = Boolean(istISO($('#f-datum').value) && toKm($('#f-km').value) !== null);
+  if (aktion) aktion.zeige(gueltig);
+  else $('#aktion').classList.toggle('da', gueltig);
+  return gueltig;
+}
+
+/* Meldung live unter dem Feld, mit Wort — nie Farbe allein. Ein Stand
+   unter dem letzten wird angemeckert, aber nicht verboten: Tachos
+   werden getauscht, und die App weiß nicht alles besser. */
 function zeigeKmHinweis() {
   const hinweis = $('#km-hinweis');
+  const feld = $('#feld-km');
+  const meldung = $('#feld-km-msg');
   const letzterStand = eintraege.length ? Math.max(...eintraege.map((eintrag) => eintrag.km)) : null;
   const eingabe = toKm($('#f-km').value);
 
+  let text;
+  let zustand = '';
   if (letzterStand === null) {
-    hinweis.textContent = 'Der erste Eintrag setzt den Ausgangspunkt.';
-    return;
+    text = 'Der erste Eintrag setzt den Ausgangspunkt.';
+  } else if (eingabe === null) {
+    text = `Zuletzt ${km(letzterStand)} km.`;
+  } else if (eingabe >= letzterStand) {
+    text = `+ ${km(eingabe - letzterStand)} km seit dem letzten Eintrag.`;
+    zustand = 'is-valid';
+  } else {
+    text = `Achtung: ${km(letzterStand - eingabe)} km unter dem letzten Stand (${km(letzterStand)} km).`;
+    zustand = 'has-error';
   }
-  if (eingabe === null) {
-    hinweis.textContent = `Zuletzt ${km(letzterStand)} km.`;
-    return;
+
+  hinweis.textContent = text;
+  for (const knoten of [feld, meldung]) {
+    knoten.classList.toggle('has-error', zustand === 'has-error');
+    knoten.classList.toggle('is-valid', zustand === 'is-valid');
   }
-  const differenz = eingabe - letzterStand;
-  hinweis.textContent = differenz >= 0
-    ? `${km(differenz)} km seit dem letzten Eintrag.`
-    : `Achtung: ${km(Math.abs(differenz))} km unter dem letzten Stand (${km(letzterStand)} km).`;
+  $('#f-km').setAttribute('aria-invalid', String(zustand === 'has-error'));
+  pruefeFormular();
 }
 
 function speichereNeuen() {
@@ -281,38 +404,90 @@ function speichereNeuen() {
   zeigeKmHinweis();
 
   klopfen();
-  melde(`Eingetragen bei ${km(eintrag.km)} km.`);
+  const art = artVon(eintrag.art);
+  melde(`${art.label} bei ${km(eintrag.km)} km.`, 'Gespeichert.');
   zeichneAlles();
+  // Nach dem Speichern steht nichts Gültiges mehr im Formular.
+  pruefeFormular();
+  if (M) $('#s-ein').scrollTo({ top: 0, behavior: M.reduziert.matches ? 'auto' : 'smooth' });
   return undefined;
 }
 
 function zeigeFormFehler(text) {
   const zeile = $('#form-fehler');
-  zeile.textContent = text;
+  zeile.querySelector('span').textContent = text;
   zeile.hidden = false;
   log('eintrag', 'Eingabe abgelehnt', { grund: text });
   return undefined;
 }
 
+/** Das Objekt ist der Titel der App — nicht ihr Name. */
+function fahrzeugName() {
+  return (einstellungen.fahrzeug || '').trim() || 'Bordbuch';
+}
+
+function renderKopf() {
+  const kennung = [einstellungen.kennzeichen, einstellungen.baujahr]
+    .map((wert) => (wert || '').trim())
+    .filter(Boolean);
+  $('#fahrzeug-titel').textContent = fahrzeugName();
+  $('#fahrzeug-kz').textContent = kennung.length
+    ? kennung.join(' · ')
+    : 'Fahrzeug in den Einstellungen eintragen';
+  // Der Titel ist neu geschrieben — die Wörter müssen neu zerlegt werden.
+  if (M) M.titelWoerter($('#fahrzeug-titel'));
+
+  const werte = statistik(eintraege);
+  $('#verlauf-kz').textContent = werte.erster
+    ? `${plural(werte.anzahl, 'Eintrag', 'Einträge')} · seit ${formatDatum(werte.erster.datum, { kurz: true })}`
+    : 'Noch kein Eintrag';
+}
+
 function renderStand() {
   const werte = statistik(eintraege);
-  const odo = $('#odo');
-  const meta = $('#odo-meta');
+  const daten = $('#stand-daten');
 
-  odo.textContent = '';
+  if (zaehlwerk) zaehlwerk.zaehle(werte.stand || 0);
+  else $('#zw').textContent = werte.stand === null ? '—' : km(werte.stand);
+
+  daten.textContent = '';
   if (werte.stand === null) {
-    odo.textContent = '—';
-    meta.textContent = 'Noch kein Eintrag';
+    daten.append(el('span', { text: 'Noch kein Eintrag' }));
   } else {
-    odo.append(zahl(km(werte.stand)), ' km');
-    const teile = [`${plural(werte.anzahl, 'Eintrag', 'Einträge')}`];
-    if (werte.gefahren > 0) teile.push(`${km(werte.gefahren)} km aufgezeichnet`);
-    if (werte.letzter) teile.push(`zuletzt ${formatDatum(werte.letzter.datum, { kurz: true })}`);
-    meta.textContent = teile.join(' · ');
+    daten.append(el('span', {}, 'Einträge ', el('b', { class: 'n', text: String(werte.anzahl) })));
+    if (werte.gefahren > 0) {
+      daten.append(el('span', {}, 'Erfasst ', el('b', { class: 'n', text: km(werte.gefahren) }), ' km'));
+    }
+    if (werte.letzter) {
+      daten.append(el('span', {}, 'Zuletzt ', el('b', { class: 'n', text: formatDatum(werte.letzter.datum, { kurz: true }) })));
+    }
   }
 
+  renderBemassung(werte);
   $('#leer-hinweis').hidden = eintraege.length > 0;
   zeigeKmHinweis();
+}
+
+/* Bemaßung über das laufende Jahr: vom Stand am 1. Januar bis zur
+   Hochrechnung aufs Jahresende, „jetzt" dazwischen. Beide Zahlen sind
+   gemessen — die Hochrechnung rechnet die bisherige Fahrleistung des
+   Jahres auf 365 Tage hoch, mehr behauptet sie nicht. */
+function renderBemassung(werte) {
+  const block = $('#mass');
+  const dieses = monateFuerJahr(eintraege, new Date().getFullYear());
+  const gefahren = dieses.gesamt;
+  const tag = Math.max(1, Math.round((Date.now() - new Date(new Date().getFullYear(), 0, 1)) / 86400000));
+  const hoch = Math.round((gefahren / tag) * 365);
+
+  block.hidden = !(werte.stand !== null && gefahren > 0 && hoch > gefahren);
+  if (block.hidden) return;
+
+  $('#mass-jetzt').textContent = km(gefahren);
+  $('#mass-bis').textContent = `${km(hoch)} km`;
+  if (jahresMass) {
+    jahresMass = M.Mass(block, 0, hoch);
+    jahresMass.zeige(gefahren);
+  }
 }
 
 function renderLetzte() {
@@ -322,7 +497,7 @@ function renderLetzte() {
 
   const neueste = sortiereNeueste(eintraege).slice(0, 3);
   abschnitt.hidden = neueste.length === 0;
-  for (const eintrag of neueste) liste.append(el('li', {}, eintragZeile(eintrag)));
+  for (const eintrag of neueste) liste.append(eintragZeile(eintrag));
 }
 
 /* ── Eine Zeile in jeder Liste ───────────────────────────── */
@@ -339,30 +514,31 @@ function eintragZeile(eintrag, { strecke = null, verbrauch = null } = {}) {
   if (einstellungen.kostenAnzeigen && eintrag.kosten) meta.push(euro(eintrag.kosten));
   if (eintrag.notiz) meta.push(eintrag.notiz);
 
+  /* Kurz halten: Die Spalte ist schmal, und „seit dem Eintrag davor"
+     erklärt sich aus der Liste selbst. */
+  if (strecke !== null) {
+    meta.push(strecke >= 0 ? `+${km(strecke)} km` : `${km(strecke)} km — Stand fällt`);
+  }
+  if (verbrauch !== null) meta.push(`${verbrauchZahl(verbrauch)} L/100 km`);
+
+  /* Das Raster des Systems: Datum · Was · Wert. Ein Button, weil die
+     Zeile die Tafel zum Bearbeiten öffnet. */
   return el('button', {
     class: 'eintrag',
     type: 'button',
     onclick: () => oeffneTafel(eintrag.id),
   },
-  el('span', { class: 'eintrag-symbol' }, icon(art.pfad, { size: 20 })),
-  el('span', { class: 'eintrag-koerper' },
-    el('span', { class: 'eintrag-kopf' },
-      el('span', { class: 'eintrag-datum' }, zahl(formatDatum(eintrag.datum, { kurz: true }))),
-      el('span', { class: 'eintrag-km' }, zahl(km(eintrag.km)), ' km'),
-    ),
-    el('span', { class: 'eintrag-text', text: eintrag.text || art.standard || art.label }),
-    meta.length ? el('span', { class: 'eintrag-meta', text: meta.join(' · ') }) : null,
-    strecke !== null
-      ? el('span', { class: 'eintrag-strecke', text: strecke >= 0 ? `+${km(strecke)} km seit dem Eintrag davor` : `${km(strecke)} km — Stand niedriger als davor` })
-      : null,
-    verbrauch !== null
-      ? el('span', { class: 'eintrag-strecke', text: `${verbrauchZahl(verbrauch)} L/100 km seit der letzten vollen Tankfüllung` })
-      : null,
+  el('span', { class: 'tag n', text: `${eintrag.datum.slice(8, 10)}.${eintrag.datum.slice(5, 7)}.` }),
+  el('span', { class: 'was' },
+    icon(art.pfad, { size: 15 }),
+    el('span', { text: eintrag.text || art.standard || art.label }),
+    meta.length ? el('small', { text: meta.join(' · ') }) : null,
     eintrag.belege.length
       ? el('span', { class: 'eintrag-belege', 'aria-label': `${eintrag.belege.length} Beleg(e)` },
         eintrag.belege.map(() => el('i')))
       : null,
-  ));
+  ),
+  el('span', { class: 'wert n', text: `${km(eintrag.km)} km` }));
 }
 
 /* ── Liste ───────────────────────────────────────────────── */
@@ -411,7 +587,8 @@ function renderFilterChips() {
   });
 
   mehrKnopf.hidden = vorhanden.length <= ARTEN_SICHTBAR;
-  mehrKnopf.textContent = offen
+  mehrKnopf.setAttribute('aria-expanded', String(offen));
+  mehrKnopf.querySelector('span').textContent = offen
     ? 'Weniger anzeigen'
     : `Weitere ${vorhanden.length - ARTEN_SICHTBAR} anzeigen`;
 }
@@ -444,32 +621,35 @@ function renderListe() {
 
   const ausreisser = strecken(eintraege).filter((abschnitt) => !abschnitt.gueltig);
   if (ausreisser.length && !suche && !filterArt) {
-    halter.append(el('div', { class: 'warnkarte' },
-      icon('<path d="M12 9v4M12 17h.01M10.3 3.9 2.4 17.5A2 2 0 0 0 4.1 20.5h15.8a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>', { size: 18 }),
+    // Status trägt immer ein Wort, nie Farbe allein.
+    halter.append(el('p', { class: 'notice is-warning' },
+      el('strong', { text: 'Achtung' }),
       el('span', { text: `${plural(ausreisser.length, 'Übergang', 'Übergänge')} mit fallendem Kilometerstand. Diese Strecken zählen nicht mit — bitte die Stände prüfen.` }),
     ));
   }
 
   if (!gefiltert.length) {
-    halter.append(el('p', { class: 'leer', text: eintraege.length ? 'Kein Eintrag passt zu dieser Suche.' : 'Noch nichts eingetragen.' }));
+    halter.append(el('p', { class: 'empty', text: eintraege.length ? 'Kein Eintrag passt zu dieser Suche.' : 'Noch nichts eingetragen.' }));
     fertig({ zeilen: 0 });
     return;
   }
 
-  let letztesJahr = null;
-  const liste = el('ul', { class: 'liste' });
+  // Gruppiert nach Monat — das Raster des Systems.
+  let letzterMonat = null;
+  let gruppe = null;
   for (const eintrag of gefiltert) {
-    const eintragsJahr = eintrag.datum.slice(0, 4);
-    if (eintragsJahr !== letztesJahr) {
-      letztesJahr = eintragsJahr;
-      liste.append(el('li', { class: 'jahr-trenner' }, zahl(eintragsJahr)));
+    const schluessel = eintrag.datum.slice(0, 7);
+    if (schluessel !== letzterMonat) {
+      letzterMonat = schluessel;
+      const [gJahr, gMonat] = schluessel.split('-').map(Number);
+      gruppe = el('div', { class: 'monat' }, el('span', { class: 'lb', text: formatMonat(gJahr, gMonat - 1) }));
+      halter.append(gruppe);
     }
-    liste.append(el('li', {}, eintragZeile(eintrag, {
+    gruppe.append(eintragZeile(eintrag, {
       strecke: streckeNach.has(eintrag.id) ? streckeNach.get(eintrag.id) : null,
       verbrauch: verbrauchNach.has(eintrag.id) ? verbrauchNach.get(eintrag.id) : null,
-    })));
+    }));
   }
-  halter.append(liste);
   fertig({ zeilen: gefiltert.length });
 }
 
@@ -561,14 +741,14 @@ function renderVerlauf() {
   const daten = monateFuerJahr(eintraege, jahr);
   const werte = statistik(eintraege);
 
-  const jahrKm = $('#jahr-km');
-  jahrKm.textContent = '';
-  jahrKm.append(zahl(km(daten.gesamt)), ' km');
+  $('#jahr-km').textContent = km(daten.gesamt);
 
   const gefahrene = daten.monate.filter((wert) => wert > 0).length;
-  $('#jahr-meta').textContent = gefahrene
-    ? `verteilt über ${plural(gefahrene, 'Monat', 'Monate')}`
-    : 'Für dieses Jahr liegen keine Strecken vor.';
+  const jahrMeta = $('#jahr-meta');
+  jahrMeta.textContent = '';
+  jahrMeta.append(gefahrene
+    ? el('span', {}, 'Verteilt über ', el('b', { class: 'n', text: String(gefahrene) }), gefahrene === 1 ? ' Monat' : ' Monate')
+    : el('span', { text: 'Für dieses Jahr liegen keine Strecken vor.' }));
 
   renderKennzahlen(daten, werte);
   renderDiagramme(daten);
@@ -596,7 +776,7 @@ function renderKennzahlen(daten, werte) {
 
   for (const [label, wert] of felder) {
     halter.append(el('div', { class: 'kennzahl' },
-      el('span', { class: 'eyebrow', text: label }),
+      el('span', { class: 'lb', text: label }),
       el('div', { class: 'kennzahl-wert' }, zahl(wert)),
     ));
   }
@@ -870,17 +1050,21 @@ function renderVerbrauch() {
   letzteBilanz = bilanz;
 
   const wert = $('#verbrauch-wert');
-  wert.textContent = '';
+  const meta = $('#verbrauch-meta');
+  meta.textContent = '';
   if (bilanz.schnitt) {
-    wert.append(zahl(verbrauchZahl(bilanz.schnitt)), ' L/100 km');
+    wert.textContent = verbrauchZahl(bilanz.schnitt);
     // Gezählt wird, was auch gerechnet wurde — sonst passen Zahl und
     // Strecke in derselben Zeile nicht zusammen.
     const gerechnet = bilanz.reihe.filter((messung) => messung.plausibel).length;
-    $('#verbrauch-meta').textContent = `aus ${plural(gerechnet, 'Messung', 'Messungen')} über `
-      + `${km(bilanz.messstrecke)} km`;
+    meta.append(
+      el('span', {}, 'Messungen ', el('b', { class: 'n', text: String(gerechnet) })),
+      el('span', {}, 'Strecke ', el('b', { class: 'n', text: km(bilanz.messstrecke) }), ' km'),
+    );
   } else {
     wert.textContent = '—';
-    $('#verbrauch-meta').textContent = `${plural(bilanz.tankungen, 'Tankfüllung', 'Tankfüllungen')} eingetragen`;
+    meta.append(el('span', {}, el('b', { class: 'n', text: String(bilanz.tankungen) }),
+      bilanz.tankungen === 1 ? ' Tankfüllung eingetragen' : ' Tankfüllungen eingetragen'));
   }
 
   $('#verbrauch-hinweis').textContent = bilanz.schnitt
@@ -913,7 +1097,7 @@ function renderVerbrauchsKennzahlen(bilanz) {
 
   for (const [label, text] of felder) {
     halter.append(el('div', { class: 'kennzahl' },
-      el('span', { class: 'eyebrow', text: label }),
+      el('span', { class: 'lb', text: label }),
       el('div', { class: 'kennzahl-wert' }, zahl(text)),
     ));
   }
@@ -1063,7 +1247,7 @@ function sichereTafel() {
 
   if (!geaendert) {
     const zeile = $('#tafel-fehler');
-    zeile.textContent = 'Datum und Kilometerstand müssen stimmen.';
+    zeile.querySelector('span').textContent = 'Datum und Kilometerstand müssen stimmen.';
     zeile.hidden = false;
     return undefined;
   }
@@ -1111,7 +1295,11 @@ const SCHALTER = {
 
 function verdrahteEinstellungen() {
   for (const [sel, schluessel] of Object.entries(TEXTFELDER)) {
-    $(sel).addEventListener('input', (event) => aendere({ [schluessel]: event.target.value }));
+    $(sel).addEventListener('input', (event) => {
+      aendere({ [schluessel]: event.target.value });
+      // Fahrzeug, Kennzeichen und Baujahr stehen im Kopf der App.
+      if (schluessel !== 'fin') renderKopf();
+    });
   }
   for (const [sel, schluessel] of Object.entries(SCHALTER)) {
     $(sel).addEventListener('change', (event) => {
@@ -1390,12 +1578,15 @@ async function importiere(event) {
 
 let toastTimer = null;
 
-function melde(text) {
-  const halter = $('#toast-halter');
-  halter.textContent = '';
-  halter.append(el('div', { class: 'toast', text }));
+/** Meldung nach einer Handlung. `fett` ist das Wort, das sie trägt. */
+function melde(text, fett = '') {
+  if (toast) { toast.zeige(fett, text); return; }
+  // Ohne moch-motion.js: Text direkt in den Toast schreiben.
+  const knoten = $('#toast');
+  knoten.querySelector('span').textContent = fett ? `${fett} ${text}` : text;
+  knoten.classList.add('da');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { halter.textContent = ''; }, 3200);
+  toastTimer = setTimeout(() => knoten.classList.remove('da'), 3200);
 }
 
 function klopfen() {

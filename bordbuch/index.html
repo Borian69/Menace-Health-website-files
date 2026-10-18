@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Bordbuch</title>
 <meta name="description" content="Datum, Kilometerstand, Arbeit — in zehn Sekunden eingetragen. Übersicht, Kalender, Jahreskurve und ein PDF, das beim Verkauf bares Geld wert ist.">
-<meta name="theme-color" content="#040F16">
+<meta name="theme-color" content="#0B1B25">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
@@ -16,79 +16,102 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Das Moch-Design-System v3.2: Schriften, Tokens, Formsprache, Komponenten. -->
+<!-- Das Moch-Design-System v4.0: Schriften, Tokens, Formsprache, App-Schicht. -->
 <link rel="stylesheet" href="../design/moch.css">
 <link rel="stylesheet" href="assets/app.css">
+<script src="../design/moch-motion.js" defer></script>
 </head>
-<body data-tab="neu" data-ansicht="liste">
 
-<header class="topbar">
-  <div class="mark">Bordbuch</div>
+<body class="app" data-tab="neu" data-ansicht="liste">
+<div class="app-rahmen" id="rahmen">
+
+<!-- Beim Scrollen wandert der Titel der Seite hier herein. -->
+<header class="leiste" id="leiste">
+  <span class="mini" id="leiste-titel"></span>
   <button class="icon-btn" id="btn-einstellungen" aria-label="Einstellungen">
     <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
   </button>
 </header>
 
-<main>
+<div class="seiten" id="seiten">
 
 <!-- ══════════════════ EINTRAGEN ══════════════════ -->
-<section class="pane" id="pane-neu">
-  <div class="scroll">
+<section class="seite" id="s-ein" aria-label="Eintragen">
 
-    <!-- Der eine helle Block dieser Ansicht: der aktuelle Stand. -->
-    <div class="shirt" id="stand-karte">
-      <span class="eyebrow">Kilometerstand</span>
-      <div class="odo" id="odo">—</div>
-      <span class="hemd-meta muted" id="odo-meta">Noch kein Eintrag</span>
+  <!-- Das Objekt ist der Titel, nicht der Name der App. -->
+  <div class="app-kopf" data-auftritt>
+    <h1 id="fahrzeug-titel">Bordbuch</h1>
+    <div class="kz" id="fahrzeug-kz">Fahrzeug in den Einstellungen eintragen</div>
+  </div>
+
+  <div class="gruppe rein" id="stand-gruppe">
+    <span class="lb">Kilometerstand</span>
+    <div class="zaehlwerk" aria-live="polite"><span class="zw" id="zw"></span><span class="einheit">KM</span></div>
+    <div class="dataline offen" id="stand-daten"></div>
+    <!-- Bemaßung über das laufende Jahr: gefahren gegen Hochrechnung. -->
+    <div class="mass" id="mass" hidden>
+      <div class="spur"><span class="tick"></span><span class="fill"></span><span class="jetzt"></span><span class="tick"></span></div>
+      <div class="unten">
+        <span id="mass-von">01.01.</span>
+        <span class="rest"><b class="n" id="mass-jetzt">0</b> km</span>
+        <span id="mass-bis"></span>
+      </div>
+    </div>
+  </div>
+
+  <form id="form-neu" novalidate>
+    <div class="gruppe rein">
+      <div class="zwei">
+        <div class="field">
+          <label for="f-datum">Datum</label>
+          <input type="date" id="f-datum" required>
+        </div>
+        <div class="field" id="feld-km">
+          <label for="f-km">Stand (km)</label>
+          <input type="text" id="f-km" class="n" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="123456" aria-describedby="km-hinweis" required>
+        </div>
+      </div>
+      <div class="field" id="feld-km-msg">
+        <p class="field-msg" id="km-hinweis">Der erste Eintrag setzt den Ausgangspunkt.</p>
+      </div>
     </div>
 
-    <form id="form-neu" novalidate>
-      <div class="stapel-eng">
-        <div class="feld-reihe">
-          <div class="field">
-            <label for="f-datum">Datum</label>
-            <input type="date" id="f-datum" required>
-          </div>
-          <div class="field">
-            <label for="f-km">Stand (km)</label>
-            <input type="text" id="f-km" inputmode="numeric" autocomplete="off" enterkeyhint="done" placeholder="123456" required>
-          </div>
+    <div class="gruppe rein" id="arbeit">
+      <span class="lb">Arbeit</span>
+      <div class="wahl" id="arten-chips"></div>
+      <div class="mehr-wrap"><div><div class="wahl" id="arten-chips-2"></div></div></div>
+      <button type="button" class="mehr" id="btn-mehr-arten" aria-expanded="false" hidden>
+        <span>Weitere anzeigen</span>
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+      </button>
+    </div>
+
+    <!-- Erscheint nur beim Tanken: ohne Liter kein Verbrauch. -->
+    <div class="gruppe rein" id="tank-felder" hidden>
+      <div class="zwei">
+        <div class="field">
+          <label for="f-liter">Getankt (Liter)</label>
+          <input type="text" id="f-liter" class="n" inputmode="decimal" autocomplete="off" placeholder="45,67">
         </div>
-        <p class="hinweis" id="km-hinweis"></p>
-      </div>
-
-      <div class="field">
-        <label>Arbeit</label>
-        <div class="chips" id="arten-chips"></div>
-        <button type="button" class="btn btn-quiet schmal" id="btn-mehr-arten" hidden>Weitere anzeigen</button>
-      </div>
-
-      <!-- Erscheint nur beim Tanken: ohne Liter kein Verbrauch. -->
-      <div class="tankblock" id="tank-felder" hidden>
-        <div class="feld-reihe">
-          <div class="field">
-            <label for="f-liter">Getankt (Liter)</label>
-            <input type="text" id="f-liter" inputmode="decimal" autocomplete="off" placeholder="45,67">
-          </div>
-          <div class="field">
-            <label for="f-tank-betrag">Bezahlt (€)</label>
-            <input type="text" id="f-tank-betrag" inputmode="decimal" autocomplete="off" placeholder="79,90">
-          </div>
+        <div class="field">
+          <label for="f-tank-betrag">Bezahlt (€)</label>
+          <input type="text" id="f-tank-betrag" class="n" inputmode="decimal" autocomplete="off" placeholder="79,90">
         </div>
-        <label class="schalter">
-          <input type="checkbox" id="f-voll" checked>
-          <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
-          <span class="schalter-text">Vollgetankt
-            <small>Nur zwischen zwei vollen Tanks steht fest, wie viel wirklich
-              verbraucht wurde. Teilbetankungen dazwischen zählen mit.</small></span>
-        </label>
       </div>
+      <label class="schalter">
+        <input type="checkbox" id="f-voll" checked>
+        <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Vollgetankt
+          <small>Nur zwischen zwei vollen Tanks steht fest, wie viel wirklich
+            verbraucht wurde. Teilbetankungen dazwischen zählen mit.</small></span>
+      </label>
+    </div>
 
+    <div class="gruppe rein">
       <div class="field">
         <label for="f-text">Beschreibung</label>
         <input type="text" id="f-text" autocomplete="off" placeholder="Was wurde gemacht?">
       </div>
-
       <div class="field">
         <label>Beleg</label>
         <div class="belegzeile" id="f-belege"></div>
@@ -97,212 +120,213 @@
         </button>
         <input type="file" id="datei-beleg" accept="image/*" hidden>
       </div>
+    </div>
 
-      <details class="mehr" id="mehr-angaben">
-        <summary>Kosten, Werkstatt, Notiz</summary>
-        <div class="feld-reihe">
-          <div class="field" id="feld-kosten">
-            <label for="f-kosten">Kosten (€)</label>
-            <input type="text" id="f-kosten" inputmode="decimal" autocomplete="off" placeholder="89,90">
-          </div>
-          <div class="field">
-            <label for="f-werkstatt">Werkstatt</label>
-            <input type="text" id="f-werkstatt" autocomplete="off" placeholder="Name oder Ort">
-          </div>
+    <details class="gruppe rein klapp" id="mehr-angaben">
+      <summary>Kosten, Werkstatt, Notiz</summary>
+      <div class="zwei">
+        <div class="field" id="feld-kosten">
+          <label for="f-kosten">Kosten (€)</label>
+          <input type="text" id="f-kosten" class="n" inputmode="decimal" autocomplete="off" placeholder="89,90">
         </div>
         <div class="field">
-          <label for="f-notiz">Notiz</label>
-          <input type="text" id="f-notiz" autocomplete="off" placeholder="Nur für dich">
+          <label for="f-werkstatt">Werkstatt</label>
+          <input type="text" id="f-werkstatt" autocomplete="off" placeholder="Name oder Ort">
         </div>
-      </details>
-
-      <div class="stapel-eng">
-        <button type="submit" class="btn btn-primary" id="btn-speichern">Eintragen</button>
-        <p class="fehlerzeile" id="form-fehler" hidden></p>
       </div>
-    </form>
-
-    <section id="letzte-abschnitt" hidden>
-      <div class="listen-kopf">
-        <span class="eyebrow">Zuletzt eingetragen</span>
-        <button class="btn btn-quiet" id="btn-alle-zeigen">Alle</button>
+      <div class="field">
+        <label for="f-notiz">Notiz</label>
+        <input type="text" id="f-notiz" autocomplete="off" placeholder="Nur für dich">
       </div>
-      <ul class="liste" id="letzte-liste"></ul>
-    </section>
+    </details>
 
-    <p class="leer" id="leer-hinweis">
-      Das erste Mal? Trag den heutigen Kilometerstand ein — ab da zählt jeder
-      weitere Eintrag auf ihn auf.
-    </p>
+    <p class="notice is-error" id="form-fehler" hidden><strong>Fehler</strong><span></span></p>
+  </form>
 
-    <div class="spacer"></div>
+  <div class="gruppe rein" id="letzte-abschnitt" hidden>
+    <div class="listen-kopf">
+      <span class="lb">Zuletzt eingetragen</span>
+      <button type="button" class="btn btn-quiet" id="btn-alle-zeigen">Alle</button>
+    </div>
+    <div id="letzte-liste"></div>
   </div>
+
+  <p class="empty" id="leer-hinweis">
+    Das erste Mal? Trag den heutigen Kilometerstand ein — ab da zählt jeder
+    weitere Eintrag auf ihn auf.
+  </p>
 </section>
 
 <!-- ══════════════════ VERLAUF ══════════════════ -->
-<section class="pane" id="pane-verlauf">
+<section class="seite" id="s-ver" aria-label="Verlauf">
 
-  <div class="segment vier" role="tablist" aria-label="Ansicht">
-    <button role="tab" type="button" data-ansicht="liste" aria-selected="true">Liste</button>
-    <button role="tab" type="button" data-ansicht="kalender" aria-selected="false">Kalender</button>
-    <button role="tab" type="button" data-ansicht="verlauf" aria-selected="false">Kilometer</button>
-    <button role="tab" type="button" data-ansicht="verbrauch" aria-selected="false">Verbrauch</button>
+  <div class="app-kopf" data-auftritt>
+    <h1>Verlauf</h1>
+    <div class="kz" id="verlauf-kz"></div>
   </div>
 
-  <div class="scroll">
+  <div class="wahl wahl-schmal" id="ansicht-wahl" role="tablist" aria-label="Ansicht">
+    <button class="chip" role="tab" type="button" data-ansicht="liste" aria-selected="true">Liste</button>
+    <button class="chip" role="tab" type="button" data-ansicht="kalender" aria-selected="false">Kalender</button>
+    <button class="chip" role="tab" type="button" data-ansicht="verlauf" aria-selected="false">Kilometer</button>
+    <button class="chip" role="tab" type="button" data-ansicht="verbrauch" aria-selected="false">Verbrauch</button>
+  </div>
 
-    <!-- ── Liste ── -->
-    <div class="ansicht" id="ansicht-liste">
-      <div class="suchzeile">
-        <input type="search" id="f-suche" placeholder="Suchen — Arbeit, Werkstatt, Jahr" autocomplete="off">
-      </div>
-      <div class="filter-chips" id="filter-chips"></div>
-      <button type="button" class="btn btn-quiet schmal" id="btn-filter-mehr" hidden>Weitere anzeigen</button>
-      <div id="liste-halter"></div>
+  <!-- ── Liste ── -->
+  <div class="ansicht" id="ansicht-liste">
+    <div class="field suchfeld">
+      <label for="f-suche">Suchen</label>
+      <input type="search" id="f-suche" placeholder="Arbeit, Werkstatt, Jahr" autocomplete="off">
+    </div>
+    <div class="wahl wahl-schmal" id="filter-chips"></div>
+    <button type="button" class="mehr" id="btn-filter-mehr" aria-expanded="false" hidden>
+      <span>Weitere anzeigen</span>
+      <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+    </button>
+    <div id="liste-halter"></div>
+  </div>
+
+  <!-- ── Kalender ── -->
+  <div class="ansicht" id="ansicht-kalender" hidden>
+    <div class="blaettern">
+      <button class="icon-btn" id="monat-zurueck" aria-label="Vorheriger Monat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+      </button>
+      <span class="blaettern-titel" id="monat-titel">—</span>
+      <button class="icon-btn" id="monat-vor" aria-label="Nächster Monat">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </button>
+    </div>
+    <div id="kalender-halter"></div>
+    <div id="kalender-tag"></div>
+  </div>
+
+  <!-- ── Kilometer ── -->
+  <div class="ansicht" id="ansicht-verlauf" hidden>
+    <div class="blaettern">
+      <button class="icon-btn" id="jahr-zurueck" aria-label="Vorheriges Jahr">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
+      </button>
+      <span class="blaettern-titel n" id="jahr-titel">—</span>
+      <button class="icon-btn" id="jahr-vor" aria-label="Nächstes Jahr">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </button>
     </div>
 
-    <!-- ── Kalender ── -->
-    <div class="ansicht" id="ansicht-kalender" hidden>
-      <div class="blaettern">
-        <button class="icon-btn klein" id="monat-zurueck" aria-label="Vorheriger Monat">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
-        </button>
-        <span class="blaettern-titel" id="monat-titel">—</span>
-        <button class="icon-btn klein" id="monat-vor" aria-label="Nächster Monat">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-        </button>
-      </div>
-      <div id="kalender-halter"></div>
-      <div id="kalender-tag"></div>
-    </div>
+    <!-- Die eine Kennzahl dieser Ansicht. Sie steht einfach da. -->
+    <span class="lb">Fahrleistung im Jahr</span>
+    <p class="number"><span id="jahr-km">—</span> <span class="einheit">KM</span></p>
+    <div class="dataline offen" id="jahr-meta"></div>
 
-    <!-- ── Verlauf / Diagramme ── -->
-    <div class="ansicht" id="ansicht-verlauf" hidden>
-      <div class="blaettern">
-        <button class="icon-btn klein" id="jahr-zurueck" aria-label="Vorheriges Jahr">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
-        </button>
-        <span class="blaettern-titel n" id="jahr-titel">—</span>
-        <button class="icon-btn klein" id="jahr-vor" aria-label="Nächstes Jahr">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
-        </button>
-      </div>
+    <div class="kennzahlen" id="jahr-kennzahlen"></div>
 
-      <!-- Bewusst eine ruhige Karte statt eines zweiten Hemd-Blocks: der
-           helle Block gehört dem Kilometerstand, und laut sind in dieser
-           Ansicht schon die Balken und der Primärknopf. -->
-      <div class="card" id="jahr-karte">
-        <span class="eyebrow">Fahrleistung im Jahr</span>
-        <div class="kennzahl-wert gross" id="jahr-km">—</div>
-        <span class="hemd-meta muted" id="jahr-meta"></span>
-      </div>
+    <figure class="diagramm">
+      <figcaption>
+        <span class="lb">Kilometer je Monat</span>
+        <span class="dg-lesehilfe" id="lese-balken">Antippen für den Monatswert</span>
+      </figcaption>
+      <div class="dg-halter" id="halter-balken"></div>
+    </figure>
 
-      <div class="kennzahlen" id="jahr-kennzahlen"></div>
+    <figure class="diagramm">
+      <figcaption>
+        <span class="lb">Aufsummiert über das Jahr</span>
+        <span class="dg-lesehilfe" id="lese-kurve">Antippen für den Stand im Monat</span>
+      </figcaption>
+      <div class="dg-halter" id="halter-kurve"></div>
+    </figure>
 
-      <figure class="diagramm">
-        <figcaption>
-          <span class="eyebrow">Kilometer je Monat</span>
-          <span class="dg-lesehilfe" id="lese-balken">Antippen für den Monatswert</span>
-        </figcaption>
-        <div class="dg-halter" id="halter-balken"></div>
-      </figure>
+    <p class="small muted fussnote">
+      Zwischen zwei Ablesungen wird gleichmäßig verteilt — genauer geht es
+      nicht, wenn dazwischen niemand gezählt hat. Häufigere Einträge machen
+      die Kurve genauer.
+    </p>
 
-      <figure class="diagramm">
-        <figcaption>
-          <span class="eyebrow">Aufsummiert über das Jahr</span>
-          <span class="dg-lesehilfe" id="lese-kurve">Antippen für den Stand im Monat</span>
-        </figcaption>
-        <div class="dg-halter" id="halter-kurve"></div>
-      </figure>
+    <div class="tabellenrahmen" id="jahr-tabelle"></div>
+  </div>
 
-      <p class="fussnote">
-        Zwischen zwei Ablesungen wird gleichmäßig verteilt — genauer geht es
-        nicht, wenn dazwischen niemand gezählt hat. Häufigere Einträge machen
-        die Kurve genauer.
-      </p>
+  <!-- ── Verbrauch ── -->
+  <div class="ansicht" id="ansicht-verbrauch" hidden>
+    <span class="lb">Tatsächlicher Verbrauch</span>
+    <p class="number"><span id="verbrauch-wert">—</span> <span class="einheit">L/100 KM</span></p>
+    <div class="dataline offen" id="verbrauch-meta"></div>
 
-      <div class="tabellenrahmen" id="jahr-tabelle"></div>
-    </div>
+    <div class="kennzahlen" id="verbrauch-kennzahlen"></div>
 
-    <!-- ── Verbrauch ── -->
-    <div class="ansicht" id="ansicht-verbrauch" hidden>
-      <div class="card" id="verbrauch-karte">
-        <span class="eyebrow">Tatsächlicher Verbrauch</span>
-        <div class="kennzahl-wert gross" id="verbrauch-wert">—</div>
-        <span class="hemd-meta muted" id="verbrauch-meta"></span>
-      </div>
+    <figure class="diagramm" id="verbrauch-diagramm" hidden>
+      <figcaption>
+        <span class="lb">Verbrauch je Tankfüllung</span>
+        <span class="dg-lesehilfe" id="lese-verbrauch">Antippen für die einzelne Messung</span>
+      </figcaption>
+      <div class="dg-halter" id="halter-verbrauch"></div>
+    </figure>
 
-      <div class="kennzahlen" id="verbrauch-kennzahlen"></div>
+    <figure class="diagramm" id="preis-diagramm" hidden>
+      <figcaption>
+        <span class="lb">Preis je Liter</span>
+        <span class="dg-lesehilfe" id="lese-preis">Antippen für den Preis der Tankfüllung</span>
+      </figcaption>
+      <div class="dg-halter" id="halter-preis"></div>
+    </figure>
 
-      <figure class="diagramm" id="verbrauch-diagramm" hidden>
-        <figcaption>
-          <span class="eyebrow">Verbrauch je Tankfüllung</span>
-          <span class="dg-lesehilfe" id="lese-verbrauch">Antippen für die einzelne Messung</span>
-        </figcaption>
-        <div class="dg-halter" id="halter-verbrauch"></div>
-      </figure>
+    <p class="small muted fussnote" id="verbrauch-hinweis"></p>
 
-      <figure class="diagramm" id="preis-diagramm" hidden>
-        <figcaption>
-          <span class="eyebrow">Preis je Liter</span>
-          <span class="dg-lesehilfe" id="lese-preis">Antippen für den Preis der Tankfüllung</span>
-        </figcaption>
-        <div class="dg-halter" id="halter-preis"></div>
-      </figure>
+    <div class="tabellenrahmen" id="verbrauch-tabelle"></div>
+  </div>
 
-      <p class="fussnote" id="verbrauch-hinweis"></p>
-
-      <div class="tabellenrahmen" id="verbrauch-tabelle"></div>
-    </div>
-
-    <button type="button" class="btn btn-primary" id="btn-pdf">Alles als PDF sichern</button>
+  <div class="knopfreihe pdf-knoepfe">
+    <button type="button" class="btn btn-ghost" id="btn-pdf">Alles als PDF sichern</button>
     <button type="button" class="btn btn-ghost" id="btn-pdf-teilen" hidden>PDF teilen</button>
-
-    <div class="spacer"></div>
   </div>
 </section>
 
-</main>
+</div><!-- /seiten -->
 
-<nav class="tabbar" aria-label="Hauptbereiche">
-  <button type="button" data-tab="neu" aria-current="true">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-    <span>Eintragen</span>
+<!-- Erscheint erst, wenn es etwas Gültiges zu speichern gibt. -->
+<div class="aktion" id="aktion">
+  <button type="submit" form="form-neu" class="btn btn-primary btn-block" id="btn-speichern">Eintrag speichern</button>
+</div>
+
+<div class="toast" id="toast" role="status"><span></span></div>
+
+<nav class="tabs" role="tablist" aria-label="Hauptbereiche">
+  <span class="ind" id="ind"></span>
+  <button role="tab" type="button" data-tab="neu" aria-selected="true">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Eintragen
   </button>
-  <button type="button" data-tab="verlauf">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16M8 16V9M12 16v-4M16 16v-8"/></svg>
-    <span>Verlauf</span>
+  <button role="tab" type="button" data-tab="verlauf" aria-selected="false">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16V10M12 16V6M17 16v-4"/></svg>Verlauf
   </button>
 </nav>
 
 <!-- ══════════════════ EINSTELLUNGEN ══════════════════ -->
 <section class="voll" id="view-einstellungen" hidden>
-  <header class="topbar">
+  <header class="voll-kopf">
     <button class="icon-btn" id="btn-zurueck" aria-label="Zurück">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg>
     </button>
-    <div class="topbar-titel">Einstellungen</div>
+    <span class="mini">Einstellungen</span>
     <span class="icon-btn-platz"></span>
   </header>
 
-  <div class="scroll stapel-weit">
+  <div class="scroll">
 
-    <div>
-      <span class="eyebrow">Fahrzeug</span>
-      <p class="hinweis">Steht im Kopf des PDF. Ohne diese Angaben ist die Liste
-        nur eine Liste — mit ihnen ist sie ein Nachweis.</p>
+    <div class="gruppe">
+      <span class="lb">Fahrzeug</span>
+      <p class="small muted">Steht im Kopf der App und im PDF. Ohne diese Angaben ist
+        die Liste nur eine Liste — mit ihnen ist sie ein Nachweis.</p>
       <div class="field">
         <label for="e-fahrzeug">Fahrzeug</label>
         <input type="text" id="e-fahrzeug" placeholder="z. B. VW Golf VII 1.6 TDI">
       </div>
-      <div class="feld-reihe">
+      <div class="zwei">
         <div class="field">
           <label for="e-kennzeichen">Kennzeichen</label>
           <input type="text" id="e-kennzeichen" placeholder="M-AB 1234">
         </div>
         <div class="field">
           <label for="e-baujahr">Baujahr</label>
-          <input type="text" id="e-baujahr" inputmode="numeric" placeholder="2016">
+          <input type="text" id="e-baujahr" class="n" inputmode="numeric" placeholder="2016">
         </div>
       </div>
       <div class="field">
@@ -311,8 +335,8 @@
       </div>
     </div>
 
-    <div>
-      <span class="eyebrow">Anzeige</span>
+    <div class="gruppe">
+      <span class="lb">Anzeige</span>
       <label class="schalter">
         <input type="checkbox" id="e-kosten-anzeigen">
         <span class="schalter-bahn"><span class="schalter-knopf"></span></span>
@@ -327,8 +351,8 @@
       </label>
     </div>
 
-    <div>
-      <span class="eyebrow">PDF</span>
+    <div class="gruppe">
+      <span class="lb">PDF</span>
       <div class="field">
         <label for="e-format">Papierformat</label>
         <select id="e-format">
@@ -354,13 +378,13 @@
           <small>Je Beleg eine Seite am Ende, mit der Zeile des Eintrags darüber.</small></span>
       </label>
       <button type="button" class="btn btn-ghost" id="btn-pdf-druck">Druckfassung sichern</button>
-      <p class="hinweis">Die Druckfassung trägt keine Hintergrundfläche — Weiß ist
+      <p class="small muted">Die Druckfassung trägt keine Hintergrundfläche — Weiß ist
         dort kein Farbauftrag. Inhalt und Seitenzahlen sind identisch.</p>
       <button type="button" class="btn btn-quiet" id="btn-pdf-test">Testseite erzeugen</button>
     </div>
 
-    <div>
-      <span class="eyebrow">Daten</span>
+    <div class="gruppe">
+      <span class="lb">Daten</span>
       <div class="statuskarte" id="speicher-status"></div>
       <div class="knopfreihe">
         <button type="button" class="btn btn-ghost" id="btn-export">Sicherung speichern</button>
@@ -371,9 +395,9 @@
     </div>
 
     <!-- ── Diagnose ── -->
-    <div>
-      <span class="eyebrow">Diagnose</span>
-      <p class="hinweis">Für den Fall, dass etwas nicht so läuft wie erwartet.
+    <div class="gruppe">
+      <span class="lb">Diagnose</span>
+      <p class="small muted">Für den Fall, dass etwas nicht so läuft wie erwartet.
         Der Hauptschalter aktiviert das Protokoll; darunter lässt sich für jeden
         Bereich einzeln entscheiden, ob er mitschreibt.</p>
 
@@ -394,7 +418,7 @@
         <button type="button" class="btn btn-ghost" id="btn-demo-weg">Testdaten entfernen</button>
       </div>
 
-      <details class="mehr" id="protokoll-block">
+      <details class="klapp" id="protokoll-block">
         <summary>Ereignis-Protokoll</summary>
         <pre class="protokoll" id="protokoll"></pre>
         <div class="knopfreihe">
@@ -404,15 +428,13 @@
       </details>
     </div>
 
-    <div>
-      <span class="eyebrow">Über</span>
-      <p class="hinweis" id="ueber-text"></p>
+    <div class="gruppe">
+      <span class="lb">Über</span>
+      <p class="small muted" id="ueber-text"></p>
       <button type="button" class="btn btn-ghost" id="btn-neu-laden">Neue Fassung holen</button>
-      <p class="hinweis">Leert den Offline-Speicher und lädt die App neu. Einträge und
+      <p class="small muted">Leert den Offline-Speicher und lädt die App neu. Einträge und
         Belege bleiben erhalten — die liegen woanders.</p>
     </div>
-
-    <div class="spacer"></div>
   </div>
 </section>
 
@@ -422,30 +444,36 @@
     <div class="tafel-griff" aria-hidden="true"></div>
     <h3 id="tafel-titel">Eintrag</h3>
 
-    <div class="feld-reihe">
+    <div class="zwei">
       <div class="field">
         <label for="b-datum">Datum</label>
         <input type="date" id="b-datum">
       </div>
       <div class="field">
         <label for="b-km">Stand (km)</label>
-        <input type="text" id="b-km" inputmode="numeric" autocomplete="off">
+        <input type="text" id="b-km" class="n" inputmode="numeric" autocomplete="off">
       </div>
     </div>
-    <div class="field">
-      <label>Arbeit</label>
-      <div class="chips" id="b-arten"></div>
-      <button type="button" class="btn btn-quiet schmal" id="btn-b-mehr-arten" hidden>Weitere anzeigen</button>
+
+    <div class="gruppe" id="b-arbeit">
+      <span class="lb">Arbeit</span>
+      <div class="wahl" id="b-arten"></div>
+      <div class="mehr-wrap"><div><div class="wahl" id="b-arten-2"></div></div></div>
+      <button type="button" class="mehr" id="btn-b-mehr-arten" aria-expanded="false" hidden>
+        <span>Weitere anzeigen</span>
+        <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+      </button>
     </div>
-    <div class="tankblock" id="b-tank-felder" hidden>
-      <div class="feld-reihe">
+
+    <div class="gruppe" id="b-tank-felder" hidden>
+      <div class="zwei">
         <div class="field">
           <label for="b-liter">Getankt (Liter)</label>
-          <input type="text" id="b-liter" inputmode="decimal" autocomplete="off">
+          <input type="text" id="b-liter" class="n" inputmode="decimal" autocomplete="off">
         </div>
         <div class="field">
           <label for="b-tank-betrag">Bezahlt (€)</label>
-          <input type="text" id="b-tank-betrag" inputmode="decimal" autocomplete="off">
+          <input type="text" id="b-tank-betrag" class="n" inputmode="decimal" autocomplete="off">
         </div>
       </div>
       <label class="schalter">
@@ -466,10 +494,10 @@
       <button type="button" class="btn btn-ghost schmal" id="btn-b-beleg">Beleg hinzufügen</button>
       <input type="file" id="datei-b-beleg" accept="image/*" hidden>
     </div>
-    <div class="feld-reihe">
+    <div class="zwei">
       <div class="field" id="b-feld-kosten">
         <label for="b-kosten">Kosten (€)</label>
-        <input type="text" id="b-kosten" inputmode="decimal" autocomplete="off">
+        <input type="text" id="b-kosten" class="n" inputmode="decimal" autocomplete="off">
       </div>
       <div class="field">
         <label for="b-werkstatt">Werkstatt</label>
@@ -481,10 +509,10 @@
       <input type="text" id="b-notiz" autocomplete="off">
     </div>
 
-    <p class="fehlerzeile" id="tafel-fehler" hidden></p>
+    <p class="notice is-error" id="tafel-fehler" hidden><strong>Fehler</strong><span></span></p>
 
     <div class="tafel-knoepfe">
-      <button type="button" class="btn btn-primary" id="btn-tafel-sichern">Änderung sichern</button>
+      <button type="button" class="btn btn-primary btn-block" id="btn-tafel-sichern">Änderung sichern</button>
       <div class="knopfreihe">
         <button type="button" class="btn btn-ghost" id="btn-tafel-abbrechen">Abbrechen</button>
         <button type="button" class="btn btn-ghost gefahr" id="btn-tafel-loeschen">Löschen</button>
@@ -496,7 +524,7 @@
 <!-- ══════════════════ BELEG ANSEHEN ══════════════════ -->
 <div class="blende betrachter" id="betrachter" hidden>
   <div class="betrachter-kopf">
-    <span class="eyebrow" id="betrachter-titel"></span>
+    <span class="lb" id="betrachter-titel"></span>
     <button class="icon-btn" id="btn-betrachter-zu" aria-label="Schließen">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
@@ -505,7 +533,7 @@
   <button type="button" class="btn btn-ghost gefahr" id="btn-beleg-loeschen">Diesen Beleg löschen</button>
 </div>
 
-<div id="toast-halter" aria-live="polite"></div>
+</div><!-- /app-rahmen -->
 
 <script type="module" src="assets/js/app.js"></script>
 </body>

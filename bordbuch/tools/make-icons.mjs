@@ -20,10 +20,10 @@ import { fileURLToPath } from 'node:url';
 
 const AUSGABE = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'icons');
 
-const NACHT   = [0x04, 0x0f, 0x16];   // --ground      (dunkel · walnuss)
+const NACHT   = [0x0b, 0x1b, 0x25];   // --ground      (dunkel · walnuss)
 const HEMD    = [0xf0, 0xf6, 0xfa];   // --surface     (hell · walnuss)
 const WALNUSS = [0x46, 0x24, 0x0a];   // --accent      (dunkel · walnuss)
-const MESSING = [0xb4, 0x67, 0x29];   // --brass       (dunkel · walnuss)
+const MESSING = [0xd4, 0x84, 0x48];   // --accent-ink  (dunkel · walnuss)
 const SS      = 3;                    // Überabtastung für weiche Kanten
 
 const klemme = (wert, min, max) => Math.min(max, Math.max(min, wert));
