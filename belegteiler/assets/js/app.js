@@ -1046,8 +1046,8 @@ function applyMode() {
   const mode = $('#set-mode').value;
   document.body.dataset.mode = mode;
   $('#mode-hint').textContent = mode === 'proxy'
-    ? 'Der Key bleibt auf Deinem Server. Empfehlenswert, wenn die App öffentlich erreichbar ist.'
-    : 'Schnellster Weg. Der Key bleibt auf diesem Gerät — nutze ihn nur auf einem Handy, das nur Du benutzt.';
+    ? 'Immer über den eigenen Server. Der Key bleibt dort, nicht im Browser.'
+    : 'Direkt zum Anbieter, der schnellste Weg. Ist unten ein Proxy eingetragen, wird der genommen, falls der direkte Weg gesperrt ist.';
 }
 
 const currentKey = () => (settings.provider === 'anthropic' ? settings.apiKey : settings.openrouterKey);
@@ -1403,7 +1403,7 @@ function fillProviderSelect() {
 }
 
 /* Fassung dieser App. Muss zu CACHE in sw.js passen — test13 prüft das. */
-const BUILD = 'v36';
+const BUILD = 'v37';
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;

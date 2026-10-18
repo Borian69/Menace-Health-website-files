@@ -211,17 +211,66 @@ async function call({ settings, model, system, text, images, tool, signal, attem
     maxTokens: MAX_TOKENS,
   });
 
-  const useProxy = settings.mode === 'proxy' && settings.proxyUrl.trim();
-  const url = useProxy ? settings.proxyUrl.trim() : api.endpoint;
-  const init = useProxy
-    ? { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ provider: api.id, body }) }
-    : { method: 'POST', headers: api.headers(key.trim()), body: JSON.stringify(body) };
+  /* Zwei Wege zum selben Ziel — der zweite für den Fall, dass der erste
+     gesperrt ist.
 
-  // Läuft ein Service Worker, stellt der die Anfrage — dann überlebt
-  // sie das Sperren des Displays. Siehe netz.js.
-  const megabyte = (init.body.length / 1024 / 1024).toFixed(1);
+     Ein VPN mit Inhaltsfilter (NordVPN Threat Protection und
+     Verwandte) kann einzelne Adressen sperren. Dann scheitert die
+     Anfrage nicht unterwegs, sondern sofort: auf dem Gerät gemessen
+     nach 0,3 Sekunden. Dagegen hilft von innen nichts — die Sperre
+     greift, bevor der Browser überhaupt losläuft.
+
+     Was hilft, ist eine andere Adresse. Wer einen eigenen Proxy
+     hinterlegt (proxy/cloudflare-worker.js liegt fertig im Ordner),
+     bekommt ihn jetzt als Ausweichweg: Der direkte Weg wird zuerst
+     versucht, und nur wenn er gar nicht erst zustande kommt, geht
+     dieselbe Anfrage über den Proxy. Vorher war das ein
+     Entweder-oder in den Einstellungen — entweder immer direkt oder
+     immer über den Proxy.
+
+     Der Schlüssel geht dabei nicht mit: Über den Proxy wird nur
+     beschrieben, was gefragt werden soll; der Schlüssel liegt dort. */
+  const proxy = (settings.proxyUrl || '').trim();
+  const proxyZuerst = settings.mode === 'proxy' && Boolean(proxy);
+
+  const direkterWeg = {
+    ziel: api.endpoint,
+    init: { method: 'POST', headers: api.headers(key.trim()), body: JSON.stringify(body) },
+    name: 'direkt',
+  };
+  const proxyWeg = {
+    ziel: proxy,
+    init: { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ provider: api.id, body }) },
+    name: 'über den Proxy',
+  };
+
+  const wege = proxyZuerst
+    ? [proxyWeg, direkterWeg]
+    : [direkterWeg, ...(proxy ? [proxyWeg] : [])];
+
+  const megabyte = (wege[0].init.body.length / 1024 / 1024).toFixed(1);
   melden({ phase: 'senden', model, megabyte, abschnitte: images.length });
-  const { ok, status, retryAfter, payload } = await anfrage(url, init, signal);
+
+  let antwort = null;
+  let sperre = null;
+  for (const [nummer, weg] of wege.entries()) {
+    if (nummer > 0) melden({ phase: 'ausweichweg', weg: weg.name });
+    try {
+      // Läuft ein Service Worker, stellt der die Anfrage — siehe netz.js.
+      antwort = await anfrage(weg.ziel, weg.init, signal);
+      break;
+    } catch (fehler) {
+      /* anfrage() wirft nur, wenn die Anfrage gar nicht zustande kam —
+         eine abgelehnte Antwort käme als {ok:false} zurück. Genau das
+         ist der Fall, für den der zweite Weg da ist. */
+      if (fehler.name === 'AbortError') throw fehler;
+      sperre = fehler;
+      if (nummer === wege.length - 1) throw fehler;
+    }
+  }
+  if (sperre && antwort) melden({ phase: 'ausweichweg-geholfen' });
+
+  const { ok, status, retryAfter, payload } = antwort;
   melden({ phase: 'gelesen', model });
 
   if (!ok) {
