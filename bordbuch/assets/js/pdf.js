@@ -19,30 +19,32 @@ import { log, fehler } from './debug.js';
 /* ── Farben: helles Schema des Design-Systems ────────────────
    Was gelesen, unterschrieben oder gedruckt wird, ist hell. Die Werte
    stehen hier als Zahlen, weil ein PDF keine CSS-Variablen lesen kann;
-   sie stammen unverändert aus design/moch.css ([data-farbe="walnuss"]).
+   sie stammen unverändert aus design/moch.css ([data-farbe="amber"]).
    Bei einer Token-Änderung hier nachziehen.
 
-   Der Grund ist komplementär zur Hauptfarbe: Walnuss steht bei
-   Farbton 55°, der Grund bei 235° — ein sehr blasses Blau. Warme
-   Schrift auf kühlem Grund, wie es Regel 1 verlangt.
+   Amber hell ist Ton in Ton — warmes Weiß (#FFFDF7, nie #FFFFFF) unter
+   warmer Hauptfarbe. Das System nennt diese Ausnahme ausdrücklich, und
+   für ein Dokument ist sie die richtige: Papier ist warm, nicht blau.
 
-   Bei Walnuss entfällt Gold (Farbtonabstand 30°, Regel 4). Das System
-   setzt --brass dort auf --line-strong, also eine stille Linie —
-   `messing` trägt deshalb diesen Wert. Die eine Linie, die das
-   Dokument strukturiert (unter dem Kopf, über den Kennzahlen), läuft
-   in der Hauptfarbe: Regel 3 gibt ihr ausdrücklich Fläche, Linie,
-   Rahmen und Schrift. */
+   Zwei Fassungen der Hauptfarbe: `amber` ist die helle Fläche, `akzent`
+   die dunkle Schriftfassung (5,6 : 1 auf dem Grund). Auf Papier trägt
+   die Schrift, nicht die Fläche — Linien und Labels laufen deshalb in
+   `akzent`.
+
+   Bei Amber entfällt Gold (Farbtonabstand 20°, Regel 4): `messing` ist
+   --line-strong, eine stille Linie. */
 
 const FARBE = {
-  grund:   [0.898, 0.925, 0.945],  // #E5ECF1 --ground
-  flaeche: [0.941, 0.965, 0.980],  // #F0F6FA --surface
-  linie:   [0.765, 0.800, 0.820],  // #C3CCD1 --line
-  kante:   [0.639, 0.675, 0.698],  // #A3ACB2 --line-strong
-  messing: [0.639, 0.675, 0.698],  // #A3ACB2 --brass = --line-strong
-  label:   [0.369, 0.337, 0.318],  // #5E5651 --label
-  text:    [0.224, 0.192, 0.173],  // #39312C --text
-  leise:   [0.424, 0.392, 0.373],  // #6C645F --muted
-  akzent:  [0.612, 0.345, 0.133],  // #9C5822 --accent (walnuss)
+  grund:   [1.000, 0.992, 0.969],  // #FFFDF7 --ground  (das Weiß des Systems)
+  flaeche: [1.000, 0.992, 0.969],  // #FFFDF7 --surface
+  linie:   [0.863, 0.851, 0.816],  // #DCD9D0 --line
+  kante:   [0.729, 0.718, 0.682],  // #BAB7AE --line-strong
+  messing: [0.729, 0.718, 0.682],  // #BAB7AE --brass = --line-strong
+  label:   [0.361, 0.333, 0.310],  // #5C554F --label
+  text:    [0.204, 0.173, 0.145],  // #342C25 --text
+  leise:   [0.412, 0.384, 0.357],  // #69625B --muted
+  akzent:  [0.561, 0.361, 0.122],  // #8F5C1F --accent-ink (Schriftfassung)
+  amber:   [0.851, 0.541, 0.169],  // #D98A2B --accent     (Fläche)
 };
 
 const FORMATE = {
@@ -444,8 +446,10 @@ function kopfzeile(seite, dok, einstellungen) {
   seite.label(`Stand ${formatDatum(new Date().toISOString().slice(0, 10), { kurz: true })}`,
     dok.breite - RAND, oben - 10, { align: 'rechts', groesse: 7.5 });
 
-  // Die einzige Messinglinie im Dokument. Mehr braucht es nicht.
-  seite.linie(RAND, oben - 20, dok.breite - RAND, oben - 20, FARBE.messing);
+  /* Die Linie, die den Kopf trägt, läuft in der Hauptfarbe: Regel 3
+     gibt ihr ausdrücklich Fläche, Linie, Rahmen und Schrift. Alle
+     übrigen Linien bleiben still. */
+  seite.linie(RAND, oben - 20, dok.breite - RAND, oben - 20, FARBE.akzent);
 
   seite.text('Bordbuch', RAND, oben - 54, { groesse: 26, farbe: FARBE.text });
 

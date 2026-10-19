@@ -100,7 +100,7 @@ async function nachCanvas(datei, maxKante) {
      die helle Fläche, nicht Reinweiß (Regel 5). Der Wert steht hier als
      Zahl, weil ein Canvas keine CSS-Variablen lesen kann; er stammt
      unverändert aus design/moch.css ([data-farbe="walnuss"] --surface). */
-  stift.fillStyle = '#F0F6FA';
+  stift.fillStyle = '#FFFDF7';
   stift.fillRect(0, 0, breite, hoehe);
   stift.drawImage(bild, 0, 0, breite, hoehe);
   bild.close?.();

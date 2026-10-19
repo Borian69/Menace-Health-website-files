@@ -16,14 +16,16 @@ nie hier von Hand ändern, sondern im Repo und dann bauen.
 In diesem Repo liegt das System unter `design/`. Einbinden:
 
 ```html
-<html lang="de" data-scheme="dunkel" data-farbe="walnuss">
+<html lang="de" data-scheme="dunkel" data-farbe="amber">
 <link rel="stylesheet" href="../design/moch.css">
 <script src="../design/moch-motion.js" defer></script>
 ```
 
-**Diese Fassung ist in Benutzung:** `bordbuch/` läuft auf `dunkel` + `walnuss`.
-Eine zweite Hauptfarbe im selben Projekt gibt es nicht (Regel 3). Bei Walnuss
-entfällt Gold (30°) — `--brass` ist dort `--line-strong`, eine stille Linie.
+**Diese Fassung ist in Benutzung:** `bordbuch/` läuft auf `dunkel` + `amber`.
+Eine zweite Hauptfarbe im selben Projekt gibt es nicht (Regel 3). Bei Amber
+entfällt Gold (20°) — `--brass` ist dort `--line-strong`, eine stille Linie.
+Der Grund steht eine Nuance unter dem Tokenwert (`#0D1824` statt `#0F1A26`,
+L 0,2050 statt 0,2136) — begründet in `referenz/UEBERSETZUNGSTABELLE.md`.
 
 Für ein Artifact oder eine einzelne HTML-Datei: Inhalt von `moch.css` in einen `<style>`-Block,
 `moch-motion.js` in einen `<script>`-Block kopieren. Die Schriften lädt `moch.css` von Google Fonts
