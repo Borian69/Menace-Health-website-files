@@ -21,7 +21,7 @@ In diesem Repo liegt das System unter `design/`. Einbinden:
 <script src="../design/moch-motion.js" defer></script>
 ```
 
-**Diese Fassung ist in Benutzung:** `bordbuch/` läuft auf `dunkel` + `amber`.
+**Diese Fassung ist in Benutzung:** `bordbuch/` und `sprungseil/` laufen auf `dunkel` + `amber`.
 Eine zweite Hauptfarbe im selben Projekt gibt es nicht (Regel 3). Bei Amber
 entfällt Gold (20°) — `--brass` ist dort `--line-strong`, eine stille Linie.
 Der Grund steht eine Nuance unter dem Tokenwert (`#0D1824` statt `#0F1A26`,

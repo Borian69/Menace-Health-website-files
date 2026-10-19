@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="de" data-scheme="dunkel" data-farbe="amber">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sprungseil</title>
+<meta name="description" content="Intervalle fürs Seilspringen mit Ton und Ansage, Kalorien nach MET-Wert, Gewichtstrend und ein Stufenplan von 5 auf 15 Minuten. Alles bleibt auf dem Gerät.">
+<meta name="theme-color" content="#0D1824">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sprungseil">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Das Moch-Design-System v4.0: Schriften, Tokens, Formsprache, App-Schicht. -->
+<link rel="stylesheet" href="../design/moch.css">
+<link rel="stylesheet" href="assets/app.css">
+<script src="../design/moch-motion.js" defer></script>
+<script type="module" src="assets/js/app.js"></script>
+</head>
+
+<body class="app">
+<div class="app-rahmen" id="rahmen">
+
+<!-- Beim Scrollen wandert der Titel der Seite hier herein. -->
+<header class="leiste" id="leiste">
+  <span class="mini" id="leiste-titel"></span>
+  <button class="icon-btn" id="btn-einstellungen" aria-label="Einstellungen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+  </button>
+</header>
+
+<div class="seiten" id="seiten">
+
+<!-- ══════════════════ TRAINING ══════════════════ -->
+<section class="seite" id="s-training" aria-label="Training">
+
+  <!-- Das Objekt ist der Titel: die Einheit, die gleich läuft. -->
+  <div class="app-kopf" data-auftritt>
+    <h1 id="einheit-titel">Einstieg</h1>
+    <div class="kz" id="einheit-kz"></div>
+  </div>
+
+  <div class="gruppe rein" id="woche-gruppe">
+    <span class="lb">Diese Woche</span>
+    <div class="zaehlwerk" aria-live="polite"><span class="zw" id="zw-woche"></span><span class="einheit">MIN</span></div>
+    <div class="dataline offen" id="woche-daten"></div>
+    <div class="mass" id="woche-mass">
+      <div class="spur"><span class="tick"></span><span class="fill"></span><span class="jetzt"></span><span class="tick"></span></div>
+      <div class="unten"><span id="woche-von"></span><span class="rest" id="woche-rest"></span><span id="woche-ziel"></span></div>
+    </div>
+  </div>
+
+  <div class="gruppe rein hinweise">
+    <div class="notice" id="empfehlung"><div id="empfehlung-text"></div></div>
+    <div class="notice is-info" id="hinweis-gewicht" hidden>
+      <div>
+        <p>Für die Kalorien fehlt dein Gewicht. Einmal eintragen genügt.</p>
+        <button type="button" class="btn btn-quiet" id="btn-zum-gewicht">Gewicht eintragen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="gruppe rein" id="wahl-einheit">
+    <span class="lb">Einheit</span>
+    <div class="wahl" id="chips-einheit"></div>
+    <div class="mehr-wrap"><div><div class="wahl" id="chips-einheit-2"></div></div></div>
+    <button type="button" class="mehr" id="btn-mehr" aria-expanded="false">
+      <span>Weitere 3 anzeigen</span>
+      <svg viewBox="0 0 14 14" aria-hidden="true"><path d="M3 5l4 4 4-4"/></svg>
+    </button>
+  </div>
+
+  <!-- Nur bei „Eigene“: drei Zahlen, mehr braucht ein Intervall nicht. -->
+  <div class="gruppe rein" id="eigene-gruppe" hidden>
+    <div class="eigene-felder">
+      <div class="field" id="feld-runden">
+        <label for="e-runden">Runden</label>
+        <input type="text" id="e-runden" class="n" inputmode="numeric" autocomplete="off" enterkeyhint="next">
+      </div>
+      <div class="field" id="feld-springen">
+        <label for="e-springen">Springen (s)</label>
+        <input type="text" id="e-springen" class="n" inputmode="numeric" autocomplete="off" enterkeyhint="next">
+      </div>
+      <div class="field" id="feld-pause">
+        <label for="e-pause">Pause (s)</label>
+        <input type="text" id="e-pause" class="n" inputmode="numeric" autocomplete="off" enterkeyhint="done">
+      </div>
+    </div>
+    <div class="field" id="feld-eigene-msg"><p class="field-msg" id="eigene-msg" aria-live="polite"></p></div>
+  </div>
+
+  <div class="gruppe rein">
+    <span class="lb">Ablauf</span>
+    <div class="ablauf" id="ablauf" aria-hidden="true"></div>
+    <div class="dataline offen" id="ablauf-daten"></div>
+  </div>
+
+  <div class="gruppe rein" id="wahl-tempo">
+    <span class="lb">Tempo</span>
+    <div class="wahl" id="chips-tempo"></div>
+    <p class="klein muted tempo-info" id="tempo-info"></p>
+  </div>
+</section>
+
+<!-- ══════════════════ GEWICHT ══════════════════ -->
+<section class="seite" id="s-gewicht" aria-label="Gewicht">
+
+  <div class="app-kopf" data-auftritt>
+    <h1>Gewicht</h1>
+    <div class="kz" id="gewicht-kz"></div>
+  </div>
+
+  <div class="gruppe rein" id="gewicht-gruppe">
+    <span class="lb">Trend · Ø 7 Tage</span>
+    <div class="zaehlwerk" aria-live="polite"><span class="zw" id="zw-gewicht"></span><span class="einheit">KG</span></div>
+    <div class="dataline offen" id="gewicht-daten"></div>
+    <div class="mass" id="gewicht-mass" hidden>
+      <div class="spur"><span class="tick"></span><span class="fill"></span><span class="jetzt"></span><span class="tick"></span></div>
+      <div class="unten"><span id="g-start"></span><span class="rest" id="g-rest"></span><span id="g-ziel"></span></div>
+    </div>
+  </div>
+  <div class="empty" id="gewicht-leer" hidden>
+    <p>Noch keine Messung. Ab drei Messungen über eine Woche steht hier, wie schnell es abwärts geht.</p>
+  </div>
+
+  <form class="gruppe rein" id="form-gewicht" novalidate>
+    <div class="zwei">
+      <div class="field">
+        <label for="g-datum">Datum</label>
+        <input type="date" id="g-datum" required>
+      </div>
+      <div class="field" id="feld-kg">
+        <label for="g-kg">Gewicht (kg)</label>
+        <input type="text" id="g-kg" class="n" inputmode="decimal" autocomplete="off" enterkeyhint="done" placeholder="84,2" aria-describedby="kg-msg" required>
+      </div>
+    </div>
+    <div class="field" id="feld-kg-msg"><p class="field-msg" id="kg-msg" aria-live="polite"></p></div>
+  </form>
+
+  <div class="gruppe rein" id="fett-gruppe">
+    <p class="klein muted" id="fett-text"></p>
+  </div>
+
+  <figure class="gruppe rein diagramm" id="gewicht-figur" hidden>
+    <figcaption>
+      <span class="lb">Verlauf · 90 Tage</span>
+      <span class="dg-legende"><span><i class="dg-key-punkt"></i>Messung</span><span><i class="dg-key-linie"></i>Ø 7 Tage</span><span id="legende-ziel"><i class="dg-key-ziel"></i>Ziel</span></span>
+      <span class="dg-lesehilfe" id="gewicht-lesehilfe" aria-live="polite"></span>
+    </figcaption>
+    <div class="dg-halter" id="gewicht-diagramm"></div>
+  </figure>
+
+  <div class="gruppe rein" id="gewicht-liste"></div>
+</section>
+
+<!-- ══════════════════ VERLAUF ══════════════════ -->
+<section class="seite" id="s-verlauf" aria-label="Verlauf">
+
+  <div class="app-kopf" data-auftritt>
+    <h1>Verlauf</h1>
+    <div class="kz" id="verlauf-kz"></div>
+  </div>
+
+  <div class="gruppe rein" id="summe-gruppe">
+    <span class="lb">Gesamt · netto</span>
+    <p class="number"><span id="summe-kcal">0</span> <span class="einheit">KCAL</span></p>
+    <div class="dataline offen" id="summe-daten"></div>
+  </div>
+
+  <figure class="gruppe rein diagramm" id="wochen-figur">
+    <figcaption>
+      <span class="lb">Minuten je Woche</span>
+      <span class="dg-legende"><span><i class="dg-key-ziel"></i>Wochenziel <b class="n" id="wochen-ziel-text"></b> min</span></span>
+      <span class="dg-lesehilfe" id="wochen-lesehilfe" aria-live="polite"></span>
+    </figcaption>
+    <div class="dg-halter" id="wochen-diagramm"></div>
+  </figure>
+
+  <div class="gruppe rein" id="verlauf-liste"></div>
+</section>
+
+</div>
+
+<!-- Je Seite eine Hauptaktion. Sie erscheint, wenn es etwas Gültiges gibt. -->
+<div class="aktion" id="aktion-training"><button type="button" class="btn btn-primary btn-block" id="btn-start">Training starten</button></div>
+<div class="aktion" id="aktion-gewicht"><button type="submit" class="btn btn-primary btn-block" id="btn-gewicht" form="form-gewicht">Gewicht speichern</button></div>
+<div class="toast" id="toast" role="status"><span></span></div>
+
+<nav class="tabs" role="tablist" aria-label="Bereiche">
+  <span class="ind" id="ind"></span>
+  <button role="tab" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5v4.5M17 3.5v4.5"/><path d="M7 8c0 6.6 2.2 10.2 5 10.2S17 14.6 17 8"/><path d="M4 21h16"/></svg>Training</button>
+  <button role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="3"/><path d="M8 11a4 4 0 0 1 8 0"/><path d="M12 11l2-2.2"/></svg>Gewicht</button>
+  <button role="tab" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h16M7 16v-6M12 16V6M17 16v-4"/></svg>Verlauf</button>
+</nav>
+
+<!-- ══════════════════ LAUF ══════════════════
+     Liegt über allem, solange eine Einheit läuft. Eine Kennzahl: die
+     Restzeit der Phase. Sie ist aus zwei Metern lesbar. -->
+<div class="lauf" id="lauf" role="dialog" aria-modal="true" aria-labelledby="lauf-phase" hidden>
+  <div class="lauf-kopf">
+    <span class="lb" id="lauf-runde"></span>
+    <span class="lb" id="lauf-name"></span>
+  </div>
+  <div class="lauf-mitte">
+    <p class="lauf-phase" id="lauf-phase" aria-live="assertive"></p>
+    <div class="zaehlwerk lauf-uhr" aria-hidden="true"><span class="zw" id="zw-lauf"></span></div>
+    <p class="lauf-danach" id="lauf-danach"></p>
+    <div class="mass" id="lauf-mass">
+      <div class="spur"><span class="tick"></span><span class="fill"></span><span class="jetzt"></span><span class="tick"></span></div>
+      <div class="unten"><span id="lauf-verstrichen"></span><span class="rest" id="lauf-rest"></span><span id="lauf-gesamt"></span></div>
+    </div>
+    <div class="dataline offen" id="lauf-daten"></div>
+  </div>
+  <div class="lauf-knoepfe">
+    <button type="button" class="btn btn-primary btn-block" id="btn-halt">Anhalten</button>
+    <button type="button" class="btn btn-ghost btn-block" id="btn-beenden" style="visibility:hidden">Training beenden</button>
+  </div>
+</div>
+
+<!-- ══════════════════ ABSCHLUSS ══════════════════ -->
+<div class="lauf blatt" id="abschluss" role="dialog" aria-modal="true" aria-labelledby="abschluss-titel" hidden>
+  <div class="blatt-scroll">
+    <div class="app-kopf" data-auftritt id="abschluss-kopf">
+      <h1 id="abschluss-titel"></h1>
+      <div class="kz" id="abschluss-kz"></div>
+    </div>
+
+    <div class="gruppe rein" id="abschluss-zahl">
+      <span class="lb" id="abschluss-lb"></span>
+      <div class="zaehlwerk" aria-live="polite"><span class="zw" id="zw-abschluss"></span><span class="einheit" id="abschluss-einheit"></span></div>
+      <div class="dataline offen" id="abschluss-daten"></div>
+    </div>
+
+    <div class="gruppe rein" id="wahl-gefuehl">
+      <span class="lb">Wie war’s?</span>
+      <div class="wahl" id="chips-gefuehl">
+        <button type="button" class="chip" aria-pressed="false" data-gefuehl="leicht">Leicht</button>
+        <button type="button" class="chip" aria-pressed="false" data-gefuehl="passend">Passend</button>
+        <button type="button" class="chip" aria-pressed="false" data-gefuehl="hart">Hart</button>
+      </div>
+      <p class="klein muted gefuehl-info">Davon hängt die nächste Stufe ab.</p>
+    </div>
+
+    <div class="gruppe rein">
+      <div class="field" id="feld-gezaehlt">
+        <label for="a-gezaehlt">Sprünge gezählt (optional)</label>
+        <input type="text" id="a-gezaehlt" class="n" inputmode="numeric" autocomplete="off" enterkeyhint="done" aria-describedby="gezaehlt-msg">
+        <p class="field-msg" id="gezaehlt-msg" aria-live="polite">Mit Zähler im Griff wird aus der Schätzung eine Messung.</p>
+      </div>
+    </div>
+  </div>
+  <div class="lauf-knoepfe">
+    <div class="aktion" id="aktion-abschluss"><button type="button" class="btn btn-primary btn-block" id="btn-sichern">Einheit speichern</button></div>
+    <button type="button" class="btn btn-quiet btn-block" id="btn-verwerfen">Verwerfen</button>
+  </div>
+</div>
+
+<!-- ══════════════════ EINSTELLUNGEN ══════════════════ -->
+<div class="voll" id="einstellungen" role="dialog" aria-modal="true" aria-label="Einstellungen" hidden>
+  <div class="voll-kopf">
+    <button class="icon-btn" id="btn-einstellungen-zu" aria-label="Zurück">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </button>
+    <span class="mini">Einstellungen</span>
+    <span class="icon-btn-platz"></span>
+  </div>
+  <div class="scroll stapel-weit">
+    <div>
+      <span class="eyebrow">Ziele</span>
+      <div class="zwei">
+        <div class="field" id="feld-wochenziel">
+          <label for="s-wochenziel">Wochenziel (min)</label>
+          <input type="text" id="s-wochenziel" class="n" inputmode="numeric" autocomplete="off">
+        </div>
+        <div class="field" id="feld-zielgewicht">
+          <label for="s-zielgewicht">Zielgewicht (kg)</label>
+          <input type="text" id="s-zielgewicht" class="n" inputmode="decimal" autocomplete="off" placeholder="optional">
+        </div>
+      </div>
+      <div class="field" id="feld-ziele-msg"><p class="field-msg" id="ziele-msg" aria-live="polite"></p></div>
+    </div>
+
+    <div>
+      <span class="eyebrow">Signale</span>
+      <label class="schalter"><input type="checkbox" id="s-toene"><span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Töne<small>Drei kurze vor jedem Wechsel. Hoch heißt springen, tief heißt Pause.</small></span></label>
+      <label class="schalter"><input type="checkbox" id="s-ansage"><span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Ansage<small>Sagt „Springen“ und „Pause“. Für ein Telefon, das am Boden liegt.</small></span></label>
+      <label class="schalter"><input type="checkbox" id="s-haptik"><span class="schalter-bahn"><span class="schalter-knopf"></span></span>
+        <span class="schalter-text">Vibration<small>Bei jedem Wechsel. Für ein Telefon in der Hosentasche.</small></span></label>
+      <div class="vorlauf-wahl">
+        <span class="lb">Vorlauf</span>
+        <div class="wahl" id="chips-vorlauf"></div>
+      </div>
+    </div>
+
+    <div>
+      <span class="eyebrow">Rechengrundlage</span>
+      <div class="rechnung klein">
+        <p>Kalorien je Minute = MET · <span class="n">3,5</span> · kg / <span class="n">200</span>. Gezählt wird <b>netto</b>: Der Ruheumsatz von <span class="n">1</span> MET ist abgezogen — was du ohnehin verbrannt hättest, macht nicht leichter.</p>
+        <p>MET beim Seilspringen nach dem Compendium of Physical Activities: ruhig <span class="n">8,8</span> (unter <span class="n">100</span> Sprünge pro Minute), mittel <span class="n">11,8</span> (<span class="n">100</span>–<span class="n">120</span>), schnell <span class="n">12,3</span> (<span class="n">120</span>–<span class="n">160</span>). Pausen zwischen den Runden: <span class="n">2,5</span>.</p>
+        <p>Ein Kilo Körperfett speichert rund <span class="n">7.700</span> kcal. Das Wochenziel von <span class="n">75</span> Minuten ist die Empfehlung der WHO für intensive Bewegung.</p>
+      </div>
+    </div>
+
+    <div>
+      <span class="eyebrow">Daten</span>
+      <p class="klein muted" id="daten-info"></p>
+      <div class="knopfreihe">
+        <button type="button" class="btn btn-ghost" id="btn-sicherung">Sicherung speichern</button>
+        <button type="button" class="btn btn-ghost" id="btn-einlesen">Sicherung einlesen</button>
+      </div>
+      <input type="file" id="datei-sicherung" accept="application/json,.json" hidden>
+      <button type="button" class="btn btn-quiet gefahr" id="btn-alles-loeschen">Alle Daten löschen</button>
+      <p class="klein muted fassung" id="fassung"></p>
+    </div>
+  </div>
+</div>
+
+<!-- Tafel: Einzelheiten und Rückfragen. Sie schwebt, also mit Radius. -->
+<div class="blende" id="blende" hidden>
+  <div class="tafel" role="dialog" aria-modal="true" aria-labelledby="tafel-titel">
+    <div class="tafel-griff"></div>
+    <h3 id="tafel-titel"></h3>
+    <div id="tafel-inhalt"></div>
+    <div class="tafel-knoepfe" id="tafel-knoepfe"></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
