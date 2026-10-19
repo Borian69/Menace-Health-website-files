@@ -1,0 +1,280 @@
+/* ══════════════════════════════════════════════════════════
+   Sprungseil — App-Hülle über dem Moch-Design-System v4.0
+
+   Die App-Schicht bringt das System mit (design/moch.css):
+   .app-rahmen .leiste .app-kopf .seiten/.seite .zaehlwerk .mass
+   .aktion .monat/.eintrag .tabs .wahl/.chip/.mehr .field/.field-msg
+   .notice .toast .empty. Nichts davon wird hier nachgebaut.
+
+   Übrig bleibt Möblierung: die Laufansicht, der Ablaufstreifen, zwei
+   Diagramme, Einstellungen, Tafel und Schalter. Sie ist wie im Bordbuch
+   gebaut und trägt dieselben Namen, wo sie dasselbe tut.
+
+   Genau ein Farbwert steht in dieser Datei: der Grund, eine Nuance
+   unter dem Tokenwert — dieselbe Entscheidung wie im Bordbuch, damit
+   beide Apps eines Projekts auf demselben Grund stehen
+   (referenz/UEBERSETZUNGSTABELLE.md). Sonst nur Rollen.
+   ══════════════════════════════════════════════════════════ */
+
+/* Muss vor allen display-Regeln stehen, sonst überstimmt etwa
+   .lauf { display:flex } das hidden-Attribut. */
+[hidden] { display: none !important; }
+
+[data-scheme="dunkel"][data-farbe="amber"] { --ground: #0D1824; }
+
+html, body { height: 100%; overscroll-behavior-y: none; }
+body.app { margin: 0; overflow: hidden; }
+/* Die Seiten liegen nebeneinander und ragen rechts aus dem Rahmen.
+   overflow:hidden ließe den Rahmen trotzdem scrollen, sobald ein Feld
+   den Fokus bekommt — dann rutscht die halbe Nachbarseite ins Bild.
+   clip lässt sich nicht scrollen, auch nicht vom Browser. */
+.app-rahmen { overflow: clip; }
+
+svg { display: block; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+.seite { animation: einblenden var(--dur-panel) var(--ease); }
+@keyframes einblenden { from { opacity: 0; } }
+
+/* Nur für Screenreader */
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Nähe ────────────────────────────────────────────────── */
+
+/* Über der tragenden Kennzahl 68 px, wie im System vorgesehen. */
+#woche-gruppe, #gewicht-gruppe, #summe-gruppe, #abschluss-zahl, #gewicht-leer { margin-top: var(--f6); }
+/* Felder laufen über die volle Breite (Übersetzungstabelle, Bordbuch). */
+.seite .field, .lauf .field, .voll .field { max-width: none; margin-bottom: 0; }
+/* Die Meldung gehört zum Feld darüber, nicht zur nächsten Gruppe. */
+#feld-eigene-msg, #feld-kg-msg, #feld-ziele-msg { margin: 0; }
+#form-gewicht { margin-top: var(--f5); }   /* zwischen beiden steht die verborgene .empty */
+#form-gewicht + .gruppe { margin-top: var(--f4); }
+
+.hinweise:not(:has(.notice:not([hidden]))) { display: none; }
+.hinweise .notice { max-width: none; }
+.hinweise .notice + .notice { margin-top: var(--f3); }
+.notice p { margin: 0; }
+.notice .btn-quiet { min-height: var(--touch); padding: 0; color: var(--accent-ink); }
+
+/* ── Ablauf: die Einheit als Strecke ─────────────────────────
+   Springen trägt die Fläche der Hauptfarbe, die Pause ist eine Linie —
+   Länge gleich Dauer. Man sieht, was kommt, bevor man es liest. */
+
+.ablauf { display: flex; align-items: center; gap: 2px; height: 16px; margin-top: var(--f1); }
+.ablauf i { display: block; min-width: 2px; flex-basis: 0; }
+.ablauf .s { height: 16px; background: var(--accent); }
+.ablauf .p { height: 1px; background: var(--line-strong); }
+
+.eigene-felder { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--f3); }
+.tempo-info, .gefuehl-info { margin: var(--f2) 0 0; }
+
+/* ── Laufansicht ─────────────────────────────────────────────
+   Liegt über der App, eine Fläche, kein Rahmen. Die Restzeit ist die
+   eine Kennzahl dieser Ansicht und wird aus zwei Metern gelesen: Sie
+   füllt die Breite, statt bei 72 px zu enden (Übersetzungstabelle). */
+
+.lauf, .voll {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--ground);
+  animation: einblenden var(--dur-panel) var(--ease);
+}
+.lauf { padding: calc(env(safe-area-inset-top, 0px) + var(--f4)) var(--app-rand) calc(env(safe-area-inset-bottom, 0px) + var(--f4)); }
+
+.lauf-kopf { display: flex; justify-content: space-between; align-items: center; gap: var(--f3); min-height: var(--touch); }
+.lauf-kopf .lb { margin: 0; }
+.lauf-mitte { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+
+.lauf-phase {
+  margin: 0 0 var(--f2);
+  font: 600 1.5rem/1.1 var(--font-text);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--accent-ink);
+}
+.lauf-uhr {
+  /* --breite: Breite des Texts in em, gesetzt von app.js */
+  font-size: min(13.5rem, 36vh, calc((min(100vw, 560px) - 2 * var(--app-rand)) / var(--breite, 2.2)));
+  letter-spacing: -.02em;
+  transition: color var(--dur-hover) ease-out;
+}
+.lauf-danach { margin: var(--f3) 0 0; font-size: var(--fs-small); color: var(--muted); }
+.lauf .mass { margin-top: var(--f4); }
+
+/* Pause und Anhalten treten zurück: gedämpfte Ziffern, stilles Wort. */
+.lauf[data-phase="pause"] .lauf-phase,
+.lauf[data-phase="pause"] .lauf-uhr,
+.lauf.angehalten .lauf-uhr { color: var(--muted); }
+.lauf.angehalten .lauf-phase { color: var(--text); }
+
+.lauf-knoepfe { flex: none; display: flex; flex-direction: column; gap: var(--f2); padding-top: var(--f3); }
+/* Im Abschluss steht die bedingte Aktion im Fluss über „Verwerfen“,
+   nicht schwebend über den Tabs. Feder und Sichtbarkeit bleiben. */
+.lauf .aktion { position: static; }
+
+.blatt { padding-top: 0; padding-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--f3)); }
+.blatt-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  margin-inline: calc(-1 * var(--app-rand));
+  padding: calc(env(safe-area-inset-top, 0px) + 92px) var(--app-rand) var(--f5);
+}
+.blatt-scroll::-webkit-scrollbar { display: none; }
+
+/* ── Listen ──────────────────────────────────────────────── */
+
+button.eintrag {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border-top: 0;
+  border-inline: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color var(--dur-hover) ease-out;
+}
+button.eintrag:active { background: var(--press); }
+.eintrag { grid-template-columns: 52px 1fr auto; }
+.eintrag .wert small { display: block; margin-top: 2px; color: var(--muted); font-size: var(--fs-label); }
+
+.tafel-liste { margin: 0 0 var(--f3); }
+.tafel-liste > div { display: flex; justify-content: space-between; gap: var(--f3); padding: 10px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-small); }
+.tafel-liste dt { color: var(--muted); }
+.tafel-liste dd { margin: 0; text-align: right; }
+
+/* ── Diagramme ───────────────────────────────────────────── */
+
+.diagramm { margin-inline: 0; }
+.diagramm figcaption { display: flex; flex-direction: column; gap: var(--f1); margin-bottom: var(--f3); }
+.diagramm figcaption .lb { margin: 0; }
+.dg-lesehilfe, .dg-legende {
+  font: 400 var(--fs-label)/var(--lh-small) var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.dg-lesehilfe { color: var(--text); min-height: 1.45em; }
+.dg-legende { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; }
+.dg-legende > span { display: inline-flex; align-items: center; gap: 6px; }
+.dg-legende b { font-weight: 400; }
+.dg-legende i { display: inline-block; flex: none; }
+.dg-key-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.dg-key-linie { width: 16px; height: 2px; background: var(--accent-ink); }
+.dg-key-ziel { width: 16px; height: 1px; background: var(--text); opacity: .7; }
+.dg-halter svg { width: 100%; height: auto; overflow: visible; stroke: none; }
+
+/* Balken tragen die Fläche (--accent), die Kurve die Schriftfassung
+   (--accent-ink), die Messpunkte die stille Farbe. Das Ziel ist eine
+   Haarlinie in Textfarbe: Struktur, keine Daten. */
+.dg-balken { fill: var(--accent); transition: fill var(--dur-hover) ease-out; }
+.dg-balken.an { fill: var(--text); }
+.dg-treffer { fill: transparent; }
+.dg-linie { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dg-messung { fill: var(--muted); stroke: var(--ground); stroke-width: 2; transition: r 160ms var(--ease); }
+.dg-messung.an { fill: var(--text); r: 6; }
+.dg-ziel { stroke: var(--text); stroke-width: 1; opacity: .7; }
+.dg-fadenkreuz { stroke: var(--line-strong); stroke-width: 1; }
+.dg-gitter { stroke: var(--line); stroke-width: 1; }
+.dg-achse { stroke: var(--line-strong); stroke-width: 1; }
+.dg-tick { fill: var(--muted); font: 400 10px var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.dg-wert { fill: var(--text); font: 400 11px var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ── Einstellungen ───────────────────────────────────────── */
+
+.voll { z-index: 25; }
+.voll-kopf {
+  flex: none;
+  height: calc(74px + env(safe-area-inset-top, 0px));
+  padding: env(safe-area-inset-top, 0px) var(--f3) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--f3);
+  border-bottom: 1px solid var(--line);
+}
+.voll-kopf .mini { flex: 1; text-align: center; font: 400 1.25rem/1 var(--font-display); }
+.icon-btn-platz { width: var(--touch); flex: none; }
+.voll .scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: var(--f5) var(--app-rand) calc(env(safe-area-inset-bottom, 0px) + var(--f7));
+}
+.vorlauf-wahl { margin-top: var(--f4); }
+.rechnung p { color: var(--muted); }
+.rechnung b { color: var(--text); font-weight: 600; }
+.knopfreihe { display: flex; gap: var(--f3); flex-wrap: wrap; margin-top: var(--f3); }
+.knopfreihe .btn { flex: 1; }
+.btn.gefahr { color: var(--error); }
+.btn-ghost.gefahr { border-color: var(--error); }
+#btn-alles-loeschen { margin-top: var(--f4); }
+.fassung { margin-top: var(--f4); }
+
+/* ── Schalter (wie im Bordbuch) ──────────────────────────── */
+
+.schalter { display: flex; align-items: flex-start; gap: var(--f3); padding: var(--f2) 0; cursor: pointer; }
+.schalter input { position: absolute; opacity: 0; width: 0; height: 0; }
+.schalter-bahn {
+  width: 44px; height: 27px;
+  flex: none;
+  padding: 2px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  transition: background-color var(--dur-hover) ease-out, border-color var(--dur-hover) ease-out;
+}
+.schalter-knopf {
+  display: block;
+  width: 21px; height: 21px;
+  background: var(--muted);
+  border-radius: 50%;
+  transition: transform var(--dur-panel) var(--ease), background-color var(--dur-hover) ease-out;
+}
+.schalter input:checked + .schalter-bahn { background: var(--accent); border-color: var(--accent); }
+.schalter input:checked + .schalter-bahn .schalter-knopf { transform: translateX(17px); background: var(--auf-accent); }
+.schalter input:focus-visible + .schalter-bahn { outline: 2px solid var(--focus); outline-offset: 2px; }
+.schalter-text { font-size: var(--fs-small); line-height: var(--lh-small); }
+.schalter-text small { display: block; font-size: var(--fs-label); color: var(--muted); margin-top: 2px; }
+
+/* ── Tafel ───────────────────────────────────────────────── */
+
+.blende {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  background: var(--scrim);
+  animation: einblenden var(--dur-panel) var(--ease);
+}
+/* Die Tafel schwebt — deshalb bekommt sie den Radius. */
+.tafel {
+  width: 100%;
+  max-height: 92%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--f3) var(--app-rand) calc(env(safe-area-inset-bottom, 0px) + var(--f4));
+  background: var(--surface);
+  border-top: 1px solid var(--line-strong);
+  border-radius: var(--r) var(--r) 0 0;
+  box-shadow: inset 0 1px 0 var(--kante);
+  animation: tafelRein var(--dur-panel) var(--ease);
+}
+@keyframes tafelRein { from { transform: translateY(8px); opacity: 0; } }
+.tafel-griff { width: 36px; height: 4px; margin: 0 auto var(--f4); background: var(--line-strong); border-radius: 999px; }
+.tafel h3 { margin-bottom: var(--f3); }
+.tafel p { color: var(--muted); }
+.tafel-knoepfe { margin-top: var(--f4); display: flex; flex-direction: column; gap: var(--f2); }
+
+/* Der Toast steht über Laufansicht und Tafel — im Rahmen, nicht im Fenster. */
+.toast { position: absolute; z-index: 40; }
+
+/* ── Größere Bildschirme ─────────────────────────────────── */
+
+@media (min-width: 620px) {
+  .app-rahmen { max-width: 560px; margin: 0 auto; border-inline: 1px solid var(--line); }
+}
