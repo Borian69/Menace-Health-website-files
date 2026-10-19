@@ -211,20 +211,26 @@ Einstellungen zeigen vorher an, wie viel die Ablage belegt.
 
 Die App läuft auf dem **Moch-Design-System v4.0** (`../design/moch.css` und
 `../design/moch-motion.js`) im Schema
-`dunkel` mit der Hauptfarbe `walnuss` — beides steht als Attribut am `<html>`-Element:
+`dunkel` mit der Hauptfarbe `amber` — beides steht als Attribut am `<html>`-Element:
 
 ```html
-<html lang="de" data-scheme="dunkel" data-farbe="walnuss">
+<html lang="de" data-scheme="dunkel" data-farbe="amber">
 ```
 
-Eine andere Hauptfarbe ist ein Wort: `oxblood`, `taupe`, `stahlblau`, `petrol` oder
-`smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau eine je Projekt.
+Eine andere Hauptfarbe ist ein Wort: `walnuss`, `oxblood`, `taupe`, `stahlblau`,
+`petrol` oder `smaragd`. Zwei gleichzeitig gibt es nicht — das System erlaubt genau
+eine je Projekt.
 
-**Der Grund ist komplementär zur Hauptfarbe.** Walnuss steht bei Farbton 55°, der
-Grund bei 235° — ein dunkles Blau (`#0B1B25`). Warme Schrift auf kühlem Grund; man
-sieht es nicht, man spürt es. **Gold entfällt hier**: Zwischen Walnuss und Gold
-liegen 30° Farbtonabstand, unter den 35°, ab denen beide als verschiedene Farben
-lesbar sind. `--brass` ist deshalb `--line-strong` — eine stille Linie.
+**Der Grund ist komplementär zur Hauptfarbe.** Amber steht bei Farbton 66°, der Grund
+bei 246° — ein dunkles Blau (`#0D1824`, eine Nuance unter dem Tokenwert; die Messung
+steht in der Übersetzungstabelle). Warme Schrift auf kühlem Grund; man sieht es nicht,
+man spürt es. **Gold entfällt hier**: Zwischen Amber und Gold liegen nur 20°
+Farbtonabstand — die Hauptfarbe *ist* das Gold. `--brass` ist deshalb `--line-strong`,
+eine stille Linie.
+
+**Amber ist von Natur aus hell.** Die Fläche `#D98A2B` trägt 6,5 : 1 gegen den Grund
+und dunklen Text darauf. Markierungen, Balken und Schalter nutzen sie direkt; Kurven,
+Icons und Zahlen die hellere Schriftfassung `#EDB065` (9,4 : 1).
 
 **Vier Schriftrollen.** Überschriften in **Instrument Serif** (nie fett, die Schrift
 hat nur einen Schnitt), die große Kennzahl in Archivo 600, Fließtext in Archivo,
@@ -244,12 +250,12 @@ Schriftgrößen stehen als Rollen bereit (`--fs-h1`, `--fs-zaehlwerk`, `--fs-bod
 eine 2-px-Linie in der Hauptfarbe von links auf, und die Meldung darunter sagt live,
 was fehlt. Seit der 4.0 steht das im System; die App hat ihre eigene Fassung gestrichen.
 
-`assets/app.css` enthält **keinen einzigen Hexwert** mehr. Auch die vier Statustöne
-nicht: Das System liefert sie wieder in zwei Fassungen je Schema (gemessen
-5,76–7,80 : 1 auf diesem Grund).
+`assets/app.css` enthält genau **einen** Farbwert: den Grund, eine Nuance unter dem
+Tokenwert. Sonst nur Rollen. Auch die vier Statustöne kommen aus dem System, in zwei
+Fassungen je Schema (gemessen 5,9–8,0 : 1 auf diesem Grund).
 
 Das PDF steht im hellen Schema: Was gelesen, unterschrieben oder gedruckt wird, ist
-hell. Dort ist die Schrift Helvetica — Instrument Serif ließe sich nur als eingebettete
+hell — bei Amber Ton in Ton auf `#FFFDF7`, dem Weiß des Systems. Papier ist warm. Dort ist die Schrift Helvetica — Instrument Serif ließe sich nur als eingebettete
 Schriftdatei verwenden, und die wiegt mehr als die ganze App.
 
 Jede Abweichung vom Regelwerk ist in `../referenz/UEBERSETZUNGSTABELLE.md` mit Wunsch,

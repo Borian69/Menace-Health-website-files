@@ -20,10 +20,10 @@ import { fileURLToPath } from 'node:url';
 
 const AUSGABE = join(dirname(fileURLToPath(import.meta.url)), '..', 'assets', 'icons');
 
-const NACHT   = [0x0b, 0x1b, 0x25];   // --ground      (dunkel · walnuss)
-const HEMD    = [0xf0, 0xf6, 0xfa];   // --surface     (hell · walnuss)
-const WALNUSS = [0x46, 0x24, 0x0a];   // --accent      (dunkel · walnuss)
-const MESSING = [0xd4, 0x84, 0x48];   // --accent-ink  (dunkel · walnuss)
+const NACHT   = [0x0d, 0x18, 0x24];   // --ground      (dunkel · amber, eine Nuance tiefer)
+const HEMD    = [0xff, 0xfd, 0xf7];   // --ground      (hell · amber, das Weiß des Systems)
+const ZEILE   = [0x8f, 0x5c, 0x1f];   // --accent-ink  (hell · amber)
+const MESSING = [0xd9, 0x8a, 0x2b];   // --accent      (die Hauptfarbe als Haarlinie)
 const SS      = 3;                    // Überabtastung für weiche Kanten
 
 const klemme = (wert, min, max) => Math.min(max, Math.max(min, wert));
@@ -61,7 +61,7 @@ function farbeAn(x, y, { rund, einzug }) {
   if (inBalken(px, py, 0.315, 0.700, 0.290, 0.026)) return MESSING;
 
   for (const zeile of ZEILEN) {
-    if (inBalken(px, py, zeile.x0, zeile.x1, zeile.y, 0.042)) return WALNUSS;
+    if (inBalken(px, py, zeile.x0, zeile.x1, zeile.y, 0.042)) return ZEILE;
   }
 
   return HEMD;

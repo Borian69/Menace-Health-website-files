@@ -20,6 +20,16 @@
    .blende { display:flex } das hidden-Attribut. */
 [hidden] { display: none !important; }
 
+/* ── Der Grund, eine Nuance dunkler ──────────────────────────
+   Der einzige Farbwert dieser Datei. Amber steht im System auf
+   #0F1A26 (L 0,2136). Regel 2 erlaubt dem dunklen Grund L 0,20–0,30
+   bei Chroma 0,022–0,060 — hier L 0,2050 bei Chroma 0,0289, Farbton
+   251,4° unverändert. Gemessen, nicht geschätzt: Die eine Nuance
+   lässt das Gold weiter vorn stehen, ohne dass der Grund als Schwarz
+   liest. Alle Rollen tragen darauf mehr als vorher: Text 17,6 : 1,
+   Akzentfläche 6,5 : 1, Akzentschrift 9,4 : 1, Status 5,9–8,0 : 1. */
+[data-scheme="dunkel"][data-farbe="amber"] { --ground: #0D1824; }
+
 html, body { height: 100%; overscroll-behavior-y: none; }
 body.app { margin: 0; overflow: hidden; }
 
@@ -62,7 +72,7 @@ button.eintrag:active { background: var(--press); }
 /* Das Jahr steht in der Monatsgruppe, die Spalte trägt Tag und Monat. */
 .eintrag { grid-template-columns: 46px 1fr auto; gap: 10px; }
 .eintrag .was { display: flex; flex-wrap: wrap; align-items: center; gap: 0 8px; }
-.eintrag .was svg { width: 15px; height: 15px; flex: none; color: var(--accent-ink); }
+.eintrag .was svg { width: 15px; height: 15px; flex: none; color: var(--accent-ink); }  /* Schriftfassung: 9,4 : 1 */
 .eintrag .was small { flex-basis: 100%; }
 
 .wahl-schmal { gap: var(--f1); margin-bottom: var(--f4); }
@@ -145,15 +155,16 @@ button.eintrag:active { background: var(--press); }
 .kal-tag:active { transform: scale(var(--press-scale-chip)); background: var(--press); }
 .kal-tag.fremd { color: var(--line-strong); cursor: default; }
 .kal-tag.fremd:active { transform: none; background: none; }
-.kal-tag.heute { border-color: var(--accent-ink); }
-/* Gemessen: --accent trägt auf dem Grund 1,27 : 1 und verschwände im
-   Gitter; --accent-ink trägt 6,01 : 1. */
-.kal-tag.an { background: var(--accent-ink); color: var(--ground); }
+.kal-tag.heute { border-color: var(--accent); }
+/* Amber ist von Natur aus hell: Die Fläche trägt 6,5 : 1 gegen den
+   Grund und dunklen Text darauf (6,4 : 1). Sie braucht hier also
+   keine Ersatzfarbe — anders als eine tiefe Hauptfarbe. */
+.kal-tag.an { background: var(--accent); color: var(--auf-accent); }
 .kal-punkte { display: flex; gap: 3px; height: 5px; align-items: center; }
-.kal-punkte i { width: 4px; height: 4px; background: var(--accent-ink); border-radius: 50%; }
-.kal-tag.an .kal-punkte i { background: var(--ground); }
+.kal-punkte i { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
+.kal-tag.an .kal-punkte i { background: var(--auf-accent); }
 .kal-mehr { font-size: 9px; color: var(--accent-ink); }
-.kal-tag.an .kal-mehr { color: var(--ground); }
+.kal-tag.an .kal-mehr { color: var(--auf-accent); }
 .kal-debug { position: absolute; top: 1px; left: 3px; font-size: 8px; color: var(--label); }
 
 #kalender-tag { margin-top: var(--f4); }
@@ -191,10 +202,11 @@ button.eintrag:active { background: var(--press); }
    zeichnet jede Klasse ihre Kontur selbst. */
 .dg-halter svg { width: 100%; height: auto; overflow: visible; stroke: none; }
 
-/* Daten tragen --accent-ink, nicht --accent: Im Dunkelmodus ist
-   --accent die tiefe Fläche *unter hellem Text* und steht auf dem
-   Grund bei 1,27 : 1. --accent-ink trägt 6,01 : 1. Gemessen. */
-.dg-balken { fill: var(--accent-ink); stroke: none; transition: fill var(--dur-hover) ease-out; }
+/* Balken tragen die Fläche (--accent, 6,5 : 1), Kurven und Punkte die
+   Schriftfassung (--accent-ink, 9,4 : 1) — genau die Rollen, die das
+   System für die beiden Fassungen vorsieht. Der angetippte Balken
+   wird lauter, nicht bunter: --text ist die neutrale Schriftfarbe. */
+.dg-balken { fill: var(--accent); stroke: none; transition: fill var(--dur-hover) ease-out; }
 .dg-balken.an { fill: var(--text); }
 .dg-treffer { fill: transparent; stroke: none; }
 .dg-linie { fill: none; stroke: var(--accent-ink); stroke-width: 2; stroke-linejoin: round; }
@@ -354,9 +366,9 @@ button.eintrag:active { background: var(--press); }
   transition: transform var(--dur-panel, 320ms) var(--ease), background-color var(--dur-hover) ease-out;
 }
 /* Ein Schalter trägt keinen Text, der seinen Zustand erklärt — die
-   Bahn muss ihn allein zeigen. Deshalb --accent-ink. */
-.schalter input:checked + .schalter-bahn { background: var(--accent-ink); border-color: var(--accent-ink); }
-.schalter input:checked + .schalter-bahn .schalter-knopf { transform: translateX(17px); background: var(--ground); }
+   Bahn muss ihn allein zeigen. Die Amber-Fläche tut das mit 6,5 : 1. */
+.schalter input:checked + .schalter-bahn { background: var(--accent); border-color: var(--accent); }
+.schalter input:checked + .schalter-bahn .schalter-knopf { transform: translateX(17px); background: var(--auf-accent); }
 .schalter input:focus-visible + .schalter-bahn { outline: 2px solid var(--focus); outline-offset: 2px; }
 .schalter-text { font-size: var(--fs-small); line-height: var(--lh-small); }
 .schalter-text small { display: block; font-size: var(--fs-label); color: var(--muted); margin-top: 2px; }

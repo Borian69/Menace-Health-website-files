@@ -17,7 +17,7 @@
    **Alles andere zuerst aus dem Cache** (Icons, Schriften). Die ändern
    sich praktisch nie und sollen den Start nicht aufhalten. */
 
-const CACHE = 'bordbuch-v8';
+const CACHE = 'bordbuch-v9';
 
 /* Wie lange die App auf das Netz wartet, bevor der Cache einspringt.
    Länger wartet niemand auf ein Serviceheft. */
