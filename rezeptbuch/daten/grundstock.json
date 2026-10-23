@@ -1,0 +1,2308 @@
+[
+ {
+  "id": "linsen-bolognese",
+  "titel": "Bolognese halb Hack, halb Linsen",
+  "kurz": "Rote Linsen zerfallen in der Soße und sind nicht herauszuschmecken. Spart die Hälfte des Hacks.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 4,
+  "arbeitszeit": 15,
+  "gesamtzeit": 30,
+  "geraete": 2,
+  "sossenbasis": "Tomate",
+  "zutaten": [
+   [
+    "rinderhack",
+    400
+   ],
+   [
+    "rote_linsen",
+    120
+   ],
+   [
+    "passierte_tomaten",
+    700
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "tomatenmark",
+    40
+   ],
+   [
+    "vollkornnudeln",
+    320
+   ],
+   [
+    "grana",
+    40
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Zwiebel und Knoblauch fein würfeln. Im Öl glasig anschwitzen.",
+   "Hack dazugeben und krümelig braten, bis es Farbe hat. Tomatenmark 1 Minute mitrösten.",
+   "Passierte Tomaten, Linsen und 200 ml Wasser einrühren. 15 Minuten leise köcheln lassen, bis die Linsen zerfallen.",
+   "Parallel die Nudeln kochen. Soße mit Salz, Pfeffer und Oregano abschmecken, mit Grana servieren."
+  ],
+  "tipps": {
+   "strecken": "Das Strecken steckt schon drin: 400 g statt 800 g Hack spart beim Metzger etwa 6 €. Wer noch mehr sparen will, nimmt 300 g Hack und 160 g Linsen.",
+   "fertig": "Passierte Tomaten aus dem Tetrapack sind ein gutes Fertigprodukt: nur Tomaten, kein Zucker. Fertige Bolognese-Soßen im Glas enthalten oft Zucker und kaum Fleisch.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 4,
+   "kuehlakku": true,
+   "transport": "Soße und Nudeln getrennt einfrieren. Hält eingefroren 3 Monate."
+  },
+  "tags": [
+   "Meal Prep",
+   "Rind",
+   "Nudeln",
+   "einfrierbar"
+  ]
+ },
+ {
+  "id": "chili-con-carne",
+  "titel": "Chili con Carne mit doppelt Bohnen",
+  "kurz": "Klassiker für den großen Topf. Schmeckt am zweiten Tag besser.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 4,
+  "arbeitszeit": 15,
+  "gesamtzeit": 35,
+  "geraete": 2,
+  "sossenbasis": "Tomate",
+  "zutaten": [
+   [
+    "rinderhack",
+    400
+   ],
+   [
+    "kidney",
+    480,
+    "2 Dosen"
+   ],
+   [
+    "gehackte_tomaten",
+    800,
+    "2 Dosen"
+   ],
+   [
+    "mais",
+    140,
+    "1 kleine Dose"
+   ],
+   [
+    "paprika",
+    320
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "tomatenmark",
+    30
+   ],
+   [
+    "reis",
+    180
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Zwiebel, Knoblauch und Paprika würfeln. Reis nach Packung kochen.",
+   "Hack im Öl krümelig braten. Zwiebel, Knoblauch und Tomatenmark kurz mitrösten.",
+   "Mit Kreuzkümmel, Paprikapulver, Chili und etwas Kakao würzen. Tomaten und Paprika zugeben, 15 Minuten köcheln.",
+   "Abgespülte Bohnen und Mais unterrühren, 5 Minuten heiß werden lassen. Mit Salz und Limette oder Essig abschmecken."
+  ],
+  "tipps": {
+   "strecken": "Statt 400 g Hack gehen 250 g Hack plus 1 weitere Dose Kidneybohnen. Spart etwa 1,60 € und kostet nur 3 g Protein pro Portion.",
+   "fertig": "Bohnen und Mais aus der Dose sind unbedenklich: abspülen, dann ist auch das meiste Salz weg. Chili-Gewürzmischungen enthalten oft Zucker und Stärke – eigene Gewürze sind günstiger.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 4,
+   "kuehlakku": true,
+   "transport": "Gut einfrierbar. Reis separat lagern."
+  },
+  "tags": [
+   "Meal Prep",
+   "Rind",
+   "Bohnen",
+   "einfrierbar"
+  ]
+ },
+ {
+  "id": "haehnchen-curry-tomate-kokos",
+  "titel": "Hähnchen-Curry mit Tomate und Kokos",
+  "kurz": "Cremig ohne Sahne: Kokosmilch light und passierte Tomaten tragen die Soße.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Kokosmilch light und Tomate",
+  "zutaten": [
+   [
+    "haehnchenbrust",
+    350
+   ],
+   [
+    "kokosmilch_light",
+    200
+   ],
+   [
+    "passierte_tomaten",
+    200
+   ],
+   [
+    "erbsen",
+    150
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "reis",
+    140
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Reis kochen. Hähnchen in Würfel schneiden, Zwiebel und Knoblauch hacken.",
+   "Hähnchen im Öl rundum anbraten, herausnehmen. Zwiebel und Knoblauch in derselben Pfanne anschwitzen.",
+   "Mit 2 TL Currypulver und etwas Kreuzkümmel 30 Sekunden rösten. Kokosmilch und Tomaten zugießen.",
+   "Erbsen und Hähnchen zurück in die Pfanne geben, 8 Minuten köcheln. Mit Salz und einem Spritzer Zitrone abschmecken."
+  ],
+  "tipps": {
+   "strecken": "Eine Dose Kichererbsen ersetzt 150 g Hähnchen. Spart etwa 1,30 € für zwei Portionen.",
+   "fertig": "Eine fertige Currypaste (Glas) ist in Ordnung, wenn Zucker nicht unter den ersten drei Zutaten steht. Fertige Currysoßen im Glas sind dagegen meist Zucker und Stärke.",
+   "pulver": null
+  },
+  "tags": [
+   "Hähnchen",
+   "Reis",
+   "Curry"
+  ]
+ },
+ {
+  "id": "one-pot-haehnchen-brokkoli-pasta",
+  "titel": "One-Pot-Pasta mit Hähnchen und Brokkoli",
+  "kurz": "Nudeln garen direkt in der Soße. Ein Topf, 20 Minuten.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 20,
+  "geraete": 1,
+  "sossenbasis": "Frischkäse light, Milch und Parmesan",
+  "zutaten": [
+   [
+    "haehnchenbrust",
+    300
+   ],
+   [
+    "vollkornnudeln",
+    160
+   ],
+   [
+    "brokkoli",
+    300
+   ],
+   [
+    "frischkaese_light",
+    100
+   ],
+   [
+    "milch",
+    200
+   ],
+   [
+    "grana",
+    30
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Hähnchen würfeln und im Öl im großen Topf anbraten. Knoblauch kurz mitbraten.",
+   "Nudeln, Milch und 400 ml Brühe zugeben. Aufkochen und 6 Minuten bei mittlerer Hitze köcheln, gelegentlich rühren.",
+   "Brokkoli dazugeben und weitere 4 Minuten garen, bis die Nudeln bissfest sind.",
+   "Vom Herd nehmen, Frischkäse und Grana unterrühren. Mit Pfeffer und Muskat abschmecken."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Brokkoli ist hier sogar besser als frischer: schon geputzt, gart in der gleichen Zeit wie die Nudeln.",
+   "pulver": "Nicht in die heiße Soße – Whey flockt aus. Wenn du mehr Protein willst: 150 g Hähnchen mehr."
+  },
+  "tags": [
+   "Hähnchen",
+   "Nudeln",
+   "ein Topf"
+  ]
+ },
+ {
+  "id": "schweinelachs-champignon-pfanne",
+  "titel": "Schweinelachs-Geschnetzeltes mit Champignons",
+  "kurz": "Mageres Schweinefleisch vom Metzger, Soße aus Senf und Frischkäse.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Brühe, Milch, Frischkäse light und Senf",
+  "zutaten": [
+   [
+    "schweinelachs",
+    300
+   ],
+   [
+    "champignons",
+    250
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "frischkaese_light",
+    80
+   ],
+   [
+    "milch",
+    150
+   ],
+   [
+    "senf",
+    15
+   ],
+   [
+    "reis",
+    140
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Reis kochen. Fleisch in dünne Streifen, Pilze in Scheiben, Zwiebel in Würfel schneiden.",
+   "Fleisch im heißen Öl in zwei Portionen kurz scharf anbraten, herausnehmen.",
+   "Pilze und Zwiebel in derselben Pfanne braten, bis die Pilze gebräunt sind. Mit Milch und 100 ml Brühe ablöschen.",
+   "Frischkäse und Senf einrühren, Fleisch zurückgeben und nur noch erhitzen, nicht kochen. Mit Paprikapulver abschmecken."
+  ],
+  "tipps": {
+   "strecken": "Beim Metzger nach Schweinelachs-Abschnitten fragen. Für Geschnetzeltes reichen die und sind oft deutlich günstiger.",
+   "fertig": "Geschnittene Champignons aus der Kühlung sparen 5 Minuten. Sie kosten pro Kilo etwa 1 € mehr.",
+   "pulver": null
+  },
+  "tags": [
+   "Schwein",
+   "Reis",
+   "Pfanne"
+  ]
+ },
+ {
+  "id": "shakshuka-kichererbsen-feta",
+  "titel": "Shakshuka mit Kichererbsen und Feta",
+  "kurz": "Eier stocken in würziger Tomatensoße. Die Kichererbsen machen satt.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 25,
+  "geraete": 1,
+  "sossenbasis": "Tomate",
+  "zutaten": [
+   [
+    "eier",
+    360
+   ],
+   [
+    "gehackte_tomaten",
+    800,
+    "2 Dosen"
+   ],
+   [
+    "paprika",
+    160
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "kichererbsen",
+    240,
+    "1 Dose"
+   ],
+   [
+    "feta",
+    80
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Zwiebel, Paprika und Knoblauch würfeln und im Öl in einer großen Pfanne weich braten.",
+   "Mit Kreuzkümmel und Paprikapulver würzen. Tomaten und Kichererbsen zugeben, 8 Minuten einkochen.",
+   "Sechs Mulden drücken, die Eier hineinschlagen. Deckel drauf, 6–8 Minuten stocken lassen.",
+   "Feta darüberbröseln. Direkt aus der Pfanne essen, Brot dazu ist optional."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Ajvar aus dem Glas (2 EL) ersetzt die frische Paprika und spart das Schneiden.",
+   "pulver": null
+  },
+  "tags": [
+   "vegetarisch",
+   "Eier",
+   "ein Topf"
+  ]
+ },
+ {
+  "id": "ofen-seelachs-tomate-feta",
+  "titel": "Seelachs vom Blech mit Tomaten, Feta und Kartoffeln",
+  "kurz": "Alles auf ein Blech. 10 Minuten Arbeit, den Rest macht der Ofen.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 40,
+  "geraete": 1,
+  "sossenbasis": "keine (Tomaten und Feta schmelzen)",
+  "zutaten": [
+   [
+    "seelachs",
+    400
+   ],
+   [
+    "kartoffeln",
+    500
+   ],
+   [
+    "tomaten",
+    250
+   ],
+   [
+    "feta",
+    60
+   ],
+   [
+    "zitrone",
+    40,
+    "½ Zitrone"
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Ofen auf 220 °C Umluft vorheizen. Kartoffeln vierteln, mit der Hälfte des Öls, Salz und Rosmarin aufs Blech.",
+   "20 Minuten backen.",
+   "Aufgetauten Seelachs und die geviertelten Tomaten dazulegen, Feta darüberbröseln, restliches Öl darüberträufeln.",
+   "Weitere 12 Minuten backen. Mit Zitrone beträufeln."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Seelachs von Aldi ist hier die beste Wahl: günstig, ohne Panade, über Nacht im Kühlschrank auftauen. Fischstäbchen sind kein Ersatz – zu viel Panade.",
+   "pulver": null
+  },
+  "tags": [
+   "Fisch",
+   "Ofen",
+   "Kartoffeln"
+  ]
+ },
+ {
+  "id": "gyros-pfanne-tzatziki",
+  "titel": "Hähnchen-Gyros-Pfanne mit Tzatziki",
+  "kurz": "Gyros-Würzung aus dem Vorrat, Tzatziki als Dip daneben.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 20,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "keine – Tzatziki ist ein Dip daneben",
+  "zutaten": [
+   [
+    "haehnchen_schenkel",
+    350
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "paprika",
+    160
+   ],
+   [
+    "skyr",
+    200
+   ],
+   [
+    "gurke",
+    150
+   ],
+   [
+    "reis",
+    120
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Reis kochen. Hähnchen in Streifen schneiden, mit Öl, Paprikapulver, Oregano, Thymian, Kreuzkümmel, Salz und der Hälfte des Knoblauchs mischen.",
+   "Gurke grob raspeln, ausdrücken, mit Skyr, restlichem Knoblauch, Salz und Pfeffer zu Tzatziki verrühren.",
+   "Hähnchen in einer heißen Pfanne 6–8 Minuten kräftig braten, bis die Ränder knusprig sind.",
+   "Zwiebel- und Paprikastreifen dazugeben und 3 Minuten mitbraten. Mit Reis und Tzatziki servieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Oberschenkel bleiben saftiger als Brust und sind günstiger. Fertiges Gyros-Fleisch aus der Kühltheke ist oft stark gesalzen.",
+   "pulver": null
+  },
+  "tags": [
+   "Hähnchen",
+   "Reis",
+   "Pfanne"
+  ]
+ },
+ {
+  "id": "puten-asia-nudelpfanne",
+  "titel": "Asia-Nudelpfanne mit Pute und Erdnuss",
+  "kurz": "Sojasoße, Erdnussmus und ein Löffel Honig. Schneller als der Lieferdienst.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 20,
+  "geraete": 2,
+  "sossenbasis": "Sojasoße und Erdnussmus",
+  "zutaten": [
+   [
+    "putenbrust",
+    300
+   ],
+   [
+    "vollkornnudeln",
+    150
+   ],
+   [
+    "gemuese_asia",
+    400
+   ],
+   [
+    "sojasosse",
+    40
+   ],
+   [
+    "erdnussmus",
+    30
+   ],
+   [
+    "honig",
+    10
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Nudeln kochen. Erdnussmus, Sojasoße, Honig und 4 EL Nudelwasser glatt rühren.",
+   "Pute in Streifen schneiden und im heißen Öl 4 Minuten scharf anbraten.",
+   "TK-Gemüse und Knoblauch zugeben und 5 Minuten braten, bis das Wasser verdampft ist.",
+   "Nudeln und Soße untermischen, 1 Minute schwenken. Mit Chiliflocken servieren."
+  ],
+  "tipps": {
+   "strecken": "100 g TK-Edamame statt 100 g Pute spart etwa 0,65 €. Kostet etwa 6 g Protein pro Portion.",
+   "fertig": "Die TK-Asia-Mischung spart das ganze Schnippeln. Achte auf die Variante ohne Soßenpäckchen.",
+   "pulver": null
+  },
+  "tags": [
+   "Pute",
+   "Nudeln",
+   "Asiatisch"
+  ]
+ },
+ {
+  "id": "burrito-pfanne-wraps",
+  "titel": "Burrito-Pfanne mit Hack und Bohnen",
+  "kurz": "Füllung aus der Pfanne, jeder rollt sich seinen Wrap selbst.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 20,
+  "geraete": 1,
+  "sossenbasis": "Tomate",
+  "zutaten": [
+   [
+    "rinderhack",
+    200
+   ],
+   [
+    "kidney",
+    240,
+    "1 Dose"
+   ],
+   [
+    "mais",
+    140
+   ],
+   [
+    "passierte_tomaten",
+    200
+   ],
+   [
+    "vollkornwraps",
+    248
+   ],
+   [
+    "skyr",
+    150
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Zwiebel würfeln und mit dem Hack in wenig Öl krümelig braten.",
+   "Mit Kreuzkümmel, Paprikapulver und Chili würzen. Bohnen, Mais und Tomaten zugeben, 8 Minuten einkochen, bis die Masse fest ist.",
+   "Skyr mit Salz, Limette oder Zitrone verrühren.",
+   "Wraps kurz in der trockenen Pfanne erwärmen, füllen, einen Klecks Dip darauf, einrollen."
+  ],
+  "tipps": {
+   "strecken": "Das Strecken steckt schon drin: 200 g Hack auf eine Dose Bohnen. Wer noch weniger Fleisch will, nimmt 150 g Hack und eine zweite Dose Bohnen.",
+   "fertig": "Fertige Tortilla-Wraps sind in Ordnung. Fertige Burrito-Gewürzpäckchen nicht nötig – Kreuzkümmel und Paprika reichen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Wraps gefüllt in Alufolie wickeln. Schmecken auch kalt, Dip separat mitnehmen."
+  },
+  "tags": [
+   "Rind",
+   "Wraps",
+   "Bohnen"
+  ]
+ },
+ {
+  "id": "ruehrei-spinat-huettenkaese",
+  "titel": "Rührei mit Spinat und Hüttenkäse",
+  "kurz": "Hüttenkäse macht das Rührei cremig und bringt 12 g Protein extra.",
+  "typ": "warm",
+  "mahlzeit": "Frühstück",
+  "portionen": 1,
+  "arbeitszeit": 8,
+  "gesamtzeit": 10,
+  "geraete": 1,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "eier",
+    180
+   ],
+   [
+    "huettenkaese",
+    100
+   ],
+   [
+    "spinat",
+    100
+   ],
+   [
+    "vollkorntoast",
+    60
+   ],
+   [
+    "oel",
+    3
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Spinat in einer beschichteten Pfanne mit dem Öl auftauen lassen, bis das Wasser verdampft ist.",
+   "Eier mit Salz und Pfeffer verquirlen, in die Pfanne geben und bei mittlerer Hitze langsam stocken lassen.",
+   "Kurz bevor das Ei fest ist, den Hüttenkäse unterheben.",
+   "Mit getoastetem Brot servieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Blattspinat in Portionsstücken (Kugeln) ist ideal: eine Kugel ist etwa 25 g, einfach abzählen.",
+   "pulver": null
+  },
+  "tags": [
+   "Frühstück",
+   "Eier",
+   "vegetarisch",
+   "10 Minuten"
+  ]
+ },
+ {
+  "id": "protein-pfannkuchen-hafer",
+  "titel": "Haferpfannkuchen mit Banane",
+  "kurz": "Teig aus dem Mixer: Hafer, Eier, Quark und Banane. Kein Mehl.",
+  "typ": "warm",
+  "mahlzeit": "Frühstück",
+  "portionen": 1,
+  "arbeitszeit": 15,
+  "gesamtzeit": 15,
+  "geraete": 1,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "haferflocken",
+    50
+   ],
+   [
+    "eier",
+    120
+   ],
+   [
+    "magerquark",
+    125
+   ],
+   [
+    "banane",
+    110
+   ],
+   [
+    "milch",
+    50
+   ],
+   [
+    "oel",
+    3
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Haferflocken, Eier, Quark, die halbe Banane, Milch, eine Prise Salz und Zimt fein mixen. 5 Minuten quellen lassen.",
+   "Eine beschichtete Pfanne mit wenig Öl auspinseln, bei mittlerer Hitze kleine Pfannkuchen ausbacken.",
+   "Wenden, sobald die Oberseite Bläschen wirft.",
+   "Mit der restlichen Banane in Scheiben servieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": null,
+   "pulver": "Hier passt es gut: 20 g neutrales Proteinpulver in den Teig, dazu 2 EL Milch mehr. Bringt +16 g Protein. Nicht mehr als 30 g, sonst wird der Teig trocken."
+  },
+  "tags": [
+   "Frühstück",
+   "süß",
+   "vegetarisch"
+  ]
+ },
+ {
+  "id": "fried-rice-haehnchen-ei",
+  "titel": "Gebratener Reis mit Hähnchen und Ei",
+  "kurz": "Resteverwertung für Reis vom Vortag. Der wird beim Braten körnig statt matschig.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 15,
+  "geraete": 1,
+  "sossenbasis": "Sojasoße",
+  "zutaten": [
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "reis",
+    140,
+    "140 g (gekocht vom Vortag)"
+   ],
+   [
+    "eier",
+    120
+   ],
+   [
+    "erbsen",
+    200
+   ],
+   [
+    "sojasosse",
+    30
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Hähnchen klein würfeln und im heißen Öl 4 Minuten braten. Zwiebel und Knoblauch dazu.",
+   "Erbsen zugeben, 2 Minuten mitbraten.",
+   "Alles an den Rand schieben, Eier in die Mitte schlagen und unter Rühren stocken lassen.",
+   "Kalten Reis zugeben, alles 3 Minuten bei hoher Hitze braten. Mit Sojasoße ablöschen."
+  ],
+  "tipps": {
+   "strecken": "Hähnchen auf 150 g reduzieren und ein drittes Ei dazu: spart etwa 1 €, kostet etwa 8 g Protein pro Portion.",
+   "fertig": "Express-Reis im Beutel geht, wenn kein Reis vom Vortag da ist. Er kostet etwa dreimal so viel.",
+   "pulver": null
+  },
+  "tags": [
+   "Hähnchen",
+   "Reis",
+   "Resteverwertung"
+  ]
+ },
+ {
+  "id": "linsen-dal-mit-ei",
+  "titel": "Rotes Linsen-Dal mit Eiern",
+  "kurz": "Vegetarisch und trotzdem über 30 g Protein. Die Eier machen den Unterschied.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Tomate und Kokosmilch light",
+  "zutaten": [
+   [
+    "rote_linsen",
+    200
+   ],
+   [
+    "eier",
+    240
+   ],
+   [
+    "gehackte_tomaten",
+    400,
+    "1 Dose"
+   ],
+   [
+    "kokosmilch_light",
+    200
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "spinat",
+    100
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Zwiebel und Knoblauch im Öl anschwitzen, 2 TL Curry und 1 TL Kurkuma kurz mitrösten.",
+   "Linsen, Tomaten, Kokosmilch und 400 ml Wasser zugeben. 15 Minuten köcheln, bis die Linsen weich sind.",
+   "Parallel die Eier 8 Minuten kochen, abschrecken, pellen und halbieren.",
+   "Spinat ins Dal rühren, mit Salz und Zitrone abschmecken. Eier obenauf legen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Gekochte, geschälte Eier aus dem Kühlregal sparen 10 Minuten. Pro Ei etwa 15 Cent teurer.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 4,
+   "kuehlakku": true,
+   "transport": "Dal ohne Eier einfrieren. Eier frisch kochen."
+  },
+  "tags": [
+   "vegetarisch",
+   "Linsen",
+   "Meal Prep",
+   "einfrierbar"
+  ]
+ },
+ {
+  "id": "ofen-haehnchen-kartoffel-brokkoli",
+  "titel": "Hähnchenschenkel vom Blech mit Kartoffeln und Brokkoli",
+  "kurz": "Ein Blech, keine Soße nötig. Die Oberschenkel bleiben saftig.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 40,
+  "geraete": 1,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "haehnchen_schenkel",
+    400
+   ],
+   [
+    "kartoffeln",
+    500
+   ],
+   [
+    "brokkoli",
+    300
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Ofen auf 220 °C Umluft vorheizen. Kartoffeln würfeln, mit 2/3 des Öls, Salz und Paprikapulver aufs Blech.",
+   "Hähnchen mit restlichem Öl, Knoblauch, Paprikapulver, Salz und Pfeffer mischen und zwischen die Kartoffeln legen.",
+   "20 Minuten backen.",
+   "Gefrorenen Brokkoli dazugeben und weitere 12 Minuten backen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Brokkoli kommt direkt gefroren aufs Blech und röstet an den Spitzen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Schmeckt auch kalt als Bowl, mit Senf oder Ketchup."
+  },
+  "tags": [
+   "Hähnchen",
+   "Ofen",
+   "Kartoffeln"
+  ]
+ },
+ {
+  "id": "hackbaellchen-tomatensosse-bulgur",
+  "titel": "Hackbällchen in Tomatensoße mit Bulgur",
+  "kurz": "Haferflocken statt Brötchen im Hack. Die Bällchen garen direkt in der Soße.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 4,
+  "arbeitszeit": 20,
+  "gesamtzeit": 35,
+  "geraete": 2,
+  "sossenbasis": "Tomate",
+  "zutaten": [
+   [
+    "rinderhack",
+    400
+   ],
+   [
+    "haferflocken",
+    40
+   ],
+   [
+    "eier",
+    60
+   ],
+   [
+    "passierte_tomaten",
+    700
+   ],
+   [
+    "bulgur",
+    200
+   ],
+   [
+    "grana",
+    40
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Hack mit Haferflocken, Ei, halber gewürfelter Zwiebel, Salz, Pfeffer und Paprika verkneten. 16 Bällchen formen.",
+   "Bällchen im Öl rundum anbraten. Restliche Zwiebel und Knoblauch kurz mitbraten.",
+   "Tomaten angießen, Oregano dazu, 15 Minuten mit Deckel köcheln.",
+   "Parallel Bulgur in der doppelten Menge Brühe garen. Mit Grana servieren."
+  ],
+  "tipps": {
+   "strecken": "100 g Hack durch 60 g gekochte rote Linsen ersetzen: spart etwa 1,40 €. Die Bällchen werden weicher, halten aber.",
+   "fertig": null,
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 4,
+   "kuehlakku": true,
+   "transport": "Hackbällchen schmecken auch kalt gut."
+  },
+  "tags": [
+   "Rind",
+   "Meal Prep",
+   "einfrierbar"
+  ]
+ },
+ {
+  "id": "thunfisch-tomaten-pasta",
+  "titel": "Thunfisch-Tomaten-Pasta",
+  "kurz": "Alles aus dem Vorratsschrank. Für die Tage, an denen nichts im Kühlschrank ist.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 15,
+  "geraete": 2,
+  "sossenbasis": "Tomate",
+  "zutaten": [
+   [
+    "thunfisch",
+    260,
+    "2 Dosen"
+   ],
+   [
+    "vollkornnudeln",
+    160
+   ],
+   [
+    "passierte_tomaten",
+    400
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "grana",
+    20
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Nudeln kochen.",
+   "Zwiebel und Knoblauch im Öl anschwitzen, Tomaten und Oregano dazu, 5 Minuten köcheln.",
+   "Thunfisch abtropfen, grob zerpflücken und nur noch kurz in der Soße erwärmen.",
+   "Mit Nudeln mischen, mit Chiliflocken und Grana servieren."
+  ],
+  "tipps": {
+   "strecken": "Eine Dose Thunfisch durch eine Dose weiße Bohnen ersetzen: spart etwa 1 €, kostet etwa 8 g Protein pro Portion.",
+   "fertig": "Thunfisch „naturell“ statt in Öl: halb so viele Kalorien. Achte auf das MSC-Siegel.",
+   "pulver": null
+  },
+  "tags": [
+   "Fisch",
+   "Nudeln",
+   "Vorrat",
+   "15 Minuten"
+  ]
+ },
+ {
+  "id": "omelett-paprika-feta",
+  "titel": "Omelett mit Paprika und Feta",
+  "kurz": "Zehn Minuten, eine Pfanne. Für morgens oder wenn es schnell gehen muss.",
+  "typ": "warm",
+  "mahlzeit": "Frühstück",
+  "portionen": 1,
+  "arbeitszeit": 10,
+  "gesamtzeit": 10,
+  "geraete": 1,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "eier",
+    180
+   ],
+   [
+    "feta",
+    40
+   ],
+   [
+    "paprika",
+    80
+   ],
+   [
+    "huettenkaese",
+    50
+   ],
+   [
+    "oel",
+    3
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Paprika würfeln und in der Pfanne mit wenig Öl 3 Minuten anbraten.",
+   "Eier mit Hüttenkäse, Salz und Pfeffer verquirlen, über die Paprika gießen.",
+   "Bei mittlerer Hitze stocken lassen, Feta darüberbröseln.",
+   "Zusammenklappen und auf den Teller gleiten lassen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": null,
+   "pulver": null
+  },
+  "tags": [
+   "Frühstück",
+   "Eier",
+   "vegetarisch",
+   "10 Minuten"
+  ]
+ },
+ {
+  "id": "ofen-feta-pasta-haehnchen",
+  "titel": "Ofen-Feta-Pasta mit Hähnchen",
+  "kurz": "Feta und Kirschtomaten schmelzen im Ofen zur Soße. Hähnchen gart gleich mit.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 30,
+  "geraete": 2,
+  "sossenbasis": "Feta und geschmolzene Tomaten",
+  "zutaten": [
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "feta",
+    150
+   ],
+   [
+    "tomaten",
+    400
+   ],
+   [
+    "vollkornnudeln",
+    160
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Ofen auf 200 °C Umluft vorheizen. Tomaten grob würfeln und in eine Auflaufform geben, Feta als Block in die Mitte.",
+   "Hähnchen würfeln, mit Knoblauch, Salz und Oregano drumherum verteilen. Öl darüberträufeln.",
+   "20 Minuten backen. Parallel die Nudeln kochen.",
+   "Feta und Tomaten mit einer Gabel zerdrücken, mit dem Hähnchen verrühren und die Nudeln untermischen."
+  ],
+  "tipps": {
+   "strecken": "Statt Hähnchen eine Dose Kichererbsen in die Form: vegetarisch und etwa 2,65 € günstiger, dann noch etwa 33 g Protein pro Portion.",
+   "fertig": "Kirschtomaten schmecken hier noch besser, kosten aber etwa doppelt so viel. Im Angebot zugreifen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Schmeckt kalt wie Nudelsalat."
+  },
+  "tags": [
+   "Hähnchen",
+   "Nudeln",
+   "Ofen"
+  ]
+ },
+ {
+  "id": "haehnchen-nudelsuppe",
+  "titel": "Hähnchen-Nudelsuppe",
+  "kurz": "Großer Topf für mehrere Tage. Leicht, aber mit 37 g Protein pro Teller.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 4,
+  "arbeitszeit": 15,
+  "gesamtzeit": 35,
+  "geraete": 1,
+  "sossenbasis": "Brühe",
+  "zutaten": [
+   [
+    "haehnchenbrust",
+    500
+   ],
+   [
+    "nudeln",
+    160
+   ],
+   [
+    "karotten",
+    300
+   ],
+   [
+    "erbsen",
+    200
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Zwiebel und Karotten würfeln, im Öl im großen Topf kurz anschwitzen.",
+   "1,5 l Brühe zugießen, das ganze Hähnchen hineinlegen. 15 Minuten leise köcheln.",
+   "Hähnchen herausnehmen und mit zwei Gabeln zerzupfen.",
+   "Nudeln und Erbsen in die Brühe geben, 8 Minuten garen. Hähnchen zurück, mit Petersilie servieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Suppengemüse spart das Schneiden. Brühwürfel ohne Glutamat sind in Ordnung, aber salzig – vor dem Salzen abschmecken.",
+   "pulver": "Möglich: Pro Teller 15 g Pulver in 3 EL kalter Brühe glatt rühren und erst einrühren, wenn die Suppe nicht mehr kocht. Bringt +12 g Protein."
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 4,
+   "kuehlakku": false,
+   "transport": "Thermobehälter. Nudeln saugen sich voll – lieber getrennt aufbewahren."
+  },
+  "tags": [
+   "Hähnchen",
+   "Suppe",
+   "Meal Prep"
+  ]
+ },
+ {
+  "id": "satay-haehnchen-reis",
+  "titel": "Hähnchen-Satay-Pfanne mit Brokkoli",
+  "kurz": "Erdnusssoße mit Kokos. Schmeckt nach Thai-Imbiss.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Erdnussmus, Kokosmilch light und Sojasoße",
+  "zutaten": [
+   [
+    "haehnchenbrust",
+    300
+   ],
+   [
+    "reis",
+    120
+   ],
+   [
+    "brokkoli",
+    300
+   ],
+   [
+    "erdnussmus",
+    40
+   ],
+   [
+    "sojasosse",
+    30
+   ],
+   [
+    "kokosmilch_light",
+    100
+   ],
+   [
+    "knoblauch",
+    10
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Reis kochen. Erdnussmus, Sojasoße, Kokosmilch, Knoblauch und etwas Chili glatt rühren.",
+   "Hähnchen in Streifen im heißen Öl 5 Minuten braten.",
+   "Brokkoli zugeben, 5 Minuten mitbraten.",
+   "Soße zugießen, 2 Minuten einköcheln. Mit Limette oder Zitrone abschmecken."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Erdnussmus ohne Zucker- und Palmölzusatz kaufen. Es sollte nur aus Erdnüssen bestehen.",
+   "pulver": null
+  },
+  "tags": [
+   "Hähnchen",
+   "Reis",
+   "Asiatisch"
+  ]
+ },
+ {
+  "id": "kartoffel-hack-pfanne-spiegelei",
+  "titel": "Kartoffel-Hack-Pfanne mit Spiegelei",
+  "kurz": "Bauernfrühstück-Prinzip, nur mit mehr Fleisch und weniger Fett.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 30,
+  "geraete": 1,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "kartoffeln",
+    600
+   ],
+   [
+    "rinderhack",
+    250
+   ],
+   [
+    "eier",
+    120
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "paprika",
+    160
+   ],
+   [
+    "oel",
+    10
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Kartoffeln in 1 cm Würfel schneiden, 8 Minuten in Salzwasser vorkochen, abgießen.",
+   "Hack in der großen Pfanne krümelig braten, Zwiebel und Paprika zugeben.",
+   "Öl und Kartoffeln dazu, 10 Minuten braten, bis sie Farbe haben. Mit Paprika, Salz und Kümmel würzen.",
+   "Zwei Mulden drücken, Eier hineinschlagen, mit Deckel stocken lassen."
+  ],
+  "tipps": {
+   "strecken": "Hack halbieren und eine Dose Kidneybohnen untermischen: spart etwa 1,20 €, kostet etwa 8 g Protein pro Portion.",
+   "fertig": "Vorgegarte Kartoffeln aus dem Kühlregal sparen das Vorkochen.",
+   "pulver": null
+  },
+  "tags": [
+   "Rind",
+   "Kartoffeln",
+   "Pfanne"
+  ]
+ },
+ {
+  "id": "seelachs-senfsosse-kartoffeln",
+  "titel": "Seelachs in Senfsoße mit Kartoffeln und Erbsen",
+  "kurz": "Norddeutscher Klassiker in leicht. Die Soße kommt aus Milch und Senf.",
+  "typ": "warm",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Milch und Senf",
+  "zutaten": [
+   [
+    "seelachs",
+    400
+   ],
+   [
+    "kartoffeln",
+    500
+   ],
+   [
+    "milch",
+    250
+   ],
+   [
+    "senf",
+    30
+   ],
+   [
+    "mehl",
+    15
+   ],
+   [
+    "erbsen",
+    150
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Kartoffeln schälen, halbieren und in Salzwasser 20 Minuten kochen.",
+   "Mehl im Öl in einer Pfanne kurz anschwitzen, Milch unter Rühren zugießen und aufkochen.",
+   "Senf und Erbsen einrühren, mit Salz, Pfeffer und etwas Zucker abschmecken.",
+   "Aufgetauten Seelachs in die Soße legen und mit Deckel 8 Minuten gar ziehen lassen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Seelachs ohne Panade. Über Nacht im Kühlschrank auftauen.",
+   "pulver": null
+  },
+  "tags": [
+   "Fisch",
+   "Kartoffeln"
+  ]
+ },
+ {
+  "id": "linsensalat-haehnchen-feta",
+  "titel": "Linsensalat mit Hähnchen und Feta",
+  "kurz": "Wird am zweiten Tag besser, weil die Linsen das Dressing aufnehmen.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 15,
+  "geraete": 1,
+  "sossenbasis": "Öl, Essig und Senf",
+  "zutaten": [
+   [
+    "linsen_dose",
+    480,
+    "2 Dosen"
+   ],
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "feta",
+    60
+   ],
+   [
+    "paprika",
+    160
+   ],
+   [
+    "gurke",
+    200
+   ],
+   [
+    "zwiebel",
+    40,
+    "½ rote Zwiebel"
+   ],
+   [
+    "senf",
+    10
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Hähnchen salzen, pfeffern und in einer Pfanne mit etwas Öl 5 Minuten pro Seite braten. Abkühlen lassen, würfeln.",
+   "Linsen abspülen und gut abtropfen lassen.",
+   "Öl, Senf, 2 EL Essig, Salz und Pfeffer verrühren.",
+   "Paprika, Gurke und Zwiebel würfeln, alles mit dem Dressing mischen, Feta darüberbröseln."
+  ],
+  "tipps": {
+   "strecken": "Ohne Hähnchen, dafür eine Dose Linsen mehr und 2 gekochte Eier: vegetarisch und etwa 1,90 € günstiger.",
+   "fertig": "Linsen aus der Dose sind hier ideal: fertig gegart, nur abspülen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Dicht schließende Box. Gurke erst am Morgen dazugeben, dann bleibt sie knackig."
+  },
+  "tags": [
+   "Uni",
+   "Meal Prep",
+   "Hähnchen",
+   "Salat"
+  ]
+ },
+ {
+  "id": "nudelsalat-thunfisch-erbsen",
+  "titel": "Nudelsalat mit Thunfisch und Erbsen",
+  "kurz": "Ohne Mayo. Das Dressing aus Öl, Senf und Essig hält den Salat saftig.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 20,
+  "geraete": 1,
+  "sossenbasis": "Öl, Essig und Senf",
+  "zutaten": [
+   [
+    "vollkornnudeln",
+    140
+   ],
+   [
+    "thunfisch",
+    260,
+    "2 Dosen"
+   ],
+   [
+    "erbsen",
+    150
+   ],
+   [
+    "mais",
+    140
+   ],
+   [
+    "gurke",
+    150
+   ],
+   [
+    "senf",
+    10
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Nudeln kochen. In der letzten Minute die TK-Erbsen mit ins Wasser geben.",
+   "Abgießen und kalt abschrecken, damit die Nudeln nicht weiter garen.",
+   "Öl, Senf, 3 EL Essig, 2 EL Wasser, Salz und Pfeffer verrühren.",
+   "Thunfisch, Mais und gewürfelte Gurke untermischen, mit Dressing vermengen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Thunfisch naturell mit MSC-Siegel. Mais abspülen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 2,
+   "kuehlakku": true,
+   "transport": "Etwas mehr Dressing machen und separat mitnehmen. Nudeln ziehen über Nacht nach."
+  },
+  "tags": [
+   "Uni",
+   "Fisch",
+   "Nudeln",
+   "Salat"
+  ]
+ },
+ {
+  "id": "haehnchen-hummus-wrap",
+  "titel": "Hähnchen-Wraps mit Hummus",
+  "kurz": "Hummus als Schutzschicht: Der Wrap wird bis mittags nicht durchweicht.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 20,
+  "geraete": 1,
+  "sossenbasis": "Hummus",
+  "zutaten": [
+   [
+    "vollkornwraps",
+    248
+   ],
+   [
+    "haehnchenbrust",
+    300
+   ],
+   [
+    "hummus",
+    80
+   ],
+   [
+    "gurke",
+    100
+   ],
+   [
+    "tomaten",
+    100
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Hähnchen mit Paprikapulver und Salz würzen, in wenig Öl braten. Abkühlen lassen, in Streifen schneiden.",
+   "Wraps dünn mit Hummus bestreichen, bis an den Rand.",
+   "Gurke in Stifte, Tomaten in Scheiben schneiden. Mit dem Hähnchen auf die Wraps legen.",
+   "Unten einschlagen, fest aufrollen und halbieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Fertiges Hummus ist in Ordnung: Kichererbsen, Sesam, Öl. Variante ohne Zuckerzusatz wählen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 1,
+   "kuehlakku": true,
+   "transport": "Fest in Alufolie oder Butterbrotpapier wickeln. Am Morgen rollen."
+  },
+  "tags": [
+   "Uni",
+   "Hähnchen",
+   "Wraps"
+  ]
+ },
+ {
+  "id": "overnight-oats-quark-beeren",
+  "titel": "Overnight Oats mit Quark und Beeren",
+  "kurz": "Am Abend in ein Glas, am Morgen mitnehmen. Fünf Minuten Arbeit.",
+  "typ": "kalt",
+  "mahlzeit": "Frühstück",
+  "portionen": 1,
+  "arbeitszeit": 5,
+  "gesamtzeit": 5,
+  "geraete": 0,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "haferflocken",
+    60
+   ],
+   [
+    "magerquark",
+    200
+   ],
+   [
+    "milch",
+    120
+   ],
+   [
+    "beeren_tk",
+    100
+   ],
+   [
+    "honig",
+    8
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Haferflocken, Quark, Milch, Honig und eine Prise Zimt im Schraubglas verrühren.",
+   "Gefrorene Beeren obendrauf geben – sie tauen über Nacht auf und färben den Brei.",
+   "Über Nacht in den Kühlschrank.",
+   "Morgens umrühren. Bei Bedarf einen Schuss Milch dazu."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "TK-Beeren sind günstiger als frische und genauso gesund.",
+   "pulver": "Hier passt es am besten: 20 g Pulver mit 60 ml Milch mehr einrühren. Bringt +16 g Protein, schmeckt man nicht."
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 2,
+   "kuehlakku": false,
+   "transport": "Schraubglas. Bis 4 Stunden ohne Kühlung unproblematisch."
+  },
+  "tags": [
+   "Uni",
+   "Frühstück",
+   "süß",
+   "vegetarisch",
+   "5 Minuten"
+  ]
+ },
+ {
+  "id": "eiermuffins-schinken-spinat",
+  "titel": "Eiermuffins mit Schinken und Spinat",
+  "kurz": "Zwölf Stück auf einmal backen, die ganze Woche mitnehmen.",
+  "typ": "kalt",
+  "mahlzeit": "Snack",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 30,
+  "geraete": 1,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "eier",
+    360
+   ],
+   [
+    "huettenkaese",
+    100
+   ],
+   [
+    "kochschinken",
+    100
+   ],
+   [
+    "paprika",
+    100
+   ],
+   [
+    "spinat",
+    100
+   ],
+   [
+    "gouda",
+    40
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Ofen auf 180 °C Umluft vorheizen, ein 6er-Muffinblech einfetten oder Papierförmchen nehmen.",
+   "Spinat auftauen und gut ausdrücken. Schinken und Paprika klein würfeln.",
+   "Eier mit Hüttenkäse, Salz und Pfeffer verquirlen, alles untermischen und in die Mulden füllen.",
+   "Mit Gouda bestreuen und 18–20 Minuten backen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Gewürfelter Kochschinken vom Metzger statt abgepackter Würfel: weniger Salz und Zusatzstoffe.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 4,
+   "kuehlakku": true,
+   "transport": "In der Box, einzeln einfrierbar."
+  },
+  "tags": [
+   "Uni",
+   "Snack",
+   "Meal Prep",
+   "Eier"
+  ]
+ },
+ {
+  "id": "bulgursalat-kichererbsen-haehnchen",
+  "titel": "Bulgursalat mit Kichererbsen und Hähnchen",
+  "kurz": "Wie Taboulé, nur sättigender. Zieht im Kühlschrank durch.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Öl und Zitrone",
+  "zutaten": [
+   [
+    "bulgur",
+    120
+   ],
+   [
+    "kichererbsen",
+    240,
+    "1 Dose"
+   ],
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "gurke",
+    150
+   ],
+   [
+    "tomaten",
+    150
+   ],
+   [
+    "feta",
+    60
+   ],
+   [
+    "zitrone",
+    80
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Bulgur mit der doppelten Menge kochender Brühe übergießen, 10 Minuten quellen lassen.",
+   "Hähnchen braten, abkühlen lassen, würfeln.",
+   "Gurke und Tomaten würfeln, Kichererbsen abspülen.",
+   "Alles mit Zitronensaft, Öl, Salz, Pfeffer und Minze oder Petersilie mischen. Feta darüber."
+  ],
+  "tipps": {
+   "strecken": "Ohne Hähnchen und mit einer zweiten Dose Kichererbsen: vegetarisch und etwa 2,65 € günstiger, aber nur noch etwa 30 g Protein pro Portion.",
+   "fertig": null,
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Hält sich gut. Tomaten geben Wasser ab – am besten erst morgens dazu."
+  },
+  "tags": [
+   "Uni",
+   "Meal Prep",
+   "Hähnchen",
+   "Salat"
+  ]
+ },
+ {
+  "id": "frikadellen-rind-linsen",
+  "titel": "Frikadellen mit Rind und roten Linsen",
+  "kurz": "Kalt fast besser als warm. Linsen im Teig machen sie saftig und günstiger.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 4,
+  "arbeitszeit": 20,
+  "gesamtzeit": 35,
+  "geraete": 2,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "rinderhack",
+    500
+   ],
+   [
+    "rote_linsen",
+    80
+   ],
+   [
+    "eier",
+    60
+   ],
+   [
+    "haferflocken",
+    40
+   ],
+   [
+    "zwiebel",
+    80
+   ],
+   [
+    "senf",
+    15
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Linsen in 200 ml Wasser 10 Minuten weich kochen, bis das Wasser aufgesogen ist. Abkühlen lassen.",
+   "Zwiebel fein würfeln. Mit Hack, Linsen, Ei, Haferflocken, Senf, Salz, Pfeffer und Majoran verkneten.",
+   "12 flache Frikadellen formen.",
+   "Im Öl bei mittlerer Hitze 4–5 Minuten pro Seite braten."
+  ],
+  "tipps": {
+   "strecken": "Das Strecken steckt drin: Die Linsen ersetzen etwa 150 g Hack.",
+   "fertig": null,
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Mit Senf und Rohkost in die Box. Einzeln einfrierbar."
+  },
+  "tags": [
+   "Uni",
+   "Rind",
+   "Meal Prep",
+   "einfrierbar"
+  ]
+ },
+ {
+  "id": "thunfisch-bohnen-salat",
+  "titel": "Italienischer Thunfisch-Bohnen-Salat",
+  "kurz": "Zehn Minuten, kein Herd. Aus Dosen und einer Zwiebel.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 10,
+  "gesamtzeit": 10,
+  "geraete": 0,
+  "sossenbasis": "Öl und Essig",
+  "zutaten": [
+   [
+    "thunfisch",
+    260,
+    "2 Dosen"
+   ],
+   [
+    "weisse_bohnen",
+    240,
+    "1 Dose"
+   ],
+   [
+    "zwiebel",
+    50,
+    "½ rote Zwiebel"
+   ],
+   [
+    "tomaten",
+    200
+   ],
+   [
+    "vollkorntoast",
+    60
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Bohnen abspülen und abtropfen lassen.",
+   "Zwiebel in feine Ringe, Tomaten in Würfel schneiden.",
+   "Thunfisch grob zerpflücken, alles mit Öl, 2 EL Essig, Salz, Pfeffer und Petersilie mischen.",
+   "Mit Brot servieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Alles aus der Dose: abspülen senkt das Salz deutlich.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 2,
+   "kuehlakku": true,
+   "transport": "Brot separat einpacken."
+  },
+  "tags": [
+   "Uni",
+   "Fisch",
+   "Salat",
+   "10 Minuten",
+   "ohne Herd"
+  ]
+ },
+ {
+  "id": "pesto-nudelsalat-haehnchen-mozzarella",
+  "titel": "Pesto-Nudelsalat mit Hähnchen und Mozzarella",
+  "kurz": "Pesto rosso trägt den Geschmack. Etwas Pesto reicht für viel Salat.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 20,
+  "geraete": 2,
+  "sossenbasis": "Pesto rosso",
+  "zutaten": [
+   [
+    "vollkornnudeln",
+    140
+   ],
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "pesto_rosso",
+    60
+   ],
+   [
+    "kirschtomaten",
+    200
+   ],
+   [
+    "mozzarella_light",
+    125
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Nudeln kochen, kalt abschrecken.",
+   "Hähnchen in wenig Öl braten, abkühlen lassen, würfeln.",
+   "Tomaten halbieren, Mozzarella würfeln.",
+   "Alles mit Pesto und 3 EL Nudelwasser mischen. Mit Rucola oder Basilikum servieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Pesto im Glas ist okay in kleinen Mengen. 30 g pro Portion sind etwa 100 kcal – nicht mehr nehmen.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Hält sich gut, wird nicht matschig."
+  },
+  "tags": [
+   "Uni",
+   "Hähnchen",
+   "Nudeln",
+   "Salat"
+  ]
+ },
+ {
+  "id": "asia-nudelsalat-edamame",
+  "titel": "Asia-Nudelsalat mit Edamame und Hähnchen",
+  "kurz": "Erdnuss-Soja-Dressing, knackiges Gemüse. Schmeckt kalt am besten.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 20,
+  "gesamtzeit": 20,
+  "geraete": 2,
+  "sossenbasis": "Sojasoße und Erdnussmus",
+  "zutaten": [
+   [
+    "vollkornnudeln",
+    140
+   ],
+   [
+    "edamame",
+    200
+   ],
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "karotten",
+    150
+   ],
+   [
+    "gurke",
+    150
+   ],
+   [
+    "sojasosse",
+    30
+   ],
+   [
+    "erdnussmus",
+    20
+   ],
+   [
+    "oel",
+    5
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Nudeln kochen, Edamame die letzten 3 Minuten mitkochen. Kalt abschrecken.",
+   "Hähnchen braten, abkühlen lassen und in Streifen schneiden.",
+   "Karotten raspeln, Gurke in Stifte schneiden.",
+   "Sojasoße, Erdnussmus, 1 EL Essig und 3 EL Wasser verrühren, alles mischen."
+  ],
+  "tipps": {
+   "strecken": "Hähnchen weglassen, dafür 200 g Edamame mehr: vegetarisch und etwa 1,90 € günstiger.",
+   "fertig": "TK-Edamame gibt es bei Edeka. Bereits geschälte kaufen, das spart viel Zeit.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 3,
+   "kuehlakku": true,
+   "transport": "Dressing separat, sonst werden die Nudeln weich."
+  },
+  "tags": [
+   "Uni",
+   "Hähnchen",
+   "Asiatisch",
+   "Salat"
+  ]
+ },
+ {
+  "id": "reissalat-haehnchen-mais",
+  "titel": "Reissalat mit Hähnchen, Mais und Paprika",
+  "kurz": "Partysalat-Prinzip für die Mittagspause.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 2,
+  "arbeitszeit": 15,
+  "gesamtzeit": 25,
+  "geraete": 2,
+  "sossenbasis": "Öl und Essig",
+  "zutaten": [
+   [
+    "reis",
+    140
+   ],
+   [
+    "haehnchenbrust",
+    250
+   ],
+   [
+    "mais",
+    140
+   ],
+   [
+    "paprika",
+    160
+   ],
+   [
+    "erbsen",
+    150
+   ],
+   [
+    "oel",
+    15
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Reis kochen, Erbsen die letzten 3 Minuten mitgaren. Ausbreiten und abkühlen lassen.",
+   "Hähnchen braten, abkühlen lassen, würfeln.",
+   "Paprika würfeln, Mais abtropfen lassen.",
+   "Alles mit Öl, 3 EL Essig, Salz, Pfeffer und Paprikapulver mischen."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": null,
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 2,
+   "kuehlakku": true,
+   "transport": "Gekochten Reis schnell abkühlen und gekühlt lagern. Bei Reis ist die Kühlkette wichtig."
+  },
+  "tags": [
+   "Uni",
+   "Hähnchen",
+   "Reis",
+   "Salat"
+  ]
+ },
+ {
+  "id": "puten-sandwich-huettenkaese",
+  "titel": "Puten-Sandwich mit Hüttenkäse",
+  "kurz": "Hüttenkäse statt Butter. Drei Scheiben Brot, ein Sandwich, 43 g Protein.",
+  "typ": "kalt",
+  "mahlzeit": "Hauptgericht",
+  "portionen": 1,
+  "arbeitszeit": 5,
+  "gesamtzeit": 5,
+  "geraete": 0,
+  "sossenbasis": null,
+  "zutaten": [
+   [
+    "vollkorntoast",
+    90
+   ],
+   [
+    "putenaufschnitt",
+    100
+   ],
+   [
+    "huettenkaese",
+    100
+   ],
+   [
+    "gurke",
+    50
+   ],
+   [
+    "tomaten",
+    50
+   ],
+   [
+    "gewuerze",
+    0
+   ]
+  ],
+  "schritte": [
+   "Brot toasten oder frisch lassen.",
+   "Hüttenkäse mit Salz, Pfeffer und Schnittlauch auf zwei Scheiben streichen.",
+   "Pute, Gurken- und Tomatenscheiben darauf schichten.",
+   "Doppeldecker bauen und diagonal halbieren."
+  ],
+  "tipps": {
+   "strecken": null,
+   "fertig": "Putenaufschnitt mit hohem Fleischanteil und wenig Salz wählen. Bei Aldi gibt es ihn in Haltung 3.",
+   "pulver": null
+  },
+  "unterwegs": {
+   "haltbarkeit_tage": 1,
+   "kuehlakku": true,
+   "transport": "Tomate zwischen Pute und Gurke legen, dann weicht das Brot nicht durch."
+  },
+  "tags": [
+   "Uni",
+   "Pute",
+   "Brot",
+   "5 Minuten",
+   "ohne Herd"
+  ]
+ }
+]

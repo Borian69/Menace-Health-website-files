@@ -75,6 +75,7 @@ ist derselbe: `#0D1824`, eine Nuance unter dem Tokenwert (Begründung oben).
 
 Datiere neue Zeilen. Eine Abweichung, die nur im Code-Kommentar begründet ist, gilt als
 nicht begründet.
+| **Rezeptbuch als claude.ai-Artifact mit eingebetteten Tokens**<br>*07.10.2026* | Artifacts dürfen keine Repo-Dateien laden, `@import url("./design/styles.css")` läuft dort ins Leere. Kopierte Werte können vom Original abweichen, wenn `tokens.css` sich ändert | Tokens, Schriften und Komponentenregeln aus `design/` werden 1 : 1 in `rezeptbuch/rezeptbuch.html` übernommen, Elfenbein hell und Nacht dunkel. Zwei Hilfsnamen ohne neue Farbe: `--link` (Walnuss Tief hell, Messing dunkel — beide freigegeben) und `--shirt-ink` (Tinte). Bei Änderungen an `tokens.css` die Kopie nachziehen |
 
 ## Was nicht verhandelbar ist
 
