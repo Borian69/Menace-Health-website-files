@@ -278,10 +278,10 @@
           <input type="password" id="set-key" name="key" spellcheck="false" autocomplete="off">
           <p class="field-hint" id="key-hint"></p>
         </div>
-        <div class="field" data-mode="proxy">
-          <label for="set-proxy">Proxy-URL</label>
-          <input type="url" id="set-proxy" name="proxyUrl" placeholder="https://…/api/scan" spellcheck="false">
-          <p class="field-hint">Endpunkt, der den API-Key serverseitig hält. Siehe <b>server/scan.js</b> im Projekt.</p>
+        <div class="field">
+          <label for="set-proxy">Proxy-URL (Ausweichweg)</label>
+          <input type="url" id="set-proxy" name="proxyUrl" placeholder="https://….workers.dev" spellcheck="false">
+          <p class="field-hint">Sperrt ein VPN oder Blocker den Weg zum Anbieter, nimmt die App diesen hier. Fertig zum Aufsetzen: <b>proxy/cloudflare-worker.js</b> im Projekt — fünf Minuten, kostenlos, und der Schlüssel liegt dann dort statt im Browser.</p>
         </div>
         <div class="field">
           <label for="set-model">Modell fürs Lesen des Bons</label>
