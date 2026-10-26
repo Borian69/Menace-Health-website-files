@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Literata:opsz,wght@7..72,400;7..72,600&family=Instrument+Serif&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Serif&display=swap');
 /* Moch — Design System v4.0 · Einzeldatei für den Skill.
    ERZEUGT von .design-sync/build.sh aus tokens/tokens.css, tokens/shape.css und der
    Komponentenschicht in components/controls.html. Nicht von Hand ändern. */
@@ -32,26 +32,33 @@
      Überschrift schmal mit Charakter · Kennzahl ruhig und kräftig · Text still · Ziffern exakt. */
   --font-display:"Instrument Serif",Georgia,"Times New Roman",serif;  /* Überschriften, Statement */
   --display-wght:400;       /* Instrument Serif hat nur 400 – nie fett setzen          */
-  --font-zahl:"Literata",Georgia,"Times New Roman",serif;  /* große Kennzahlen, Zählwerk      */
-  --zahl-wght:600; --zahl-opsz:72;
-  --display-opsz:72;        /* Alt-Name (v3.2), wirkt nur auf Literata                 */
+  --font-zahl:var(--font-text);             /* große Kennzahlen, Zählwerk: Archivo 600  */
+  --zahl-wght:600;
+  --zahl-luft:.18em;                        /* Box-Luft unter einer Zahl bei line-height:1.
+                                               Gemessen: 12,9 px bei 72 px. Wer darunter eine
+                                               Linie setzt, zieht sie ab, sonst steht sie
+                                               optisch doppelt so weit weg wie gesetzt.      */                          /* Archivo kennt keine opsz-Achse           */
   --font-text:"Archivo","Helvetica Neue",Arial,sans-serif;
   --font-mono:"IBM Plex Mono",Consolas,monospace;
   --display-min:24px;                       /* darunter nie Display, sondern Archivo 600 */
-  --display-track:calc(.3px - .012em);      /* größenabhängig: klein ≈ 0, groß bis −1 %  */
+  --display-track:.016em;                   /* OFFEN, nicht eng: Instrument Serif läuft 22 %
+                                             schmaler als Archivo (gemessen an derselben
+                                             Zeile bei 100 px: 1198 zu 1543). Die Regel
+                                             "große Schrift enger" gilt für normal laufende
+                                             Schriften, nicht für diese.                 */
   --mark-track:.06em;
 
   /* Typo-Skala. Instrument Serif läuft schmal, deshalb größer und enger gesetzt als eine
      breite Antiqua – die Überschrift trägt die Persönlichkeit. */
-  --fs-statement:clamp(4rem, 1.2rem + 11vw, 12.5rem);  --lh-statement:.92;
-  --fs-h1:clamp(3.5rem, 2.9rem + 2.4vw, 4.5rem);      --lh-h1:.96;   /* 56–72 px */
-  --fs-h2:clamp(2.25rem, 1.8rem + 1.6vw, 3.25rem);    --lh-h2:1;     /* 36–52 px */
-  --fs-number:clamp(2.75rem, 2rem + 2.4vw, 4rem);     --lh-number:1; /* Literata 600 */
+  --fs-statement:clamp(4.4rem, 1.32rem + 12.1vw, 13.75rem);  --lh-statement:.92;
+  --fs-h1:clamp(3.85rem, 3.19rem + 2.64vw, 4.95rem);      --lh-h1:.96;   /* 56–72 px */
+  --fs-h2:clamp(2.475rem, 1.98rem + 1.76vw, 3.575rem);    --lh-h2:1;     /* 36–52 px */
+  --fs-number:clamp(2.75rem, 2rem + 2.4vw, 4rem);     --lh-number:1; /* Archivo 600, tabellarisch */
   --fs-zaehlwerk:clamp(3.625rem, 3rem + 2vw, 4.5rem);                /* 58–72 px, App-Kennzahl */
   --fs-h3:1.0625rem;   --lh-h3:1.3;   /* 17 px, Archivo 600 */
-  --fs-body:1.0625rem; --lh-body:1.5; /* 17 px              */
-  --fs-small:.90625rem;--lh-small:1.5;/* 14,5 px            */
-  --fs-label:.75rem;   --lh-label:1.3; --track-label:.14em; /* 12 px, kleinste Größe */
+  --fs-body:1.0625rem; --lh-body:1.4; /* 17 px              */
+  --fs-small:.90625rem;--lh-small:1.45;/* 14,5 px            */
+  --fs-label:.75rem;   --lh-label:1.3; --track-label:.1em; /* 12 px, kleinste Größe */
   --t-body:var(--fs-body); --t-small:var(--fs-small); --t-label:var(--fs-label); /* v3.0-Namen */
   --measure:66ch;          /* Fließtext */
   --measure-narrow:42ch;   /* Karten, Spalten, Bildunterschriften */
@@ -116,14 +123,14 @@
   --line:#DCD9D0; --line-strong:#BAB7AE;
   --text:#342C25; --muted:#69625B; --label:#5C554F;
   --accent:#D98A2B; --accent-ink:#8F5C1F; --auf-accent:#141210;   /* 6,8 : 1 */
-  --brass:#8F5C1F; --focus:#8F5C1F;
+  --brass:var(--line-strong); --focus:#8F5C1F;
 }
 [data-farbe="walnuss"]{   /* Hauptfarbe H 55 . Grund H 235 · Gold entfällt (30°) */
   --ground:#E5ECF1; --surface:#F0F6FA; --surface-2:#C3CCD1;
   --line:#C3CCD1; --line-strong:#A3ACB2;
   --text:#39312C; --muted:#6C645F; --label:#5E5651;
   --accent:#9C5822; --accent-ink:#9C5822; --auf-accent:#F0F6FA;
-  --brass:#9C5822; --focus:#9C5822;
+  --brass:var(--line-strong); --focus:#9C5822;
 }
 [data-farbe="oxblood"]{   /* Hauptfarbe H 12 . Grund H 192 */
   --ground:#E4EDED; --surface:#EFF7F6; --surface-2:#C2CDCC;
@@ -137,7 +144,7 @@
   --line:#C5CBD2; --line-strong:#A5ACB3;
   --text:#37322B; --muted:#6B655E; --label:#5D5750;
   --accent:#8F6123; --accent-ink:#8F6123; --auf-accent:#F1F6FA;
-  --brass:#8F6123; --focus:#8F6123;
+  --brass:var(--line-strong); --focus:#8F6123;
 }
 [data-farbe="stahlblau"]{   /* Hauptfarbe H 233 . Grund H 53 */
   --ground:#F1E9E5; --surface:#FAF4F0; --surface-2:#D1C9C3;
@@ -173,14 +180,14 @@
   --line:#26313D; --line-strong:#3A4654;
   --text:#FFFDF7; --muted:#A6AEB7; --label:#A6AEB7;
   --accent:#D98A2B; --accent-ink:#EDB065; --auf-accent:#0F1A26;
-  --brass:#EDB065; --focus:#EDB065;
+  --brass:var(--line-strong); --focus:#EDB065;
 }
 [data-scheme="dunkel"][data-farbe="walnuss"]{
   --ground:#0B1B25; --surface:#12232D; --surface-2:#12232D;
   --line:#23323B; --line-strong:#364852;
   --text:#E4D4CA; --muted:#A89C94; --label:#B5AAA3;
   --accent:#46240A; --accent-ink:#D48448; --auf-accent:#E4D4CA;
-  --brass:#D48448; --focus:#D48448;
+  --brass:var(--line-strong); --focus:#D48448;
 }
 [data-scheme="dunkel"][data-farbe="oxblood"]{
   --ground:#071D1C; --surface:#0E2624; --surface-2:#0E2624;
@@ -194,7 +201,7 @@
   --line:#26313D; --line-strong:#394654;
   --text:#E1D5C8; --muted:#A59D93; --label:#B3ABA2;
   --accent:#3F290A; --accent-ink:#C48E49; --auf-accent:#E1D5C8;
-  --brass:#C48E49; --focus:#C48E49;
+  --brass:var(--line-strong); --focus:#C48E49;
 }
 [data-scheme="dunkel"][data-farbe="stahlblau"]{
   --ground:#24150C; --surface:#2C1D13; --surface-2:#2C1D13;
@@ -231,7 +238,7 @@
   --line:#26313D; --line-strong:#3A4654;
   --text:#FFFDF7; --muted:#A6AEB7; --label:#A6AEB7;
   --accent:#D98A2B; --accent-ink:#EDB065; --auf-accent:#0F1A26;
-  --brass:#EDB065; --focus:#EDB065;
+  --brass:var(--line-strong); --focus:#EDB065;
   --success:#5FA883; --warning:#D9A441; --error:#E07563; --info:#78A6C4;
 }
 
@@ -383,9 +390,9 @@ h1,h2,.display{font-family:var(--font-display);font-weight:var(--display-wght);
 .display-gross{font-size:var(--fs-statement)}
 h1{font-size:var(--fs-h1);line-height:var(--lh-h1);margin:0 0 var(--s3)}
 h2{font-size:var(--fs-h2);line-height:var(--lh-h2);margin:var(--s5) 0 var(--s2)}
-/* Kennzahlen: Literata 600, ruhig und kräftig – der Gegenpol zum schmalen Titel */
-.number{font-family:var(--font-zahl);font-weight:var(--zahl-wght);font-variation-settings:"opsz" var(--zahl-opsz);
-  font-size:var(--fs-number);line-height:var(--lh-number);letter-spacing:-.01em;margin:0;
+/* Kennzahlen: Archivo 600, tabellarisch – Gegenpol zur Mono-Datenzeile darunter */
+.number + .dataline,.zaehlwerk + .dataline{margin-top:calc(var(--s2) - var(--zahl-luft))}
+.number{font-family:var(--font-zahl);font-weight:var(--zahl-wght);font-size:var(--fs-number);line-height:var(--lh-number);letter-spacing:-.01em;margin:0;
   font-variant-numeric:tabular-nums lining-nums}
 h3{font-family:var(--font-text);font-weight:600;font-size:var(--fs-h3);line-height:var(--lh-h3);
   letter-spacing:0;margin:0 0 var(--s1);text-wrap:balance}
@@ -439,7 +446,7 @@ h1 .n,h2 .n,.display .n,.number .n,.shirt h3 .n,.zaehlwerk .n{font-family:inheri
 .mitte{text-align:center}
 .mitte p,.mitte .display{margin-left:auto;margin-right:auto}
 .reihe{display:grid;gap:var(--f3);grid-template-columns:repeat(auto-fit,minmax(calc(var(--m) * 15),1fr))}
-.drei{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--brass);border-bottom:1px solid var(--brass)}
+.drei{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong)}
 .drei > *{padding:var(--f5) var(--f4);text-align:center;border-right:1px solid var(--line)}
 .drei > *:last-child{border-right:0}
 .drei .number{display:block;color:var(--accent-ink);margin-bottom:var(--f2)}
@@ -480,7 +487,7 @@ h1 .n,h2 .n,.display .n,.number .n,.shirt h3 .n,.zaehlwerk .n{font-family:inheri
 table{border-collapse:collapse;width:100%;font-size:var(--fs-small)}
 th,td{text-align:left;padding:10px var(--s2);border-bottom:1px solid var(--line);vertical-align:top}
 th{color:var(--label);font-weight:500}
-thead th{border-bottom-color:var(--brass)}
+thead th{border-bottom-color:var(--label)}
 td.n{color:var(--muted)}
 table.compact th,table.compact td{padding:6px var(--s1)}
 
@@ -682,9 +689,9 @@ body.app{padding:0;overscroll-behavior:none;-webkit-tap-highlight-color:transpar
 .rein{opacity:0;transform:translateY(12px)}
 .rein.da{opacity:1;transform:none;transition:opacity 420ms var(--ease),transform 420ms var(--ease)}
 
-/* Zählwerk: jede Ziffer eine Walze, Literata 600. Rollt von links nach rechts, 45 ms versetzt. */
+/* Zählwerk: jede Ziffer eine Walze, Archivo 600. Rollt von links nach rechts, 45 ms versetzt. */
 .zaehlwerk{display:flex;align-items:baseline;font-family:var(--font-zahl);font-weight:var(--zahl-wght);
-  font-variation-settings:"opsz" var(--zahl-opsz);font-size:var(--fs-zaehlwerk);line-height:1;letter-spacing:-.01em}
+  font-size:var(--fs-zaehlwerk);line-height:1;letter-spacing:-.01em}
 .zaehlwerk .zw{display:inline-flex;height:1em;overflow:hidden}
 .zaehlwerk .ziffer{display:inline-block;width:.62em;height:1em;overflow:hidden;text-align:center}
 .zaehlwerk .ziffer > span{display:block;will-change:transform}

@@ -57,12 +57,14 @@ bringen. Eigene Nachrichten bleiben wörtlich.
 
 ## Design
 
-Moch v4.0, Fassung **Walnuss** — dieselbe Hauptfarbe wie das Bordbuch, denn ein
-Projekt hat genau eine (Regel 3). Gold entfällt bei Walnuss; `--brass` trägt die
-Hauptfarbe.
+Moch v4.0 (Stand 18.10.2026), Fassung **Walnuss** — dieselbe Hauptfarbe wie das
+Bordbuch, denn ein Projekt hat genau eine (Regel 3). Gold entfällt bei Walnuss;
+Linien (`--brass`) sind dort neutral, die Hauptfarbe trägt Fläche, Schrift und die
+Fokuslinie der Felder. Kennzahlen stehen in Archivo 600, Literata ist entfallen.
 
 `design/4.0/moch.css` und `design/4.0/moch-motion.js` sind unveränderte Kopien aus dem
-Skill `moch-design` v4.0. Sie werden dort erzeugt und hier nie von Hand geändert. Das
+Skill `moch-design` v4.0. Sie werden dort erzeugt und hier nie von Hand geändert. Nach jedem Austausch
+`?v=` in `chat/index.html` hochzählen. Das
 Bordbuch läuft weiter auf `design/moch.css` (v3.2) und ist von diesem Umbau nicht
 berührt.
 
