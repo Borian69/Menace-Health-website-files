@@ -4,23 +4,57 @@
   "description": "Aufnehmen, Projekten zuordnen, lokal transkribieren und strukturiert zusammenfassen.",
   "lang": "de",
   "dir": "ltr",
-  "id": "/",
-  "start_url": "/",
-  "scope": "/",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0D1824",
   "theme_color": "#0D1824",
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "share_target": {
-    "action": "/teilen",
+    "action": "teilen",
     "method": "POST",
     "enctype": "multipart/form-data",
-    "params": { "files": [{ "name": "audio", "accept": ["audio/*", ".m4a", ".mp3", ".wav", ".aac", ".ogg", ".flac", ".webm"] }] }
+    "params": {
+      "files": [
+        {
+          "name": "audio",
+          "accept": [
+            "audio/*",
+            ".m4a",
+            ".mp3",
+            ".wav",
+            ".aac",
+            ".ogg",
+            ".flac",
+            ".webm"
+          ]
+        }
+      ]
+    }
   }
 }

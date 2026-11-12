@@ -30,30 +30,49 @@ Pegel bewegen sich nur bei aktivem Recorder, eine Unterbrechung wird als Fehler 
   Safari kann Website-Daten trotzdem nach 7 Tagen ohne Nutzung löschen. Als installierte
   PWA (Home-Bildschirm) gilt diese Frist nicht. Aufnahmen also zeitnah speichern.
 
+## Online-Fassung (Gerätebetrieb)
+
+- **Daten je Gerät.** Ohne Server gibt es keinen Abgleich: Handy und Laptop haben getrennte
+  Projekte. Den Browserspeicher zu löschen oder die App zu deinstallieren, löscht die
+  Projekte. Wichtiges als Markdown exportieren.
+- **Verarbeitung nur bei geöffneter App.** Im Hintergrund pausieren Browser die Arbeit. Die
+  App hält den Bildschirm wach. Nach einer Unterbrechung geht es ab dem letzten fertigen
+  2-Minuten-Abschnitt weiter, bezahlte Abschnitte werden nicht wiederholt.
+- **Lange importierte Dateien auf dem Handy.** Zum Transkribieren dekodiert der Browser eine
+  Datei vollständig (16 kHz mono ≈ 230 MB Arbeitsspeicher pro Stunde). Eigene Aufnahmen sind
+  davon nicht betroffen: Die App legt alle 15 Minuten ein neues Teilstück an. Eine importierte
+  Datei von mehreren Stunden kann auf älteren Handys am Speicher scheitern. Dann am Computer
+  verarbeiten.
+- **Formate:** Was ein Browser nicht dekodieren kann, lässt sich dort nicht transkribieren
+  (z. B. OGG/Opus auf älteren iPhones). Die App sagt das mit einer Meldung. Am Computer klappt es.
+- **Kosten:** Ohne eigenen Server kostet auch die Transkription Geld (Whisper über
+  OpenRouter, pro Audiosekunde). Stille wird nicht gesendet.
+
 ## Was geprüft wurde – und wo
 
 | Bereich | Geprüft | Wie |
 |---|---|---|
-| Upload aller sieben Formate, Dauer, Größe, Abspielen mit Range | ja | pytest, echtes FFmpeg |
-| Mehrere Aufnahmen pro Projekt, Umsortieren, Entfernen, Umbenennen | ja | pytest, Browser |
-| Aufnahme, Pause, Fortsetzen, Beenden, Speichern | ja | Chromium mit künstlichem Mikrofon (Telefonansicht) |
-| Wiederherstellung nach Neuladen mitten in der Aufnahme | ja | Chromium |
-| Unterbrechung durch das System + „Weiter aufnehmen“ + Zusammensetzen | ja | Chromium (simuliertes `ended`), pytest |
-| Verarbeitung, Wiederaufnahme nach Fehler, Neustart des Servers | ja | pytest, Browser |
-| OpenRouter: Wiederholung bei 429/5xx, Abbruch bei 401/402, abgeschnittene Antworten | ja | pytest mit nachgebildeten HTTP-Antworten |
-| **Echte Transkription mit faster-whisper** | **nein** | Die Entwicklungsumgebung hatte keinen Zugriff auf huggingface.co; das Modell ließ sich nicht laden. Code, Abschnitte und Fehlerweg sind getestet, die Erkennungsqualität nicht. |
-| **Echter Aufruf von DeepSeek über OpenRouter** | **nein** | openrouter.ai war aus der Entwicklungsumgebung gesperrt. Anfrageformat und Fehlerbehandlung sind gegen nachgebildete Antworten getestet. |
-| **iPhone (Safari) und Android (Chrome) auf echten Geräten** | **nein** | Keine Geräte verfügbar. Besonders zu prüfen: Safari-MP4-Blöcke, Unterbrechung beim Sperren, Wake Lock, Teilen unter Android. |
-| **Docker-Image** | **nein** | Kein Docker-Daemon in der Entwicklungsumgebung. Dockerfile folgt dem lokal getesteten Ablauf. |
+| Online-Fassung statisch unter einem Unterordner ausgeliefert, Gerätebetrieb erkannt | ja | Chromium, `tools/e2e-geraet.mjs` |
+| Schlüssel eintragen, prüfen, Hinweis ohne Schlüssel | ja | Chromium, OpenRouter nachgebildet |
+| Aufnahme über mehrere Teilstücke, Dauer, Sprung in ein späteres Teilstück | ja | Chromium (Teilstück-Wechsel per Testschalter alle 5 s) |
+| Gesendete Anfragen: Schlüssel im Header, Modell-IDs, Sprache, **gültiges MP3 16 kHz mono** | ja | abgefangen und mit ffprobe geprüft |
+| Zusammenfassung, Transkript, Neuladen, Markdown-Export im Gerätebetrieb | ja | Chromium |
+| Server-Betrieb: Upload aller sieben Formate, Verarbeitung, Wiederaufnahme, Neustart, Anmeldung | ja | pytest (27), Chromium |
+| Wiederherstellung nach Neuladen mitten in der Aufnahme, System-Unterbrechung | ja | Chromium |
+| **Echte Antworten von OpenRouter** (Whisper und DeepSeek) | **nein** | openrouter.ai ist aus der Entwicklungsumgebung gesperrt. Format und Felder folgen der OpenRouter-Dokumentation zu `/audio/transcriptions` und `/chat/completions`. Ob der Transkriptions-Endpunkt Aufrufe direkt aus dem Browser (CORS) zulässt, ist ungeprüft. |
+| **GitHub Pages live** | **nein** | github.io ist aus der Entwicklungsumgebung gesperrt |
+| **iPhone (Safari) und Android (Chrome) auf echten Geräten** | **nein** | Besonders zu prüfen: Safari-MP4-Teilstücke, Dekodieren auf dem iPhone, Unterbrechung beim Sperren, Wake Lock |
+| **Echte Transkription mit faster-whisper (Server)** | **nein** | huggingface.co gesperrt; Modell nicht ladbar |
+| **Docker-Image** | **nein** | kein Docker-Daemon |
 
-**Erster Test auf dem Server:** eine kurze echte Aufnahme verarbeiten. Dabei zeigt sich, ob
-das Whisper-Modell lädt (Log: „Lade Whisper-Modell …“) und ob OpenRouter antwortet
-(Log: „OpenRouter final: … Token“).
+**Erster echter Test:** eine kurze Aufnahme (10–20 s) verarbeiten. Klappt es, ist die
+Kette Browser → OpenRouter → Ergebnis bestätigt. Erscheint „Netzwerkfehler“ schon bei der
+Transkription, blockiert der Browser den Aufruf (CORS). Das bitte melden.
 
 ## Weitere Grenzen dieser Fassung
 
-- **Ein Benutzer / ein Passwort.** Keine Benutzerkonten. Wer das Passwort kennt, sieht alle Projekte.
-- **Eine Verarbeitung zur Zeit.** Weitere Projekte warten in der Schlange. Auf einem kleinen
+- **Server-Betrieb: ein Benutzer / ein Passwort.** Keine Benutzerkonten. Wer das Passwort kennt, sieht alle Projekte.
+- **Eine Verarbeitung zur Zeit** (in beiden Betriebsarten). Weitere Projekte warten in der Schlange. Auf einem kleinen
   VPS ist das Absicht.
 - **Keine Sprechertrennung.** Whisper unterscheidet keine Sprecher. Die Zusammenfassung
   nennt Personen nur, wenn sie im Gesagten vorkommen.

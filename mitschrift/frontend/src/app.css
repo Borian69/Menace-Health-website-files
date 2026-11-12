@@ -117,3 +117,12 @@ details.transkript[open] > summary { margin-bottom: var(--f4); }
 .player-kopf { display: flex; align-items: center; justify-content: space-between; gap: var(--f2); }
 .player-kopf .lb { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .player audio { width: 100%; height: 40px; display: block; }
+
+/* Zahnrad: ein Punkt in der Hauptfarbe, solange der Schlüssel fehlt */
+.leiste .icon-btn { z-index: 1; }
+.leiste .punkt { position: absolute; top: 9px; right: 9px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.seiten > .seite { min-width: 100%; }
+
+/* Formularelemente und Links im dunklen Schema */
+:root[data-scheme="dunkel"] { color-scheme: dark; }
+.seite a:not(.btn):not(.eintrag) { color: var(--accent-ink); text-underline-offset: 3px; }

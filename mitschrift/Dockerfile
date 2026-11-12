@@ -10,6 +10,8 @@ COPY design/ design/
 COPY mitschrift/frontend/package.json mitschrift/frontend/package-lock.json mitschrift/frontend/
 RUN cd mitschrift/frontend && npm ci --no-audit --no-fund
 COPY mitschrift/frontend/ mitschrift/frontend/
+# Die Oberfläche bindet die Prompts ein (Gerätebetrieb) – eine Quelle für beide Wege.
+COPY mitschrift/backend/prompts/ mitschrift/backend/prompts/
 RUN cd mitschrift/frontend && npm run build
 
 # ── 2 · Server ───────────────────────────────────────────────

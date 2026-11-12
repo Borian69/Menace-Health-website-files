@@ -1,12 +1,15 @@
-// IndexedDB ohne Bibliothek. Hier liegen Aufnahmen, bis der Server sie hat:
-// jeder Block wird gespeichert, sobald der Browser ihn liefert.
+// IndexedDB ohne Bibliothek.
+// - sessions/chunks: laufende Aufnahmen, Block für Block gesichert
+// - shared: von einer anderen App geteilte Dateien (Android, Service Worker)
+// - projekte/aufnahmen/audio/tparts/llmcache/llmcalls: Projektdaten im
+//   Gerätebetrieb (ohne eigenen Server)
 
 export type SessionState =
   | 'aufnahme'      // läuft (oder lief, als die App zuletzt geschlossen wurde)
   | 'pausiert'
   | 'unterbrochen'  // Mikrofon wurde vom System beendet
   | 'beendet'       // gestoppt, wartet aufs Speichern
-  | 'upload';       // Upload läuft oder ist fehlgeschlagen
+  | 'upload';       // Speichern läuft oder ist fehlgeschlagen
 
 export interface Session {
   id: string;
@@ -15,7 +18,8 @@ export interface Session {
   state: SessionState;
   mime: string;
   durationMs: number;   // tatsächlich aufgenommene Zeit
-  segments: number;     // Zahl der Teilstücke (neues Teilstück nach Unterbrechung)
+  segments: number;     // Zahl der Teilstücke
+  segDur?: number[];    // Dauer je Teilstück in ms
   bytes: number;
   name?: string;
   projectId?: string;
@@ -29,31 +33,43 @@ export interface Chunk { id?: number; sessionId: string; segment: number; seq: n
 export interface SharedFile { id?: number; name: string; type: string; blob: Blob; at: number }
 
 const DB = 'mitschrift';
-const VERSION = 1;
+const VERSION = 2;
 let dbPromise: Promise<IDBDatabase> | null = null;
 
-function open(): Promise<IDBDatabase> {
+export function openDb(): Promise<IDBDatabase> {
   if (dbPromise) return dbPromise;
   dbPromise = new Promise((resolve, reject) => {
     const r = indexedDB.open(DB, VERSION);
     r.onupgradeneeded = () => {
       const db = r.result;
-      if (!db.objectStoreNames.contains('sessions')) db.createObjectStore('sessions', { keyPath: 'id' });
-      if (!db.objectStoreNames.contains('chunks')) {
-        const s = db.createObjectStore('chunks', { keyPath: 'id', autoIncrement: true });
-        s.createIndex('bySession', 'sessionId');
-      }
-      // Vom Service Worker abgelegt, wenn eine andere App Audio „teilt“ (Android).
-      if (!db.objectStoreNames.contains('shared')) db.createObjectStore('shared', { keyPath: 'id', autoIncrement: true });
+      const neu = (name: string, opts: IDBObjectStoreParameters, index?: [string, string]) => {
+        if (db.objectStoreNames.contains(name)) return;
+        const s = db.createObjectStore(name, opts);
+        if (index) s.createIndex(index[0], index[1]);
+      };
+      neu('sessions', { keyPath: 'id' });
+      neu('chunks', { keyPath: 'id', autoIncrement: true }, ['bySession', 'sessionId']);
+      neu('shared', { keyPath: 'id', autoIncrement: true });
+      neu('projekte', { keyPath: 'id' });
+      neu('aufnahmen', { keyPath: 'id' }, ['byProjekt', 'project_id']);
+      neu('audio', { keyPath: 'key' }, ['byAufnahme', 'recId']);
+      neu('tparts', { keyPath: 'key' }, ['byAufnahme', 'recId']);
+      neu('llmcache', { keyPath: 'key' });
+      neu('llmcalls', { keyPath: 'id', autoIncrement: true }, ['byProjekt', 'project_id']);
     };
-    r.onsuccess = () => resolve(r.result);
+    r.onblocked = () => console.warn('IndexedDB: ein anderer Tab blockiert das Update');
+    r.onsuccess = () => {
+      const db = r.result;
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      resolve(db);
+    };
     r.onerror = () => { dbPromise = null; reject(r.error); };
   });
   return dbPromise;
 }
 
 function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void): Promise<T> {
-  return open().then((db) => new Promise<T>((resolve, reject) => {
+  return openDb().then((db) => new Promise<T>((resolve, reject) => {
     const t = db.transaction(store, mode);
     let result: T;
     const req = fn(t.objectStore(store));
@@ -63,6 +79,30 @@ function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) 
     t.onabort = () => reject(t.error ?? new Error('IndexedDB abgebrochen'));
   }));
 }
+
+/** Allgemeine Zugriffe für die Projektdaten. */
+export const store = {
+  get: <T>(s: string, key: IDBValidKey) => tx<T | undefined>(s, 'readonly', (st) => st.get(key)),
+  put: (s: string, value: unknown) => tx(s, 'readwrite', (st) => st.put(value)),
+  add: (s: string, value: unknown) => tx(s, 'readwrite', (st) => st.add(value)),
+  del: (s: string, key: IDBValidKey) => tx(s, 'readwrite', (st) => st.delete(key)),
+  all: <T>(s: string) => tx<T[]>(s, 'readonly', (st) => st.getAll()),
+  byIndex: <T>(s: string, index: string, value: IDBValidKey) =>
+    tx<T[]>(s, 'readonly', (st) => st.index(index).getAll(IDBKeyRange.only(value))),
+  async delByIndex(s: string, index: string, value: IDBValidKey) {
+    const db = await openDb();
+    await new Promise<void>((resolve, reject) => {
+      const t = db.transaction(s, 'readwrite');
+      const cur = t.objectStore(s).index(index).openKeyCursor(IDBKeyRange.only(value));
+      cur.onsuccess = () => {
+        const c = cur.result;
+        if (c) { t.objectStore(s).delete(c.primaryKey); c.continue(); }
+      };
+      t.oncomplete = () => resolve();
+      t.onerror = () => reject(t.error);
+    });
+  },
+};
 
 export const idb = {
   putSession: (s: Session) => tx('sessions', 'readwrite', (st) => st.put({ ...s, updatedAt: Date.now() })),
@@ -74,19 +114,8 @@ export const idb = {
     tx<Chunk[]>('chunks', 'readonly', (st) => st.index('bySession').getAll(IDBKeyRange.only(sessionId))),
 
   async deleteSession(id: string) {
-    const db = await open();
-    await new Promise<void>((resolve, reject) => {
-      const t = db.transaction(['sessions', 'chunks'], 'readwrite');
-      t.objectStore('sessions').delete(id);
-      const idx = t.objectStore('chunks').index('bySession');
-      const cur = idx.openKeyCursor(IDBKeyRange.only(id));
-      cur.onsuccess = () => {
-        const c = cur.result;
-        if (c) { t.objectStore('chunks').delete(c.primaryKey); c.continue(); }
-      };
-      t.oncomplete = () => resolve();
-      t.onerror = () => reject(t.error);
-    });
+    await store.delByIndex('chunks', 'bySession', id);
+    await store.del('sessions', id);
   },
 
   sharedFiles: () => tx<SharedFile[]>('shared', 'readonly', (st) => st.getAll()),

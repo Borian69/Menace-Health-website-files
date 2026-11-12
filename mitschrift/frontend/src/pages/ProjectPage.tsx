@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import { createPortal } from 'react-dom';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { api, type ProjectDetail, type Recording, type ServerStatus } from '../api';
 import type { Go } from '../App';
 import { FileImport } from '../components/FileImport';
+import { audioHerunterladen, herunterladen, Player } from '../components/Player';
 import { LAUFEND, StatusText } from '../components/Status';
 import { SummaryView } from '../components/SummaryView';
 import { TranscriptView } from '../components/TranscriptView';
@@ -19,7 +19,6 @@ export function ProjectPage({ id, status, go, aktiv }: { id: string; status: Ser
   const [startet, setStartet] = useState(false);
   const [player, setPlayer] = useState<{ rec: Recording; sek: number } | null>(null);
   const [hinzufuegen, setHinzufuegen] = useState(false);
-  const audio = useRef<HTMLAudioElement>(null);
 
   const lade = useCallback(() => {
     api.project(id).then((d) => { setP(d); setFehler(null); }).catch((e) => setFehler(e.message));
@@ -33,13 +32,6 @@ export function ProjectPage({ id, status, go, aktiv }: { id: string; status: Ser
     const t = window.setInterval(lade, 2000);
     return () => window.clearInterval(t);
   }, [laeuft, lade]);
-
-  useEffect(() => {
-    if (!player || !audio.current) return;
-    const a = audio.current;
-    const los = () => { a.currentTime = player.sek; void a.play().catch(() => undefined); };
-    if (a.readyState >= 1) los(); else a.addEventListener('loadedmetadata', los, { once: true });
-  }, [player]);
 
   if (fehler && !p) {
     return (
@@ -156,8 +148,17 @@ export function ProjectPage({ id, status, go, aktiv }: { id: string; status: Ser
             <span><strong>Verarbeitung gestoppt.</strong> {p.error} Bereits fertige Transkripte bleiben erhalten und werden nicht wiederholt.</span>
           </div>
         )}
-        {!status.llm_ready && !aktuell && (
+        {!status.llm_ready && !aktuell && (status.betrieb === 'geraet' ? (
+          <div className="notice is-warning">
+            <span><strong>Schlüssel fehlt.</strong> Für Transkription und Zusammenfassung einmal den OpenRouter-Schlüssel eintragen.{' '}
+              <button className="btn btn-quiet" onClick={() => go('/einstellungen')}>Zu den Einstellungen</button></span>
+          </div>
+        ) : (
           <p className="klein muted">Hinweis: Auf dem Server fehlt der OpenRouter-Schlüssel. Transkribiert wird trotzdem, die Zusammenfassung folgt, sobald er hinterlegt ist.</p>
+        ))}
+        {laeuft && status.betrieb === 'geraet' && (
+          <p className="klein muted">Die Verarbeitung läuft auf diesem Gerät: App geöffnet lassen, der Bildschirm bleibt dafür an.
+            Wird sie unterbrochen, geht es beim nächsten Start ab dem letzten fertigen Abschnitt weiter.</p>
         )}
       </section>
 
@@ -191,7 +192,7 @@ export function ProjectPage({ id, status, go, aktiv }: { id: string; status: Ser
                     <button onClick={() => void aufnahmeAktion(r, 'name')}>Umbenennen</button>
                     {i > 0 && <button onClick={() => void aufnahmeAktion(r, 'hoch')}>Nach oben</button>}
                     {i < p.recordings.length - 1 && <button onClick={() => void aufnahmeAktion(r, 'runter')}>Nach unten</button>}
-                    <a href={api.audioUrl(r.id)} download={r.filename}>Herunterladen</a>
+                    <button onClick={() => void audioHerunterladen(r).catch((e) => setFehler(e.message))}>Herunterladen</button>
                     <button className="gefahr" onClick={() => void aufnahmeAktion(r, 'loeschen')}>Entfernen</button>
                   </div>
                 </details>
@@ -229,8 +230,11 @@ export function ProjectPage({ id, status, go, aktiv }: { id: string; status: Ser
                 <span>Schon transkribiert <b className="n">{transkribiert}</b></span>
               </p>
               <p className="klein muted">
-                Transkription lokal auf dem Server ({status.whisper_model}), danach eine Zusammenfassung über alle Aufnahmen
-                ({status.model}). Fertige Transkripte werden wiederverwendet.
+                {status.betrieb === 'geraet'
+                  ? <>Transkription über OpenRouter ({status.whisper_model}) in Abschnitten zu 2 Minuten, Stille wird übersprungen. Danach eine
+                    Zusammenfassung über alle Aufnahmen ({status.model}). Die App muss dabei geöffnet bleiben. Fertige Abschnitte werden wiederverwendet.</>
+                  : <>Transkription lokal auf dem Server ({status.whisper_model}), danach eine Zusammenfassung über alle Aufnahmen
+                    ({status.model}). Fertige Transkripte werden wiederverwendet.</>}
               </p>
               <div className="row">
                 <button className="btn btn-primary" onClick={starte} disabled={startet} aria-busy={startet}>Jetzt starten</button>
@@ -268,22 +272,15 @@ export function ProjectPage({ id, status, go, aktiv }: { id: string; status: Ser
       )}
 
       <section className="gruppe row">
-        <a className="btn btn-quiet" href={api.exportUrl(id)} download={`${p.name}.md`}>Als Markdown exportieren</a>
+        <button className="btn btn-quiet" onClick={() => api.exportMarkdown(id).then((t) => herunterladen(t, `${p.name}.md`)).catch((e) => setFehler(e.message))}>
+          Als Markdown exportieren
+        </button>
         <button className="btn btn-quiet gefahr" onClick={loescheProjekt} disabled={laeuft}>Projekt löschen</button>
       </section>
 
-      {/* Wiedergabe schwebt über dem Inhalt, deshalb im App-Rahmen statt in der scrollenden Seite. */}
-      {player && aktiv && createPortal(
-        <div className="player" role="region" aria-label="Wiedergabe">
-          <div className="player-kopf">
-            <span className="lb">A{p.recordings.findIndex((r) => r.id === player.rec.id) + 1} · {player.rec.filename}</span>
-            <button className="icon-btn" aria-label="Wiedergabe schließen" onClick={() => setPlayer(null)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
-            </button>
-          </div>
-          <audio ref={audio} controls preload="metadata" src={api.audioUrl(player.rec.id)} />
-        </div>,
-        document.querySelector('.app-rahmen') ?? document.body,
+      {player && aktiv && (
+        <Player rec={player.rec} sek={player.sek} nr={p.recordings.findIndex((r) => r.id === player.rec.id) + 1}
+          onClose={() => setPlayer(null)} />
       )}
     </>
   );

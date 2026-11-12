@@ -1,6 +1,28 @@
 # Architektur
 
-## Überblick
+## Zwei Betriebsarten, eine Oberfläche
+
+Beim Start fragt die Oberfläche `./api/status` ab:
+
+- **Antwortet der FastAPI-Server** → Server-Betrieb (`src/engine/server.ts`). Daten in SQLite,
+  Transkription mit faster-whisper auf dem Server, Schlüssel in `.env`.
+- **Sonst** (GitHub Pages) → Gerätebetrieb (`src/engine/geraet/`). Daten in IndexedDB,
+  Transkription und Zusammenfassung über OpenRouter direkt aus dem Browser, Schlüssel in den
+  Einstellungen des Geräts.
+
+Beide implementieren dasselbe Interface (`src/engine/types.ts`). Die Seiten kennen nur
+dieses Interface. Die Zusammenfassung nutzt in beiden Fällen dieselben Prompt-Dateien aus
+`backend/prompts/` und dasselbe Verfahren (einstufig bis ≈ 90.000 Token, sonst mehrstufig,
+Cache über den Inhalt).
+
+**Gerätebetrieb im Detail:** Aufnahmen liegen als Teilstücke in IndexedDB (neues Teilstück
+alle 15 Minuten und nach jeder Unterbrechung). Zur Transkription wird jedes Teilstück
+dekodiert (OfflineAudioContext, 16 kHz), in 2-Minuten-Abschnitte geteilt, Stille übersprungen,
+als MP3 kodiert (lamejs, LGPL) und an `POST /api/v1/audio/transcriptions` geschickt
+(`response_format: verbose_json` für Segmente mit Zeitstempeln). Jeder fertige Abschnitt wird
+sofort gespeichert.
+
+## Überblick Server-Betrieb
 
 ```
 Browser (PWA)                          Server (ein Prozess)

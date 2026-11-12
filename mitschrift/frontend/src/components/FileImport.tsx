@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ApiError, uploadRecording, type Recording } from '../api';
+import { api, ApiError, type Recording } from '../api';
 import { dauer, groesse } from '../lib/format';
 import { dateiSchluessel, dauerImBrowser } from '../lib/uploads';
 
@@ -55,7 +55,7 @@ export function FileImport({ ziel, bereit, maxMb, onFertig, vorbelegt, knopf = '
         if (z.status === 'fertig' || (z.status === 'fehler' && z.fehler?.startsWith('Größer'))) continue;
         setz(z.key, { status: 'laedt', anteil: 0, fehler: undefined });
         try {
-          const rec = await uploadRecording(
+          const rec = await api.upload(
             pid, [{ blob: z.file, name: z.file.name }],
             { filename: z.file.name, source: 'import', clientId: dateiSchluessel(z.file, pid) },
             (a) => setz(z.key, { anteil: a }),
@@ -97,8 +97,8 @@ export function FileImport({ ziel, bereit, maxMb, onFertig, vorbelegt, knopf = '
                   <span className="n">{groesse(z.file.size)}</span>
                   {' · '}
                   {z.status === 'wartet' && 'Bereit'}
-                  {z.status === 'laedt' && <>Wird hochgeladen <span className="n">{Math.round(z.anteil * 100)} %</span></>}
-                  {z.status === 'fertig' && 'Hochgeladen'}
+                  {z.status === 'laedt' && <>Wird hinzugefügt <span className="n">{Math.round(z.anteil * 100)} %</span></>}
+                  {z.status === 'fertig' && 'Hinzugefügt'}
                   {z.status === 'fehler' && <span className="fehlertext">Fehler: {z.fehler}</span>}
                 </small>
                 {z.status === 'laedt' && <span className="balken"><i style={{ transform: `scaleX(${z.anteil})` }} /></span>}
@@ -115,7 +115,7 @@ export function FileImport({ ziel, bereit, maxMb, onFertig, vorbelegt, knopf = '
           {offen > 0 && (
             <button type="button" className="btn btn-primary btn-block" style={{ marginTop: 'var(--f4)' }}
               disabled={!bereit || laeuft} aria-busy={laeuft} onClick={start}>
-              {laeuft ? 'Wird hochgeladen …' : offen === 1 ? 'Datei hinzufügen' : `${offen} Dateien hinzufügen`}
+              {laeuft ? 'Wird hinzugefügt …' : offen === 1 ? 'Datei hinzufügen' : `${offen} Dateien hinzufügen`}
             </button>
           )}
           {!bereit && offen > 0 && <p className="field-msg">Erst ein Projekt wählen.</p>}

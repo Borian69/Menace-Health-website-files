@@ -1,71 +1,64 @@
 # Mitschrift
 
-Aufnehmen oder Audiodateien importieren, Projekten zuordnen, auf Knopfdruck lokal
-transkribieren und über alle Aufnahmen eines Projekts strukturiert zusammenfassen.
-Ziel ist, dass man die Zusammenfassung liest und die Aufnahme danach nicht mehr anhören muss.
+Aufnehmen oder Audiodateien importieren, Projekten zuordnen, auf Knopfdruck transkribieren
+und über alle Aufnahmen eines Projekts strukturiert zusammenfassen. Wer die Zusammenfassung
+liest, muss die Aufnahme danach nicht mehr anhören.
 
-- **Oberfläche:** React + TypeScript + Vite, als PWA installierbar, für Telefone ausgelegt
-- **Server:** Python + FastAPI, SQLite, FFmpeg
-- **Transkription:** faster-whisper, lokal auf dem Server, keine Kosten pro Minute
-- **Analyse:** DeepSeek V4.1 Flash über OpenRouter (Modell per `.env` austauschbar)
+## Online nutzen
 
-Kosten pro Stunde Audio: Die Transkription kostet nur Rechenzeit. Die Zusammenfassung ist
-ein einziger KI-Aufruf, solange das Transkript unter ≈ 90.000 Token liegt (≈ 5 Stunden
-Gespräch). Eine Stunde Gespräch ergibt ≈ 15.000–20.000 Token. Was ein Lauf tatsächlich
-gekostet hat, zeigt die Projektansicht nach den Angaben von OpenRouter.
+**https://borian69.github.io/Menace-Health-website-files/mitschrift/app/**
+
+1. Adresse auf dem Handy öffnen und zum Home-Bildschirm hinzufügen
+   (iPhone: Safari → Teilen → *Zum Home-Bildschirm* · Android: Chrome → Menü → *App installieren*).
+2. Zahnrad oben rechts → OpenRouter-Schlüssel eintragen (von [openrouter.ai/keys](https://openrouter.ai/keys)) →
+   „Schlüssel speichern“. Die App prüft ihn sofort. Das ist einmal je Gerät nötig.
+3. Aufnehmen, Projekt wählen, speichern. In der Projektansicht „Transkribieren und zusammenfassen“.
+
+Mehr ist nicht einzurichten. Die Seite liefert GitHub Pages aus dem Ordner `mitschrift/app/`
+auf `main` aus, es gibt keinen Server. Ist Pages für das Repository noch aus: einmal
+*Settings → Pages → Source: Deploy from a branch → main / (root)*.
+
+### So arbeitet die Online-Fassung
+
+- **Alles bleibt auf dem Gerät:** Projekte, Aufnahmen, Transkripte und Zusammenfassungen
+  liegen im Speicher des Browsers (IndexedDB). Ein zweites Gerät sieht sie nicht. Wichtiges
+  per „Als Markdown exportieren“ sichern.
+- **Transkription:** Whisper über OpenRouter (`openai/whisper-large-v3-turbo`). Die App teilt
+  das Audio in Abschnitte zu 2 Minuten, kodiert sie als MP3 (16 kHz mono, 32 kbit/s, eine
+  Stunde ≈ 14 MB) und überspringt Stille.
+- **Zusammenfassung:** DeepSeek V4.1 Flash über OpenRouter (`deepseek/deepseek-v4.1-flash`).
+  Bis ≈ 5 Stunden Gespräch reicht ein einziger Aufruf.
+- **Schlüssel:** liegt nur auf dem Gerät und geht nur an openrouter.ai. Bei OpenRouter für
+  diesen Schlüssel ein Ausgabenlimit setzen.
+- **Während der Verarbeitung muss die App geöffnet bleiben.** Der Bildschirm bleibt dafür an.
+  Wird sie unterbrochen, geht es beim nächsten Start ab dem letzten fertigen Abschnitt weiter.
+- **Modelle tauschen:** Einstellungen → „Modelle und Sprache“.
+
+**Kosten pro Stunde Audio:** Die Transkription wird pro Audiosekunde abgerechnet. Je nach
+Anbieter kostet sie bei Whisper etwa 0,04 $ bis 0,36 $ pro Stunde. Die Zusammenfassung
+liest ≈ 15.000–20.000 Token pro Stunde Gespräch. Was ein Lauf tatsächlich gekostet hat, zeigt
+die Projektansicht nach den Angaben von OpenRouter. Aktuelle Preise stehen auf den
+Modellseiten bei openrouter.ai.
+
+### Nach Änderungen am Code neu veröffentlichen
+
+```bash
+cd mitschrift/frontend && npm install && npm run build:pages
+```
+
+Dann `mitschrift/app/` committen und nach `main` bringen.
 
 ---
 
-## Schnellstart lokal
+## Alternative: eigener Server (kostenlose Transkription)
 
-Voraussetzungen: Python ≥ 3.11, Node ≥ 20, FFmpeg (`ffmpeg` und `ffprobe` im Pfad).
+Dieselbe Oberfläche läuft auch mit dem Python-Server in `backend/`. Sie erkennt ihn
+automatisch (antwortet `./api/status`, gilt der Server-Betrieb). Dann transkribiert
+**faster-whisper lokal auf dem Server**, ohne Kosten pro Minute, und alle Geräte teilen
+dieselben Projekte. Der OpenRouter-Schlüssel steht dann nur in der `.env` des Servers.
 
-```bash
-cd mitschrift
-cp .env.example .env
-```
-
-In `.env` mindestens `OPENROUTER_API_KEY` eintragen. `APP_PASSWORD` darf lokal leer bleiben.
-
-```bash
-python3 -m venv .venv
-```
-
-```bash
-.venv/bin/pip install -r backend/requirements-dev.txt
-```
-
-```bash
-cd frontend && npm install && npm run build && cd ..
-```
-
-```bash
-.venv/bin/uvicorn backend.main:app --port 8000
-```
-
-Dann <http://localhost:8000> öffnen. Beim ersten Transkribieren lädt der Server das
-Whisper-Modell (Standard `small`, ≈ 480 MB) von huggingface.co nach `storage/models/`.
-
-**Mit Live-Neuladen der Oberfläche:** Backend wie oben starten, zusätzlich
-`cd frontend && npm run dev` und <http://localhost:5173> öffnen (Vite leitet `/api` an Port 8000 weiter).
-
-**Ohne Whisper-Modell und ohne API-Kosten** (Attrappen, z. B. um die Oberfläche zu testen):
-
-```bash
-STORAGE_DIR=/tmp/mitschrift-demo .venv/bin/python -m backend.tests.demo_server
-```
-
-### Auf dem Handy testen
-
-Mikrofon und Service Worker gibt es nur über **HTTPS** (Ausnahme: `localhost`). Im WLAN
-geht das am schnellsten mit einem Tunnel, z. B. `cloudflared tunnel --url http://localhost:8000`,
-oder gleich auf dem Server mit Caddy (unten).
-
----
-
-## Betrieb auf einem VPS
-
-Empfohlen: 2–4 vCPU, 4 GB RAM, Docker. Whisper `small` braucht im Betrieb ≈ 1 GB RAM.
+- **Server:** Python + FastAPI, SQLite, FFmpeg, faster-whisper
+- **Empfohlen:** VPS mit 2–4 vCPU, 4 GB RAM, Docker. Whisper `small` braucht ≈ 1 GB RAM.
 
 ```bash
 git clone <repo> && cd <repo>/mitschrift
@@ -81,11 +74,9 @@ In `.env` setzen: `APP_PASSWORD`, `OPENROUTER_API_KEY`, `COOKIE_SECURE=true`.
 docker compose up -d --build
 ```
 
-Die App lauscht nur auf `127.0.0.1:8000`. HTTPS davor, z. B. mit Caddy (holt das
-Zertifikat selbst):
+Die App lauscht auf `127.0.0.1:8000`. HTTPS davor, z. B. mit Caddy:
 
 ```
-# /etc/caddy/Caddyfile
 mitschrift.example.de {
     request_body {
         max_size 1GB
@@ -94,41 +85,33 @@ mitschrift.example.de {
 }
 ```
 
-Daten liegen in `mitschrift/storage/` (Datenbank, Audio, Modelle). **Sichern** heißt diesen
-Ordner sichern. **Aktualisieren:** `git pull && docker compose up -d --build`.
+Daten liegen in `mitschrift/storage/`. Alle Einstellungen stehen mit Erklärung in
+[`.env.example`](.env.example).
 
----
+### Lokal entwickeln
 
-## Bedienung
+Voraussetzungen: Python ≥ 3.11, Node ≥ 20, FFmpeg.
 
-1. **Aufnahme** (Startseite): großer Knopf → Pause / Fortsetzen → Beenden.
-2. Name vergeben, **Projekt wählen oder neu anlegen**, „Aufnahme speichern“. Der Knopf
-   erscheint erst, wenn ein Projekt gewählt ist.
-3. **Projekte** → Projekt öffnen → weitere Aufnahmen oder Dateien hinzufügen, entfernen,
-   umsortieren, umbenennen.
-4. **„Transkribieren und zusammenfassen“** → Übersicht prüfen → „Jetzt starten“. Der
-   Fortschritt steht auf der Seite. Man kann sie verlassen, der Server arbeitet weiter.
-5. Zusammenfassung lesen. Quellenangaben („A2 · 00:14:10“) und Zeitstempel im Transkript
-   springen an die Stelle im Audio.
+```bash
+cd mitschrift && python3 -m venv .venv && .venv/bin/pip install -r backend/requirements-dev.txt
+```
 
-**Import:** MP3, WAV, M4A, AAC, OGG, FLAC, WebM (auch Opus, MP4-Audio), bis 1 GB pro Datei.
-Unter Android können Rekorder-Apps eine Datei direkt an die installierte App **teilen**.
+```bash
+cd frontend && npm install && npm run build && cd ..
+```
 
----
+```bash
+.venv/bin/uvicorn backend.main:app --port 8000
+```
 
-## Konfiguration
+Mit Attrappen statt Whisper und OpenRouter (keine Kosten):
 
-Alle Werte stehen mit Erklärung in [`.env.example`](.env.example). Die wichtigsten:
+```bash
+STORAGE_DIR=/tmp/mitschrift-demo .venv/bin/python -m backend.tests.demo_server
+```
 
-| Variable | Standard | Wirkung |
-|---|---|---|
-| `APP_PASSWORD` | leer | Gemeinsames Passwort. Leer = offen (nur lokal!) |
-| `OPENROUTER_API_KEY` | – | Nur auf dem Server. Ohne Schlüssel läuft die Transkription, die Zusammenfassung nicht |
-| `OPENROUTER_MODEL` | `deepseek/deepseek-v4.1-flash` | Einzige Stelle, an der das Modell steht |
-| `WHISPER_MODEL` | `small` | `base` schneller, `medium` / `large-v3` genauer und deutlich langsamer |
-| `WHISPER_LANGUAGE` | `de` | Leer = automatisch erkennen |
-| `TRANSCRIBE_CHUNK_MINUTES` | `10` | Lange Aufnahmen werden in solche Abschnitte geteilt; jeder fertige wird gespeichert |
-| `LLM_SINGLE_PASS_TOKENS` | `90000` | Darunter ein Aufruf, darüber mehrstufig |
+Nur die Online-Fassung ausprobieren: aus der Repo-Wurzel `python3 -m http.server 8100`, dann
+<http://localhost:8100/mitschrift/app/> öffnen.
 
 ---
 
@@ -138,21 +121,16 @@ Alle Werte stehen mit Erklärung in [`.env.example`](.env.example). Die wichtigs
 cd mitschrift && .venv/bin/python -m pytest backend/tests -q
 ```
 
-27 Tests über die HTTP-API, mit echtem FFmpeg und Attrappen für Whisper und OpenRouter:
-Upload aller sieben Formate, Ablehnung kaputter Dateien, mehrere Aufnahmen pro Projekt,
-Zusammensetzen unterbrochener Aufnahmen, keine Dubletten bei wiederholtem Upload,
-vollständige Verarbeitung, Abschnitte und mehrstufige Zusammenfassung, Wiederaufnahme nach
-Fehler ohne erneutes Transkribieren, Neustart, Anmeldung, OpenRouter-Wiederholungen und -Fehler.
+27 Server-Tests mit echtem FFmpeg sowie Attrappen für Whisper und OpenRouter.
 
-**Im Browser** (Chromium mit künstlichem Mikrofon, Demo-Server muss laufen):
+**Im Browser** (Chromium mit künstlichem Mikrofon):
 
-```bash
-node tools/e2e.mjs <ordner-mit-vortrag.mp3-und-memo.m4a> [screenshot-ordner]
-```
+- `node tools/e2e-geraet.mjs <ordner> [screenshots]`: die Online-Fassung, statisch
+  ausgeliefert. Die Anfragen an OpenRouter werden abgefangen und geprüft (Schlüssel, Modell,
+  gültiges MP3).
+- `node tools/e2e.mjs <ordner> [screenshots]`: der Server-Betrieb gegen den Demo-Server.
 
-Prüft Aufnahme, Pause, Fortsetzen, Speichern, Wiederherstellung nach Neuladen mitten in der
-Aufnahme, System-Unterbrechung mit „Weiter aufnehmen“, Import, Verarbeitung, Zusammenfassung,
-Transkript, Umbenennen.
+`<ordner>` enthält `vortrag.mp3` und `memo.m4a` (beliebige kurze Audiodateien).
 
 ---
 
@@ -160,20 +138,14 @@ Transkript, Umbenennen.
 
 ```
 mitschrift/
-├── backend/
-│   ├── main.py            App, Anmeldung, Auslieferung der Oberfläche
-│   ├── config.py          sämtliche Einstellungen (auch Modell und Parameter)
-│   ├── db.py              SQLite-Schema
-│   ├── auth.py            Passwort und Sitzungs-Cookie
-│   ├── api/               HTTP-Routen: Projekte, Aufnahmen
-│   ├── models/            Schemas und Datenbankzugriffe
-│   ├── services/          FFmpeg, Whisper, OpenRouter, Zusammenfassung, Verarbeitung
-│   ├── prompts/           System-Prompts als Markdown
-│   └── tests/
-├── frontend/              React-PWA
-├── storage/               Datenbank, Audio, Modelle (nicht im Repo)
+├── app/                   gebaute Oberfläche für GitHub Pages (eingecheckt)
+├── frontend/              React + TypeScript + Vite (PWA)
+│   └── src/engine/        geraet/ (IndexedDB + OpenRouter) · server.ts (FastAPI)
+├── backend/               FastAPI, SQLite, FFmpeg, faster-whisper
+│   └── prompts/           System-Prompts – von beiden Betriebsarten genutzt
+├── storage/               Server-Daten (nicht im Repo)
 ├── docs/                  Architektur und Einschränkungen
-├── tools/                 Icon-Generator, Browser-Test
+├── tools/                 Icon-Generator, Browser-Tests
 ├── Dockerfile
 └── docker-compose.yml
 ```
