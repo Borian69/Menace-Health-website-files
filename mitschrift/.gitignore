@@ -18,3 +18,6 @@ venv/
 frontend/node_modules/
 frontend/dist/
 *.tsbuildinfo
+
+# app/ ist die gebaute Oberfläche für GitHub Pages und wird bewusst eingecheckt
+# (npm run build:pages im Ordner frontend/).

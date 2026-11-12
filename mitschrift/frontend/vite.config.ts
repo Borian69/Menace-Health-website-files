@@ -6,7 +6,10 @@ import { fileURLToPath } from 'node:url';
 // dort eingebunden, nicht kopiert (CLAUDE.md: moch.css nie von Hand ändern).
 const design = fileURLToPath(new URL('../../design', import.meta.url));
 
+// Relative Pfade: Dieselbe Oberfläche läuft unter / (eigener Server) und unter
+// jedem Unterordner (GitHub Pages: …/mitschrift/app/).
 export default defineConfig({
+  base: './',
   plugins: [react()],
   resolve: { alias: { '@design': design } },
   server: {

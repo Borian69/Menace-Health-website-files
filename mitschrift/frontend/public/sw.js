@@ -4,8 +4,11 @@
    - Android: „Teilen“ aus einer anderen App (share_target) legt die Dateien in
      IndexedDB ab und öffnet den Import. */
 
-const VERSION = 'mitschrift-v1';
-const SHELL = ['/', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
+const VERSION = 'mitschrift-v2';
+// Alle Pfade relativ zum Ort des Service Workers: läuft unter / und unter
+// jedem Unterordner (GitHub Pages).
+const BASIS = new URL('./', self.location.href);
+const SHELL = ['./', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -21,7 +24,9 @@ self.addEventListener('activate', (e) => {
 
 function openDb() {
   return new Promise((resolve, reject) => {
-    const r = indexedDB.open('mitschrift', 1);
+    // Ohne Versionsnummer: öffnet die Fassung, die die App angelegt hat.
+    // Nur wenn es die Datenbank noch gar nicht gibt, legt der SW das Nötigste an.
+    const r = indexedDB.open('mitschrift');
     r.onupgradeneeded = () => {
       const db = r.result;
       if (!db.objectStoreNames.contains('sessions')) db.createObjectStore('sessions', { keyPath: 'id' });
@@ -46,16 +51,17 @@ async function empfangeGeteilt(request) {
       t.oncomplete = resolve;
       t.onerror = () => reject(t.error);
     });
+    db.close();  // sonst blockiert der SW spätere Schema-Updates der App
   } catch (err) {
     console.warn('Teilen fehlgeschlagen', err);
   }
-  return Response.redirect('/#/import', 303);
+  return Response.redirect(new URL('./#/import', BASIS).href, 303);
 }
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
 
-  if (e.request.method === 'POST' && url.origin === self.location.origin && url.pathname === '/teilen') {
+  if (e.request.method === 'POST' && url.origin === self.location.origin && url.href.startsWith(new URL('teilen', BASIS).href)) {
     e.respondWith(empfangeGeteilt(e.request));
     return;
   }
@@ -73,19 +79,19 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   if (url.origin !== self.location.origin) return;
-  if (url.pathname.startsWith('/api/')) return;  // nie cachen
+  if (url.href.startsWith(new URL('api/', BASIS).href)) return;  // nie cachen
 
   if (e.request.mode === 'navigate') {
     e.respondWith(
       fetch(e.request)
-        .then((r) => { const k = r.clone(); caches.open(VERSION).then((c) => c.put('/', k)); return r; })
-        .catch(() => caches.match('/')),
+        .then((r) => { const k = r.clone(); if (r.ok) caches.open(VERSION).then((c) => c.put(BASIS.href, k)); return r; })
+        .catch(() => caches.match(BASIS.href)),
     );
     return;
   }
 
   // Gehashte Bundles ändern sich nie: Cache zuerst.
-  if (url.pathname.startsWith('/assets/')) {
+  if (url.href.startsWith(new URL('assets/', BASIS).href)) {
     e.respondWith(caches.open(VERSION).then(async (c) => {
       const hit = await c.match(e.request);
       if (hit) return hit;

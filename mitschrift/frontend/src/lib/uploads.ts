@@ -2,7 +2,7 @@
 // wird sie auf dem Gerät gelöscht. Die Sitzungs-ID dient als client_id:
 // ein wiederholter Upload legt keine zweite Aufnahme an.
 
-import { uploadRecording, type Recording } from '../api';
+import { api, type Recording } from '../api';
 import { idb, type Session } from './idb';
 import { endungFuer } from './platform';
 import { teileFuer } from './recorder';
@@ -30,7 +30,7 @@ export async function ladeSitzungHoch(
   const teile = await teileFuer(s, endung);
   if (!teile.length) throw new Error('Auf dem Gerät sind keine Daten zu dieser Aufnahme.');
   try {
-    const rec = await uploadRecording(
+    const rec = await api.upload(
       projectId,
       teile,
       { filename: s.name, source: 'aufnahme', clientId: s.id },

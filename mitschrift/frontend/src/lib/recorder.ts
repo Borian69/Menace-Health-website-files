@@ -14,6 +14,14 @@ import { neueId } from './format';
 import { bestesFormat, hatWakeLock, plattform } from './platform';
 
 export const BLOCK_MS = 4000;
+/** Nach so viel Aufnahmezeit beginnt ein neues Teilstück. Jedes Teilstück ist
+ *  eine eigenständige Datei – klein genug, dass auch ein Handy sie später
+ *  dekodieren kann. Der Wechsel überlappt, es entsteht keine Lücke. */
+export const TEIL_MS = 15 * 60 * 1000;
+function teilMs(): number {
+  // Nur für automatische Tests: kürzere Teilstücke über localStorage.
+  try { return Number(localStorage.getItem('mitschrift.test.teilMs')) || TEIL_MS; } catch { return TEIL_MS; }
+}
 
 export type RecState = 'leer' | 'startet' | 'aufnahme' | 'pausiert' | 'unterbrochen' | 'beendet';
 
@@ -35,12 +43,14 @@ export class Recorder {
   private session: Session | null = null;
   private stream: MediaStream | null = null;
   private mr: MediaRecorder | null = null;
-  private seq = 0;
   private baseMs = 0;
   private resumedAt = 0;
   private writes: Promise<unknown> = Promise.resolve();
   private listeners = new Set<Listener>();
-  private stopWanted = false;
+  private gewollt = new WeakSet<MediaRecorder>();  // Recorder, die wir selbst beenden
+  private segStart = 0;   // elapsedMs beim Beginn des aktuellen Teilstücks
+  private wechselt = false;
+  private stoppt = false;  // Uhr eingefroren: Beenden läuft
   private wake: WakeLockSentinelLike | null = null;
   private hiddenAt: number | null = null;
   private mutedAt: number | null = null;
@@ -78,7 +88,7 @@ export class Recorder {
   }
 
   elapsedMs(): number {
-    return this.baseMs + (this.state === 'aufnahme' ? performance.now() - this.resumedAt : 0);
+    return this.baseMs + (this.state === 'aufnahme' && !this.stoppt ? performance.now() - this.resumedAt : 0);
   }
 
   private level(): number {
@@ -118,35 +128,10 @@ export class Recorder {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
     });
-    const s = this.session!;
-    const opts: MediaRecorderOptions = { audioBitsPerSecond: 48000 };
-    if (s.mime && MediaRecorder.isTypeSupported?.(s.mime)) opts.mimeType = s.mime;
-    const mr = new MediaRecorder(stream, opts);
-    if (mr.mimeType) s.mime = mr.mimeType;
-    s.segments = segment + 1;
-    s.state = 'aufnahme';
     this.stream = stream;
-    this.mr = mr;
-    this.seq = 0;
-    this.stopWanted = false;
-
-    mr.ondataavailable = (e) => {
-      if (!e.data || e.data.size === 0) return;
-      const blob = e.data;
-      const seq = this.seq++;
-      s.bytes += blob.size;
-      s.durationMs = this.elapsedMs();
-      // Reihenfolge sichern: Blöcke strikt nacheinander schreiben.
-      this.writes = this.writes
-        .then(() => idb.addChunk({ sessionId: s.id, segment, seq, blob }))
-        .then(() => idb.putSession(s))
-        .catch((err) => {
-          this.meldung = 'Speichern auf dem Gerät fehlgeschlagen: ' + (err?.message ?? err) + '. Ist der Speicher voll?';
-          this.emit();
-        });
-    };
-    mr.onerror = () => this.interrupted('Der Browser hat die Aufnahme mit einem Fehler beendet.');
-    mr.onstop = () => { if (!this.stopWanted) this.interrupted('Das System hat die Aufnahme beendet.'); };
+    this.stoppt = false;
+    this.segStart = this.baseMs;
+    this.mr = this.starteRecorder(stream, segment);
 
     for (const track of stream.getAudioTracks()) {
       track.onended = () => this.interrupted('Das Mikrofon wurde vom System getrennt (Sperre, Anruf oder App-Wechsel).');
@@ -161,12 +146,70 @@ export class Recorder {
     }
 
     this.setupLevel(stream);
-    mr.start(BLOCK_MS);
     this.resumedAt = performance.now();
     this.state = 'aufnahme';
-    await idb.putSession(s);
+    await idb.putSession(this.session!);
     await this.acquireWake();
     this.emit();
+  }
+
+  /** Ein MediaRecorder für ein Teilstück; jeder Block geht sofort in IndexedDB. */
+  private starteRecorder(stream: MediaStream, segment: number): MediaRecorder {
+    const s = this.session!;
+    const opts: MediaRecorderOptions = { audioBitsPerSecond: 48000 };
+    if (s.mime && MediaRecorder.isTypeSupported?.(s.mime)) opts.mimeType = s.mime;
+    const mr = new MediaRecorder(stream, opts);
+    if (mr.mimeType) s.mime = mr.mimeType;
+    s.segments = segment + 1;
+    s.state = 'aufnahme';
+    let seq = 0;
+
+    mr.ondataavailable = (e) => {
+      if (!e.data || e.data.size === 0) return;
+      const blob = e.data;
+      const nr = seq++;
+      s.bytes += blob.size;
+      s.durationMs = this.elapsedMs();
+      // Reihenfolge sichern: Blöcke strikt nacheinander schreiben.
+      this.writes = this.writes
+        .then(() => idb.addChunk({ sessionId: s.id, segment, seq: nr, blob }))
+        .then(() => idb.putSession(s))
+        .catch((err) => {
+          this.meldung = 'Speichern auf dem Gerät fehlgeschlagen: ' + (err?.message ?? err) + '. Ist der Speicher voll?';
+          this.emit();
+        });
+      if (mr === this.mr && this.state === 'aufnahme' && this.elapsedMs() - this.segStart >= teilMs()) this.wechsle();
+    };
+    mr.onerror = () => { if (mr === this.mr) this.interrupted('Der Browser hat die Aufnahme mit einem Fehler beendet.'); };
+    mr.onstop = () => { if (!this.gewollt.has(mr) && mr === this.mr) this.interrupted('Das System hat die Aufnahme beendet.'); };
+    mr.start(BLOCK_MS);
+    return mr;
+  }
+
+  /** Neues Teilstück: neuer Recorder auf demselben Mikrofon, dann den alten beenden. */
+  private wechsle() {
+    if (this.wechselt || !this.stream || !this.session || !this.mr) return;
+    this.wechselt = true;
+    const alt = this.mr;
+    try {
+      this.schliesseTeil();
+      this.mr = this.starteRecorder(this.stream, this.session.segments);
+      this.segStart = this.elapsedMs();
+      this.gewollt.add(alt);
+      alt.stop();
+    } catch {
+      this.mr = alt;  // Wechsel misslungen: im alten Teilstück weiter
+    } finally {
+      this.wechselt = false;
+    }
+  }
+
+  /** Dauer des laufenden Teilstücks festhalten. */
+  private schliesseTeil() {
+    const s = this.session;
+    if (!s) return;
+    s.segDur = s.segDur ?? [];
+    s.segDur[s.segments - 1] = Math.max(0, this.elapsedMs() - this.segStart);
   }
 
   pause() {
@@ -211,7 +254,9 @@ export class Recorder {
   async stop(): Promise<Session | null> {
     if (!this.session) return null;
     if (this.state === 'aufnahme' || this.state === 'pausiert') {
+      this.schliesseTeil();
       this.baseMs = this.elapsedMs();
+      this.stoppt = true;  // ab hier zählt die Uhr nicht weiter
       await this.stopRecorder();
     }
     this.releaseStream();
@@ -232,6 +277,7 @@ export class Recorder {
     void this.releaseWake();
     this.session = null;
     this.baseMs = 0;
+    this.stoppt = false;
     this.meldung = null;
     this.state = 'leer';
     this.emit();
@@ -260,8 +306,9 @@ export class Recorder {
       void idb.putSession(this.session);
     }
     // Restliche Daten noch einsammeln, falls der Recorder noch lebt.
+    this.schliesseTeil();
     if (this.mr && this.mr.state !== 'inactive') {
-      this.stopWanted = true;
+      this.gewollt.add(this.mr);
       try { this.mr.stop(); } catch { /* schon beendet */ }
     }
     this.releaseStream();
@@ -309,7 +356,7 @@ export class Recorder {
   private stopRecorder(): Promise<void> {
     const mr = this.mr;
     if (!mr || mr.state === 'inactive') return Promise.resolve();
-    this.stopWanted = true;
+    this.gewollt.add(mr);
     return new Promise((resolve) => {
       const fertig = () => resolve();
       mr.addEventListener('stop', fertig, { once: true });
@@ -387,7 +434,7 @@ export async function offeneSitzungen(ausser?: string): Promise<Session[]> {
 }
 
 /** Je Teilstück eine Datei, Blöcke in Aufnahmereihenfolge. */
-export async function teileFuer(s: Session, endung: string): Promise<{ blob: Blob; name: string }[]> {
+export async function teileFuer(s: Session, endung: string): Promise<{ blob: Blob; name: string; dauer?: number }[]> {
   const chunks = await idb.chunks(s.id);
   const proSegment = new Map<number, Blob[]>();
   chunks.sort((a, b) => a.segment - b.segment || a.seq - b.seq);
@@ -399,6 +446,8 @@ export async function teileFuer(s: Session, endung: string): Promise<{ blob: Blo
   return [...proSegment.entries()].map(([seg, blobs]) => ({
     blob: new Blob(blobs, { type: typ }),
     name: `teil-${seg + 1}.${endung}`,
+    // Dauer aus der Aufnahmezeit; fehlt sie (Absturz), misst die Verarbeitung nach.
+    dauer: s.segDur?.[seg] ? s.segDur[seg] / 1000 : proSegment.size === 1 && s.durationMs ? s.durationMs / 1000 : undefined,
   }));
 }
 

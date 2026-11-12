@@ -206,7 +206,7 @@ export function RecordPage({ status, go, importModus, vorwahl }: {
           <ProjectPicker value={wahl} onChange={setWahl} vorwahl={vorwahl} />
           {fehler && (
             <div className="notice is-error" role="alert">
-              <span><strong>Nicht gespeichert.</strong> {fehler} Die Aufnahme bleibt auf diesem Gerät, bis der Upload klappt.</span>
+              <span><strong>Nicht gespeichert.</strong> {fehler} Die Aufnahme bleibt gesichert und lässt sich erneut speichern.</span>
             </div>
           )}
           {s.gaps.length > 0 && (
@@ -230,8 +230,8 @@ export function RecordPage({ status, go, importModus, vorwahl }: {
 
       {offen.length > 0 && (
         <section className="gruppe">
-          <p className="eyebrow">Noch auf diesem Gerät</p>
-          <p className="klein muted">Diese Aufnahmen sind nicht beim Server – etwa nach einem Absturz oder ohne Verbindung.</p>
+          <p className="eyebrow">Noch nicht gespeichert</p>
+          <p className="klein muted">Diese Aufnahmen sind noch keinem Projekt zugeordnet – etwa nach einem Absturz{status.betrieb === 'server' ? ' oder ohne Verbindung' : ''}.</p>
           {offen.map((o) => (
             <div className="eintrag" key={o.id}>
               <span className="tag n">{dauer(o.durationMs / 1000)}</span>
@@ -285,7 +285,7 @@ export function RecordPage({ status, go, importModus, vorwahl }: {
       {/* Bedingte Hauptaktion: erst sichtbar, wenn es etwas Gültiges zu speichern gibt. */}
       <div className={`aktion${darfSpeichern ? ' da' : ''}`} style={{ ['--a' as string]: darfSpeichern ? 1 : 0 }}>
         <button className="btn btn-primary btn-block" onClick={speichere} disabled={!darfSpeichern || speichert} aria-busy={speichert}>
-          {speichert ? `Wird hochgeladen … ${Math.round(anteil * 100)} %` : 'Aufnahme speichern'}
+          {speichert ? `${status.betrieb === 'server' ? 'Wird hochgeladen' : 'Wird gespeichert'} … ${Math.round(anteil * 100)} %` : 'Aufnahme speichern'}
         </button>
       </div>
     </>
