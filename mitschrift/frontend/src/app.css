@@ -1,0 +1,119 @@
+/* Mitschrift – nur, was moch.css nicht schon hat. Alle Werte aus den Tokens. */
+
+/* Am Computer: eine Spalte in Telefonbreite, gerahmt durch Linien. */
+@media (min-width: 760px) {
+  body.app { background: var(--surface-2); }
+  .app-rahmen { max-width: 680px; margin-inline: auto; border-inline: 1px solid var(--line); }
+}
+
+.seiten { transition: transform 460ms var(--ease); }
+.seite[aria-hidden="true"] { visibility: hidden; transition: visibility 0s 460ms; }
+.tabs .ind { transition: left 420ms var(--ease); }
+.app-kopf { margin-bottom: var(--f5); }
+.titelzeile { display: flex; align-items: flex-end; gap: var(--f2); }
+.titelzeile h1 { overflow-wrap: anywhere; }
+.zurueck { margin: calc(-1 * var(--f5)) 0 var(--f3); min-height: var(--touch); }
+
+/* ── Aufnahme ─────────────────────────────────────────── */
+.aufnahme-block { margin-top: 0; }
+.uhr .number { display: block; font-size: clamp(4.25rem, 22vw, 7.5rem); line-height: 1; letter-spacing: -.02em; }
+.uhr.laeuft .number { color: var(--accent-ink); }
+.pegel { position: relative; height: 3px; margin: var(--f3) 0 var(--f3); background: var(--line); overflow: hidden; }
+.pegel.still i { opacity: 0; }
+.pegel i { position: absolute; inset: 0; background: var(--accent-ink); transform-origin: left; transition: transform 120ms linear; }
+
+.steuerung { display: flex; flex-direction: column; align-items: center; gap: var(--f4); }
+.btn.rec {
+  width: 148px; height: 148px; border-radius: 50%; flex-direction: column; gap: var(--f2);
+  font-size: .9375rem; line-height: 1.2; text-align: center; padding: 0 18px;
+}
+.btn.rec svg { width: 30px; height: 30px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.btn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.5; flex: none; }
+.rec-punkt { width: 26px; height: 26px; border-radius: 50%; background: currentColor; display: block; }
+.btn.rec:disabled .rec-punkt { background: var(--disabled); }
+
+.speichern .field { max-width: none; }
+.aktion { transition: opacity 320ms var(--ease), transform 420ms var(--ease); }
+.schalter { display: flex; align-items: center; gap: var(--f2); min-height: var(--touch); cursor: pointer; }
+.schalter input { width: 20px; height: 20px; accent-color: var(--accent); }
+
+details.hinweis > summary { list-style: none; display: flex; align-items: center; min-height: var(--touch); cursor: pointer; }
+details.hinweis > summary::-webkit-details-marker { display: none; }
+details.hinweis > summary::after { content: "+"; margin-left: auto; font-family: var(--font-mono); color: var(--muted); }
+details.hinweis[open] > summary::after { content: "–"; }
+details.hinweis p { max-width: var(--measure); }
+
+/* ── Listen ───────────────────────────────────────────── */
+.eintrag.projekt { color: var(--text); text-decoration: none; }
+.eintrag.projekt:active { background: var(--press); }
+.eintrag.projekt .wert { font-size: 1.5rem; color: var(--muted); }
+.eintrag .was { min-width: 0; overflow-wrap: anywhere; }
+.eintrag .aktionen { display: flex; align-items: center; gap: 2px; }
+.eintrag.aufnahme, .eintrag.datei { align-items: center; }
+.balken { display: block; height: 2px; margin-top: 8px; background: var(--line); overflow: hidden; }
+.balken i { display: block; height: 100%; background: var(--accent-ink); transform-origin: left; transition: transform 160ms linear; }
+.fehlertext { color: var(--text); border-left: 3px solid var(--error); padding-left: 6px; }
+.gefahr { color: var(--error); }
+
+/* Status: immer Wort, die Linie davor nur als Verstärkung */
+.st::before { content: ""; display: inline-block; width: 3px; height: .85em; margin-right: 8px; vertical-align: -1px; background: var(--line-strong); }
+.st-ok::before { background: var(--success); }
+.st-fehler::before { background: var(--error); }
+.st-laeuft::before { background: var(--accent-ink); animation: moch-puls 1.6s ease-in-out infinite; }
+.status-zeile { font-weight: 500; margin: 0; }
+
+/* Menü: schwebt, deshalb mit Radius */
+details.menue { position: relative; }
+details.menue > summary { list-style: none; cursor: pointer; }
+details.menue > summary::-webkit-details-marker { display: none; }
+.menue-liste {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 8; min-width: 200px; display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r); padding: 4px 0;
+}
+.menue-liste button, .menue-liste a {
+  min-height: var(--touch); padding: 0 16px; border: 0; background: none; text-align: left; color: var(--text);
+  font: inherit; text-decoration: none; display: flex; align-items: center; cursor: pointer;
+}
+.menue-liste .gefahr { color: var(--error); }
+.menue-liste button:active, .menue-liste a:active { background: var(--press); }
+
+.bestaetigung .dataline { margin: var(--f2) 0; }
+
+/* ── Zusammenfassung ──────────────────────────────────── */
+.zf-titel { margin: var(--f5) 0 var(--f3); }
+.zusammenfassung .ueberblick { color: var(--text); max-width: var(--measure); }
+.zf-abschnitt .eyebrow .n { color: var(--accent-ink); }
+.punkte { list-style: none; margin: 0; padding: 0; max-width: var(--measure); }
+.punkte li { padding: 12px 0; border-bottom: 1px solid var(--line); line-height: 1.5; }
+.punkte li:first-child { border-top: 1px solid var(--line); }
+.quelle {
+  display: block; margin-top: 4px; padding: 0; border: 0; background: none; text-align: left;
+  font-size: var(--fs-label); letter-spacing: .04em; color: var(--muted);
+}
+button.quelle { color: var(--accent-ink); cursor: pointer; min-height: 24px; }
+.aufgabe-meta { display: flex; flex-wrap: wrap; gap: 4px var(--f4); margin-top: 6px; font-size: var(--fs-small); }
+.aufgabe-meta .lb { display: inline; margin: 0 6px 0 0; }
+.thema + .thema { margin-top: var(--f4); }
+.thema h3 { font-family: var(--font-display); font-weight: 400; font-size: 1.625rem; line-height: 1.1; margin: 0 0 var(--f2); }
+.unterthema { margin: var(--f3) 0 0 var(--f3); }
+.unterthema h4 { font-size: var(--fs-small); font-weight: 600; margin: 0 0 6px; }
+
+/* ── Transkript ───────────────────────────────────────── */
+details.transkript > summary { list-style: none; }
+details.transkript > summary::-webkit-details-marker { display: none; }
+details.transkript[open] > summary { margin-bottom: var(--f4); }
+.segmente p { display: grid; grid-template-columns: auto 1fr; gap: var(--f3); margin: 0; padding: 8px 0; line-height: 1.55; max-width: var(--measure); }
+.zeit {
+  padding: 2px 0 0; border: 0; background: none; color: var(--muted); cursor: pointer; align-self: start;
+  font-size: var(--fs-label); min-height: 24px;
+}
+.zeit:hover, .zeit:focus-visible { color: var(--accent-ink); }
+
+/* ── Wiedergabe: schwebt über dem Inhalt ──────────────── */
+.player {
+  position: absolute; left: var(--app-rand); right: var(--app-rand); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); z-index: 6;
+  padding: var(--f2) var(--f3) var(--f3); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r);
+}
+.player-kopf { display: flex; align-items: center; justify-content: space-between; gap: var(--f2); }
+.player-kopf .lb { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.player audio { width: 100%; height: 40px; display: block; }

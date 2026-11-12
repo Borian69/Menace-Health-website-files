@@ -1,0 +1,23 @@
+# Start:   cd mitschrift && cp .env.example .env  (Werte eintragen)
+#          docker compose up -d --build
+# Logs:    docker compose logs -f
+#
+# Die App lauscht nur auf 127.0.0.1:8000. Davor gehört ein Reverse-Proxy mit
+# HTTPS (z. B. Caddy, siehe README) – ohne HTTPS gibt kein Handy das Mikrofon frei.
+
+services:
+  mitschrift:
+    build:
+      context: ..
+      dockerfile: mitschrift/Dockerfile
+    env_file: .env
+    environment:
+      STORAGE_DIR: /data
+    volumes:
+      - ./storage:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    # Whisper „small“ braucht im Betrieb rund 1 GB RAM. Grenze verhindert,
+    # dass ein langer Lauf den ganzen VPS lahmlegt.
+    mem_limit: 3g
