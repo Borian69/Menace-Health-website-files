@@ -1,0 +1,20 @@
+# Geheimnisse
+.env
+.env.*
+!.env.example
+
+# Daten: Datenbank, Audiodateien, Modelle – niemals ins Repository
+storage/*
+!storage/README.md
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo

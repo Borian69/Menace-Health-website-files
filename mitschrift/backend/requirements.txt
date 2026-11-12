@@ -1,0 +1,8 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.2
+python-multipart==0.0.20
+pydantic-settings==2.9.1
+httpx==0.28.1
+faster-whisper==1.2.1
+# faster-whisper importiert requests, das neuere huggingface_hub-Fassungen nicht mehr mitbringen.
+requests==2.32.3
