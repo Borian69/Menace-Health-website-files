@@ -89,6 +89,16 @@ button{font-family:inherit;color:inherit}
 .rbtn:focus-visible,.cbtn:focus-visible,.gbtn:focus-visible,.obtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .rbtn svg{width:18px;height:18px}
 #coachBtn{color:var(--gold);border-color:rgba(228,196,60,.25)}
+#modeBtn{height:42px;padding:0 14px 0 12px;border-radius:999px;border:1px solid rgba(228,196,60,.45);background:rgba(12,5,2,.82);display:flex;align-items:center;gap:9px;cursor:pointer;transition:transform 180ms var(--ease-out),filter 180ms,border-color .2s}
+#modeBtn:hover{transform:translateY(-1px);filter:brightness(1.15)}
+#modeBtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+#modeBtn i{width:26px;height:16px;border-radius:999px;border:1px solid rgba(228,196,60,.4);background:rgba(249,236,229,.06);position:relative;flex:none;transition:background .25s}
+#modeBtn i::after{content:'';position:absolute;left:2px;top:2px;width:10px;height:10px;border-radius:50%;background:rgba(249,236,229,.7);transition:transform .25s var(--ease),background .25s}
+#modeBtn[aria-checked=true] i{background:rgba(228,196,60,.25)}
+#modeBtn[aria-checked=true] i::after{transform:translateX(10px);background:var(--gold)}
+#modeBtn span{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+#modeBtn small{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:rgba(249,236,229,.6)}
+#modeBtn b{font-size:11px;font-weight:500;letter-spacing:.08em;color:var(--cream);white-space:nowrap}
 #coachBtn.ready{animation:glow 2.6s cubic-bezier(.45,0,.55,1) infinite}
 .panel{background:var(--glass);border:1px solid rgba(228,196,60,.33);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.6)}
 .kick{font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
@@ -100,6 +110,7 @@ button{font-family:inherit;color:inherit}
 #coach .x{position:absolute;right:6px;top:4px;width:28px;height:28px;border:0;background:none;color:rgba(249,236,229,.6);font-size:16px;cursor:pointer}
 #toast{left:50%;top:14px;transform:translate(-50%,-8px);padding:6px 16px;opacity:0;transition:opacity .35s var(--ease-out),transform .35s var(--ease-out);white-space:nowrap;pointer-events:none;display:flex;gap:10px;align-items:baseline}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+#coach.on ~ #toast{opacity:0}
 #toast b{font-family:'Bodoni Moda',serif;font-style:italic;font-weight:400;font-size:16px}
 #toast span{font-size:10px;color:rgba(249,236,229,.8)}
 #handl{left:14px;top:278px;padding:7px 14px;border-radius:10px;min-width:140px;transition:opacity .3s,border-color .3s}
@@ -169,6 +180,11 @@ button{font-family:inherit;color:inherit}
 #result .why b{font-weight:500;color:var(--gold)}
 #result .lines{font-size:10px;color:rgba(249,236,229,.68);line-height:1.5}
 #result .lines b{font-weight:500;color:var(--cream)}
+#result .mine{display:none;align-items:center;gap:10px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(228,196,60,.18);font-size:11px;line-height:1.4}
+#result .mine.on{display:flex}
+#result .mine .cs{display:flex;gap:3px;flex:none}
+#result .mine b{font-weight:500;color:var(--gold)}
+#result .mine .lost b{color:var(--cream)}
 #result .gbtn{flex:none}
 .shimmer{position:relative;overflow:hidden}
 .shimmer::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,240,190,.22) 50%,transparent 70%);transform:translateX(-120%);animation:sh 2.2s var(--ease) .2s 2;pointer-events:none}
@@ -209,6 +225,15 @@ button{font-family:inherit;color:inherit}
 .set{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid rgba(228,196,60,.12)}
 .set .l b{display:block;font-weight:500;color:var(--cream);font-size:13px}
 .set .l span{font-size:11px;color:rgba(249,236,229,.65)}
+.set .l{flex:1}
+.vol{width:120px;flex:none;-webkit-appearance:none;appearance:none;height:28px;background:transparent;cursor:pointer}
+.vol::-webkit-slider-runnable-track{height:3px;background:linear-gradient(90deg,var(--gold) var(--p,50%),rgba(249,236,229,.18) var(--p,50%));border-radius:2px}
+.vol::-moz-range-track{height:3px;background:rgba(249,236,229,.18);border-radius:2px}
+.vol::-moz-range-progress{height:3px;background:var(--gold)}
+.vol::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;margin-top:-7.5px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f0d870,#E4C43C 60%,#b8962e);box-shadow:0 2px 5px rgba(0,0,0,.6);border:0}
+.vol::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#E4C43C;border:0}
+.vol:disabled{opacity:.35;cursor:default}
+.vol:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
 .tog{width:50px;height:28px;border-radius:999px;border:1px solid rgba(228,196,60,.4);background:rgba(249,236,229,.06);position:relative;cursor:pointer;flex:none;transition:background .25s}
 .tog::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:rgba(249,236,229,.7);transition:transform .25s var(--ease),background .25s}
 .tog[aria-checked=true]{background:rgba(228,196,60,.25)}
@@ -236,6 +261,7 @@ button{font-family:inherit;color:inherit}
 
   <button id="bookBtn" class="rbtn abs" style="left:16px;top:14px" aria-label="Regelbuch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h14"/><path d="M9 7h7"/></svg></button>
   <button id="setBtn" class="rbtn abs" style="left:66px;top:14px" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/><path d="M12 17h8"/><circle cx="10" cy="17" r="2"/></svg></button>
+  <button id="modeBtn" class="abs" style="left:116px;top:14px" role="switch" aria-checked="true" aria-label="Lernmodus an oder aus"><i></i><span><small>Modus</small><b id="modeV">Lernmodus</b></span></button>
   <button id="coachBtn" class="rbtn abs" style="left:786px;top:14px" aria-label="Coach fragen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg></button>
 
   <div id="coach" class="panel abs" role="status" aria-live="polite"><button class="x" id="coachX" aria-label="Coach schließen">×</button><div class="kick">Coach</div><div id="coachBody"></div></div>
@@ -262,7 +288,7 @@ button{font-family:inherit;color:inherit}
   <div id="learn" class="ovl dim"><div class="velvetcard"><div class="kick" id="learnK">Lernmodus</div><h3 id="learnT"></h3><div id="learnB"></div><div class="row" style="margin-top:8px"><button class="gbtn" id="learnOk">Verstanden</button><button class="lbtn" id="learnOff">Lernmodus ausschalten</button></div></div></div>
 
   <!-- Ergebnis -->
-  <div id="result" class="ovl"><div class="box panel" id="resBox"><div class="txt"><div class="kick" id="resK">Showdown</div><div class="big" id="resBig"></div><div class="sub" id="resSub"></div><div class="why" id="resWhy"></div><div class="lines" id="resLines"></div></div><button class="gbtn" id="resNext">Nächste Hand</button></div></div>
+  <div id="result" class="ovl"><div class="box panel" id="resBox"><div class="txt"><div class="kick" id="resK">Showdown</div><div class="big" id="resBig"></div><div class="sub" id="resSub"></div><div class="why" id="resWhy"></div><div class="lines" id="resLines"></div><div class="mine" id="resMine"></div></div><button class="gbtn" id="resNext">Nächste Hand</button></div></div>
 
   <!-- Regelbuch -->
   <div id="book" class="ovl dim"><div class="sheet panel"><div class="tabs" id="bookTabs"><div class="mtitle">Regelbuch</div>
@@ -274,8 +300,8 @@ button{font-family:inherit;color:inherit}
     <h4>Einstellungen</h4>
     <div class="set"><div class="l"><b>Lernmodus</b><span>Erklärt jede Phase und gibt dir automatisch Tipps.</span></div><button class="tog" id="tLearn" role="switch" aria-checked="true" aria-label="Lernmodus"></button></div>
     <div class="set"><div class="l"><b>Klänge</b><span>Karten, Chips und Glocke.</span></div><button class="tog" id="tSound" role="switch" aria-checked="true" aria-label="Klänge"></button></div>
-    <div class="set"><div class="l"><b>Atmosphäre</b><span>Leiser Raumklang: Chips, Gläser, Gemurmel.</span></div><button class="tog" id="tAmb" role="switch" aria-checked="true" aria-label="Atmosphäre"></button></div>
-    <div class="set"><div class="l"><b>Musik</b><span id="musicNote">Leiser Jazz der 1920er und 30er.</span></div><button class="tog" id="tMusic" role="switch" aria-checked="false" aria-label="Musik"></button></div>
+    <div class="set"><div class="l"><b>Atmosphäre</b><span>Leiser Raumklang: Chips, Gläser, Gemurmel.</span></div><input type="range" class="vol" id="vAmb" min="0" max="100" step="5" aria-label="Lautstärke Atmosphäre"><button class="tog" id="tAmb" role="switch" aria-checked="true" aria-label="Atmosphäre"></button></div>
+    <div class="set"><div class="l"><b>Musik</b><span id="musicNote">Leiser Jazz der 1920er und 30er.</span></div><input type="range" class="vol" id="vMusic" min="0" max="100" step="5" aria-label="Lautstärke Musik"><button class="tog" id="tMusic" role="switch" aria-checked="false" aria-label="Musik"></button></div>
     <div class="set"><div class="l"><b>Tempo der Gegner</b><span>Wie lange die anderen nachdenken.</span></div><div class="seg" id="tSpeed"><button data-s="1.25">Ruhig</button><button data-s="1" class="on">Normal</button><button data-s="0.55">Zügig</button></div></div>
     <div class="row" style="justify-content:space-between;margin-top:14px"><button class="obtn" id="newGame">Neues Spiel</button><button class="gbtn" id="setClose">Fertig</button></div>
   </div></div></div>

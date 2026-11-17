@@ -13,7 +13,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('salon.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('salon.' + k, JSON.stringify(v)); } catch (e) {} }
 };
-const S = { learn: store.get('learn', true), sound: store.get('sound', true), music: store.get('music', true), amb: store.get('amb', true), speed: store.get('speed', 1) };
+const S = { learn: store.get('learn', true), sound: store.get('sound', true), music: store.get('music', true), amb: store.get('amb', true), speed: store.get('speed', 1), musicVol: store.get('musicVol', 0.5), ambVol: store.get('ambVol', 0.5) };
 
 /* ---------- Bühne skalieren ---------- */
 let forceLandscape = false;
@@ -81,10 +81,10 @@ const SLOT_U = [-168, -84, 0, 84, 168];
 /* ---------- Sitzplätze ---------- */
 const SEATS = [
   { key: 'you', you: true, dealer: [-140, 108], betPos: [-62, 94], from: [0, 170], bub: { x: 416, y: 258, al: 'c' } },
-  { key: 'vivienne', dealer: [-262, 72], betPos: [-236, 36], from: [-330, -40], cards: [[-270, -50, -18], [-250, -44, -6]], pill: [26, 124], bub: { x: 65, y: 166, al: 'c' } },
-  { key: 'baron', dealer: [-205, -100], betPos: [-112, -84], from: [-160, -190], cards: [[-172, -124, -12], [-148, -124, 8]], pill: [242, 100], bub: { x: 236, y: 72, al: 'r' } },
-  { key: 'maxim', dealer: [205, -100], betPos: [112, -84], from: [160, -190], cards: [[148, -124, -8], [172, -124, 12]], pill: [528, 100], bub: { x: 612, y: 72, al: 'l' } },
-  { key: 'ottilie', dealer: [262, 72], betPos: [236, 36], from: [330, -40], cards: [[250, -44, 6], [270, -50, 18]], pill: [744, 124], bub: { x: 783, y: 166, al: 'c' } }
+  { key: 'vivienne', dealer: [-262, 72], betPos: [-236, 36], from: [-330, -40], cards: [[-266, -30, -14], [-246, -26, -4]], pill: [26, 124], bub: { x: 65, y: 166, al: 'c' } },
+  { key: 'baron', dealer: [-132, -120], betPos: [-92, -72], from: [-160, -190], cards: [[-198, -92, -8], [-176, -92, 6]], pill: [242, 100], bub: { x: 236, y: 72, al: 'r' } },
+  { key: 'maxim', dealer: [132, -120], betPos: [92, -72], from: [160, -190], cards: [[176, -92, -6], [198, -92, 8]], pill: [528, 100], bub: { x: 612, y: 72, al: 'l' } },
+  { key: 'ottilie', dealer: [262, 72], betPos: [236, 36], from: [330, -40], cards: [[246, -26, 4], [266, -30, 14]], pill: [744, 124], bub: { x: 783, y: 166, al: 'c' } }
 ];
 const POT = [0, -108];
 const P = SEATS.map((s, i) => ({ i, ...s, persona: s.you ? null : E.PERSONAS[s.key], name: s.you ? 'Du' : E.PERSONAS[s.key].name, stack: START, hole: [], bet: 0, contrib: 0, folded: false, allIn: false, acted: false, shown: 0 }));
@@ -209,19 +209,20 @@ const Snd = (() => {
   }
   // Raumklang: Datei (Schleife) oder leiser synthetischer Salon
   let ambNode = null, ambGain = null, ambTimer = null;
-  let ambTries = 0;
+  let ambTries = 0, ambBase = 0.2;
+  const ambLevel = () => Math.max(0.0001, ambBase * 2 * S.ambVol);
   function ambStart() {
     if (!ctx || ambNode || !S.amb) return;
     if (!buf.ambience && ambTries++ < 12) { setTimeout(ambStart, 700); return; }
     ambGain = ctx.createGain(); ambGain.gain.value = 0.0001; ambGain.connect(master);
-    if (buf.ambience) { ambNode = ctx.createBufferSource(); ambNode.buffer = buf.ambience; ambNode.loop = true; ambNode.connect(ambGain); ambNode.start(); ambGain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 4); return; }
+    if (buf.ambience) { ambNode = ctx.createBufferSource(); ambNode.buffer = buf.ambience; ambNode.loop = true; ambNode.connect(ambGain); ambNode.start(); ambBase = 0.2; ambGain.gain.exponentialRampToValueAtTime(ambLevel(), ctx.currentTime + 4); return; }
     // Raumrauschen
     const len = ctx.sampleRate * 4, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
     let last = 0; for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
     ambNode = ctx.createBufferSource(); ambNode.buffer = b; ambNode.loop = true;
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
     ambNode.connect(lp); lp.connect(ambGain); ambNode.start();
-    ambGain.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 3);
+    ambBase = 0.05; ambGain.gain.exponentialRampToValueAtTime(ambLevel(), ctx.currentTime + 3);
     const ev = () => {
       if (!ambNode) return;
       const t = ctx.currentTime + 0.05, r = Math.random();
@@ -235,6 +236,7 @@ const Snd = (() => {
     ambTimer = setTimeout(ev, 2500);
   }
   function ambStop() { if (!ambNode) return; clearTimeout(ambTimer); const n = ambNode, g = ambGain; ambNode = null; try { g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2); setTimeout(() => { try { n.stop(); } catch (e) {} }, 1400); } catch (e) {} }
+  function ambVolume() { if (!ambNode || !ambGain) return; const g = ambGain.gain, t = ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.linearRampToValueAtTime(ambLevel(), t + 0.15); }
   // Mischung: Lautstärke und natürliche Variation je Klang
   const MIX = { deal: [0.5, 0.06], deal2: [0.5, 0.06], flip: [0.55, 0.05], chips: [0.3, 0.05], chips2: [0.24, 0.05], chipsBig: [0.3, 0.04], collect: [0.28, 0.04], shuffle: [0.16, 0.03], check: [0.55, 0.05], win: [0.55, 0], coach: [0.32, 0.02], whoosh: [0.13, 0.12], whoosh2: [0.08, 0.14], fold: [0.35, 0.06], tap: [0.4, 0], turn: [0.3, 0] };
   const VARIANTS = { deal: ['deal', 'deal2'], chips: ['chips', 'chips2'], fold: ['deal2'], whoosh: ['whoosh', 'whoosh3', 'whoosh4', 'whoosh5', 'whoosh2'], whoosh2: ['whoosh2', 'whoosh4', 'whoosh5'] };
@@ -259,17 +261,18 @@ const Snd = (() => {
       if (name === 'win' && buf.collect) playBuf('collect', 0.2, 0.03, 0.12);
     } else if (SYN[name]) SYN[name](ctx.currentTime + 0.01);
   }
-  return { init, play, ambStart, ambStop, ready: () => !!ctx };
+  return { init, play, ambStart, ambStop, ambVolume, ready: () => !!ctx };
 })();
 const snd = n => Snd.play(n);
 
 const Music = (() => {
   const TRACKS = ['music/track1.mp3', 'music/track2.mp3', 'music/track3.mp3'];
-  let avail = [], el = null, idx = 0, fadeT = null;
+  let avail = [], el = null, idx = 0, fadeT = null, on = false;
+  const level = () => 0.32 * S.musicVol;
   async function probe() {
     for (const t of TRACKS) { try { const r = await fetch(t, { method: 'HEAD' }); if (r.ok && !/text\/html/.test(r.headers.get('content-type') || '')) avail.push(t); } catch (e) {} }
     const tog = $('tMusic');
-    if (!avail.length) { tog.disabled = true; tog.setAttribute('aria-checked', 'false'); $('musicNote').textContent = 'Jazz der 1920er und 30er – die Musikdateien folgen.'; }
+    if (!avail.length) { tog.disabled = true; $('vMusic').disabled = true; tog.setAttribute('aria-checked', 'false'); $('musicNote').textContent = 'Jazz der 1920er und 30er – die Musikdateien folgen.'; }
     else tog.setAttribute('aria-checked', String(S.music));
   }
   function fade(to, done) {
@@ -287,10 +290,11 @@ const Music = (() => {
       el.addEventListener('ended', () => { idx = (idx + 1) % avail.length; el.src = avail[idx]; el.play().catch(() => {}); });
       el.src = avail[idx];
     }
-    el.play().then(() => fade(0.16)).catch(() => {});
+    on = true; el.play().then(() => fade(level())).catch(() => {});
   }
-  function stop() { if (el) fade(0, () => el.pause()); }
-  return { probe, start, stop };
+  function stop() { on = false; if (el) fade(0, () => el.pause()); }
+  function volume() { if (el && on && !el.paused) { clearInterval(fadeT); el.volume = Math.min(1, level()); } }
+  return { probe, start, stop, volume, has: () => avail.length > 0 };
 })();
 
 /* ---------- Ablaufsteuerung ---------- */
@@ -549,7 +553,7 @@ function coachHTML() {
       rec = eq > fair * 1.6 ? `Setzen – zum Beispiel ${fmt(halfPotTo())}. Wer schwächer ist, soll dafür bezahlen.` : 'Check – es kostet nichts, die nächste Karte anzusehen.';
     }
     const ag = G.lastAggr; if (ag && !ag.you && !ag.folded && G.currentBet > 0) L.push(ag.persona.read);
-  } else L.push('Wenn du dran bist, sage ich dir, was ich tun würde.');
+  } else L.push('Sobald du dran bist, erscheint hier mein Tipp. Lass das Fenster einfach offen.');
   return L.map(l => `<p>${l}</p>`).join('') + (rec ? `<div class="rec"><b>Mein Tipp:</b> ${rec}</div>` : '');
 }
 function openCoach() { $('coachBody').innerHTML = coachHTML(); $('coach').classList.add('on'); snd('coach'); }
@@ -667,6 +671,8 @@ async function botTurn(p) {
 }
 async function userTurn(p) {
   setTurn(p); configureActions(); enableActions(true); snd('turn');
+  // Coach schon offen (auch im freien Spiel)? Dann jetzt mit Tipp auffrischen.
+  if ($('coach').classList.contains('on')) openCoach();
   if (S.learn) { await learn('action'); if (G.turn === p) openCoach(); }
   const gid = G.gid;
   const a = await new Promise((res, rej) => { G.userResolve = res; G.userReject = rej; });
@@ -757,6 +763,7 @@ let resultDone = null;
 async function showResult(o) {
   $('resK').textContent = o.k; $('resBig').textContent = o.big; $('resBig').className = 'big' + (o.me ? ' me tglow' : '');
   $('resSub').textContent = o.sub || ''; $('resWhy').innerHTML = o.why || ''; $('resLines').innerHTML = o.lines || '';
+  $('resMine').innerHTML = o.mine || ''; $('resMine').classList.toggle('on', !!o.mine);
   $('resBox').classList.toggle('shimmer', !!o.me);
   if (o.me) { $('resBox').classList.remove('shimmer'); void $('resBox').offsetWidth; $('resBox').classList.add('shimmer'); }
   $('result').classList.add('on'); snd('whoosh');
@@ -765,6 +772,30 @@ async function showResult(o) {
   $('result').classList.remove('on');
   if (gid !== G.gid) throw ABORT;
   await sleep(250);
+}
+// Was wären deine Karten wert gewesen? (immer im Ergebnis)
+function myHandVerdict(finalists, byFold) {
+  const me = P[0];
+  if (!me.hole.length) return '';
+  const cards = me.hole.map(c => `<div class="card mini paper${isRed(c) ? ' red' : ''}"><div class="ix"><b>${E.RANK_LABEL[E.rankOf(c)]}</b><i>${SYM[E.suitOf(c)]}</i></div></div>`).join('');
+  const need = 5 - G.board.length;
+  const board = need > 0 ? G.board.concat(G.deck.slice(-need).reverse()) : G.board;
+  const mine = E.score(me.hole.concat(board)), name = E.describe(mine);
+  const rest = need > 0 ? ', wenn alle fünf Karten ausgeteilt worden wären' : '';
+  if (!me.folded) {
+    if (byFold) return `<div class="cs">${cards}</div><div>Du hattest <b>${E.describe(E.score(me.hole.concat(G.board)))}</b>. Gezeigt werden musste sie nicht.</div>`;
+    const won = finalists.length && !byFold && G.lastWins && G.lastWins.has(me);
+    return `<div class="cs">${cards}</div><div${won ? '' : ' class="lost"'}>Du hattest <b>${name}</b> und hast ${won ? 'gewonnen' : 'verloren'}.</div>`;
+  }
+  const opp = finalists.filter(p => !p.you);
+  if (!opp.length) return '';
+  const best = opp.reduce((a, p) => { const s = E.score(p.hole.concat(board)); return s > a.s ? { p, s } : a; }, { p: null, s: -1 });
+  const nm = best.p.name;
+  let verdict;
+  if (mine > best.s) verdict = `<span>Mit <b>${name}</b> hättest du gewonnen${rest}. Das Passen hat dich diesen Topf gekostet.</span>`;
+  else if (mine === best.s) verdict = `<span>Mit <b>${name}</b> hättest du den Topf mit ${nm} geteilt${rest}.</span>`;
+  else { const theirs = E.describe(best.s); verdict = `<span class="lost">Mit <b>${name}</b> hättest du verloren${rest}. ${theirs === name ? `${nm} hatte dasselbe, aber die höhere Beikarte (Kicker)` : `${nm} hatte <b>${theirs}</b>`}. Passen war richtig.</span>`; }
+  return `<div class="cs">${cards}</div>${verdict}`;
 }
 $('resNext').onclick = () => { snd('tap'); resultDone && resultDone(); };
 async function winByFold() {
@@ -776,6 +807,7 @@ async function winByFold() {
     k: 'Alle anderen haben gepasst', me: w.you,
     big: w.you ? 'Du gewinnst ' + fmt(amt) : w.name + ' gewinnt ' + fmt(amt),
     sub: w.you ? 'Ohne Showdown – deine Karten bleiben geheim.' : 'Ohne Showdown.',
+    mine: myHandVerdict([w], true),
     why: w.you ? 'Wer als Letzter übrig bleibt, gewinnt den Topf – egal, welche Karten er hat. Darum funktioniert Bluffen.' : `${w.name} musste die Karten nicht zeigen. Vielleicht hatte ${({ vivienne: 'sie', baron: 'er', maxim: 'er', ottilie: 'sie' })[w.key]} etwas – vielleicht war es ein Bluff.`
   });
 }
@@ -801,6 +833,7 @@ async function showdown() {
   glowCards(E.best5(w0.hole.concat(G.board)).cards, w0);
   await sleep(500);
   await payout(wins);
+  G.lastWins = wins;
   const meWin = wins.has(P[0]);
   if (meWin) snd('win'); else snd('chips');
   const s0 = sc.get(w0);
@@ -817,7 +850,7 @@ async function showdown() {
   await showResult({
     k: 'Showdown', me: w0.you || meWin,
     big: (w0.you ? 'Du gewinnst ' : w0.name + ' gewinnt ') + fmt(a0),
-    sub: 'mit ' + E.describe(s0), why, lines
+    sub: 'mit ' + E.describe(s0), why, lines, mine: myHandVerdict(live, false)
   });
 }
 
@@ -905,14 +938,21 @@ $('goBook').onclick = () => { Snd.init(); $('start').classList.remove('on'); ope
 /* ---------- Einstellungen ---------- */
 function syncSettings() {
   $('tLearn').setAttribute('aria-checked', String(S.learn));
+  $('modeBtn').setAttribute('aria-checked', String(S.learn)); $('modeV').textContent = S.learn ? 'Lernmodus' : 'Freies Spiel';
   $('tSound').setAttribute('aria-checked', String(S.sound));
   $('tAmb').setAttribute('aria-checked', String(S.amb));
   if (!$('tMusic').disabled) $('tMusic').setAttribute('aria-checked', String(S.music));
   document.querySelectorAll('#tSpeed button').forEach(b => b.classList.toggle('on', +b.dataset.s === S.speed));
+  for (const [id, k] of [['vMusic', 'musicVol'], ['vAmb', 'ambVol']]) { const r = $(id); r.value = Math.round(S[k] * 100); r.style.setProperty('--p', r.value + '%'); }
+}
+for (const [id, k, apply] of [['vMusic', 'musicVol', () => Music.volume()], ['vAmb', 'ambVol', () => Snd.ambVolume()]]) {
+  $(id).oninput = e => { S[k] = e.target.value / 100; e.target.style.setProperty('--p', e.target.value + '%'); apply(); };
+  $(id).onchange = () => store.set(k, S[k]);
 }
 $('setBtn').onclick = () => { Snd.init(); syncSettings(); snd('whoosh'); $('settings').classList.add('on'); paused = true; };
 $('setClose').onclick = () => { $('settings').classList.remove('on'); paused = $('book').classList.contains('on'); };
 $('tLearn').onclick = () => { S.learn = !S.learn; store.set('learn', S.learn); syncSettings(); };
+$('modeBtn').onclick = () => { Snd.init(); S.learn = !S.learn; store.set('learn', S.learn); syncSettings(); snd('tap'); };
 $('tSound').onclick = () => { S.sound = !S.sound; store.set('sound', S.sound); syncSettings(); snd('tap'); };
 $('tAmb').onclick = () => { S.amb = !S.amb; store.set('amb', S.amb); syncSettings(); Snd.init(); S.amb ? Snd.ambStart() : Snd.ambStop(); };
 $('tMusic').onclick = () => { S.music = !S.music; store.set('music', S.music); syncSettings(); S.music ? Music.start() : Music.stop(); };
