@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Salon – Poker lernen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..700;1,6..96,400..700&family=Jost:wght@300..600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: zurückhaltend, warm, luxuriös – ein Spielsalon um 1925
+   IDEA: ein echter Pokertisch in einem dunklen Clubraum, nur ein Licht über dem Filz
+   PICTURE: 3D-Tisch mit gepolstertem Rand, Karten liegen flach im Filz
+   COLOUR and TYPE: Filz #086928, Holz #361E0D, Samt #68150A, Elfenbein #F9ECE5, Messing #E4C43C · Bodoni Moda + Jost
+   LAYOUT: feste Bühne 844×390 im Querformat, skaliert auf Handy und PC */
+:root{--gold:#E4C43C;--gold-d:#9c7c2c;--felt:#086928;--wood:#361E0D;--red:#68150A;--cream:#F9ECE5;--ink:#120803;--glass:rgba(12,5,2,.86);
+  --ease:cubic-bezier(.65,0,.35,1);--ease-out:cubic-bezier(.33,1,.68,1);--spring:cubic-bezier(.34,1.3,.64,1)}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:#000;overflow:hidden;color:var(--cream);font-family:'Jost',system-ui,sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+button{font-family:inherit;color:inherit}
+#fit{position:fixed;inset:0;background:#000}
+#stage{position:absolute;left:50%;top:50%;width:844px;height:390px;overflow:hidden;background:#0c0302;transform-origin:50% 50%}
+.abs{position:absolute}
+/* ---------- 3D-Szene ---------- */
+#scene{position:absolute;left:0;top:0;width:844px;height:390px;overflow:hidden;perspective:900px;perspective-origin:422px 320px}
+#world{position:absolute;left:422px;top:320px;width:0;height:0;transform-style:preserve-3d;transform:rotateX(55deg)}
+#world div{position:absolute}
+.carpet{background-image:linear-gradient(rgba(10,3,1,.25),rgba(10,3,1,.25)),url(tex/carpet.png);background-size:100% 100%,84px 84px}
+.wall{background-image:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.25) 100%),repeating-linear-gradient(90deg,rgba(0,0,0,0) 0px,rgba(0,0,0,0) 140px,rgba(0,0,0,.6) 140px,rgba(0,0,0,.6) 144px,rgba(255,220,170,.06) 144px,rgba(255,220,170,.06) 145px),url(tex/wood.png);background-size:100% 100%,auto,500px 125px}
+.velvet{background-image:linear-gradient(180deg,rgba(0,0,0,.3) 0%,rgba(0,0,0,0) 40%,rgba(0,0,0,.55) 100%),repeating-linear-gradient(90deg,rgba(0,0,0,.6) 0px,rgba(255,255,255,.03) 12px,rgba(0,0,0,.65) 24px),url(tex/velvet.png);background-size:100% 100%,auto,128px 256px}
+.skirt{background-image:linear-gradient(0deg,rgba(0,0,0,.35),rgba(0,0,0,.6)),url(tex/wood.png);background-size:100% 100%,520px 130px}
+.leather{background-image:linear-gradient(180deg,#5e170b 0%,#3a0c06 60%,#1e0603 100%)}
+.paper{background-image:linear-gradient(160deg,#fffaf5 0%,#F9ECE5 50%,#ecdfd2 100%)}
+.back{background-image:repeating-linear-gradient(45deg,rgba(228,196,60,.22) 0px,rgba(228,196,60,.22) 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 6px),repeating-linear-gradient(-45deg,rgba(228,196,60,.22) 0px,rgba(228,196,60,.22) 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) 6px),linear-gradient(160deg,#741a0c,#4f0f06);box-shadow:inset 0 0 0 1px rgba(228,196,60,.5)}
+.mover{transform-style:preserve-3d;transition:transform 560ms var(--ease),opacity 400ms var(--ease)}
+/* Karten */
+.card{border-radius:6px;font-family:'Bodoni Moda',serif;color:#361E0D;overflow:hidden}
+.card.red{color:#68150A}
+.card .ix{position:absolute;top:6%;left:9%;display:flex;flex-direction:column;align-items:center;line-height:1}
+.card .ix b{font-weight:600}
+.card .pp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:10%}
+.card .face,.card .bk{position:absolute;inset:0;border-radius:inherit}
+.card .bk{display:none}
+.card.down .bk{display:block}.card.down .face{display:none}
+.wcard{width:74px;height:104px}
+.wcard .ix b{font-size:24px}.wcard .ix i{font-size:16px;font-style:normal}.wcard .pp{font-size:42px}
+.scard{width:34px;height:48px;border-radius:3px}
+.scard .ix b{font-size:12px}.scard .ix i{font-size:9px;font-style:normal}.scard .pp{font-size:18px}
+.mcard{width:46px;height:64px;border-radius:4px}
+.mcard .ix b{font-size:15px}.mcard .ix i{font-size:11px;font-style:normal}.mcard .pp{font-size:24px}
+.shadow3{box-shadow:0 1px 0 rgba(0,0,0,.5),0 3px 5px rgba(0,0,0,.45)}
+.slot{border:1.5px solid rgba(228,196,60,.2);border-radius:6px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:10px;font-size:10px;letter-spacing:.3em;text-transform:uppercase;color:rgba(228,196,60,.36)}
+/* Glow */
+.gflat{animation:gflat 2.6s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes gflat{0%,100%{box-shadow:0 0 0 1.5px rgba(228,196,60,.6),0 0 6px rgba(228,196,60,.2),0 3px 5px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 1.5px rgba(228,196,60,.95),0 0 18px rgba(228,196,60,.55),0 3px 5px rgba(0,0,0,.45)}}
+.glow{animation:glow 2.6s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 0 1.5px rgba(228,196,60,.65),0 0 8px rgba(228,196,60,.2),0 10px 18px rgba(0,0,0,.55)}50%{box-shadow:0 0 0 1.5px rgba(228,196,60,1),0 0 24px rgba(228,196,60,.5),0 10px 18px rgba(0,0,0,.55)}}
+.tglow{animation:tglow 2.6s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes tglow{0%,100%{text-shadow:0 0 4px rgba(228,196,60,.2)}50%{text-shadow:0 0 12px rgba(228,196,60,.65)}}
+/* ---------- Licht ---------- */
+#light{left:82px;top:60px;width:680px;height:300px;border-radius:50%;background:radial-gradient(ellipse 50% 50% at 50% 50%,rgba(255,232,180,.12) 0%,rgba(255,232,180,.04) 55%,rgba(255,232,180,0) 75%);pointer-events:none}
+#vignette{inset:0;background:radial-gradient(ellipse 56% 68% at 50% 52%,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 42%,rgba(0,0,0,.5) 62%,rgba(0,0,0,.88) 80%,rgba(0,0,0,1) 94%);pointer-events:none}
+/* ---------- Labels ---------- */
+.pill{width:78px;padding:3px 0 4px;border-radius:999px;background:rgba(12,5,2,.84);border:1px solid rgba(228,196,60,.25);display:flex;flex-direction:column;align-items:center;transition:opacity .4s var(--ease),border-color .3s,box-shadow .3s}
+.pill .n{font-size:9px;letter-spacing:.16em;text-transform:uppercase}
+.pill .c{font-family:'Bodoni Moda',serif;font-size:12px;color:var(--gold);font-variant-numeric:lining-nums tabular-nums}
+.pill.out{opacity:.4}
+.pill.turn{border-color:rgba(228,196,60,.9);box-shadow:0 0 14px rgba(228,196,60,.35)}
+.pill.win{animation:glow 1.6s cubic-bezier(.45,0,.55,1) infinite}
+.dots{display:flex;gap:3px;height:4px;margin-top:2px;opacity:0;transition:opacity .2s}
+.pill.turn .dots{opacity:1}
+.dots i{width:3px;height:3px;border-radius:50%;background:var(--gold);animation:dot 1s infinite ease-in-out}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-1.5px)}}
+.bub{padding:4px 9px;border-radius:999px;background:rgba(249,236,229,.94);color:#361E0D;font-size:9px;font-weight:500;letter-spacing:.18em;text-transform:uppercase;white-space:nowrap;box-shadow:0 4px 10px rgba(0,0,0,.5);opacity:0;transform:translateY(4px) scale(.96);transition:opacity .28s var(--ease-out),transform .28s var(--ease-out)}
+.bub.on{opacity:1;transform:none}
+.bub.hot{background:var(--gold);color:#2e1c06;font-weight:600}
+.bub.dim{background:rgba(12,5,2,.85);color:rgba(249,236,229,.7);border:1px solid rgba(249,236,229,.15)}
+.betl{font-family:'Bodoni Moda',serif;font-size:12px;color:var(--cream);text-shadow:0 1px 3px #000,0 0 6px #000;transform:translate(-50%,-50%);white-space:nowrap;transition:opacity .3s}
+#potl{transform:translate(-50%,-50%);display:flex;align-items:baseline;gap:7px;white-space:nowrap;transition:opacity .3s}
+#potl span{font-size:9px;letter-spacing:.32em;text-transform:uppercase;color:var(--gold)}
+#potl b{font-family:'Bodoni Moda',serif;font-weight:500;font-size:18px;text-shadow:0 2px 6px rgba(0,0,0,.8);font-variant-numeric:lining-nums tabular-nums}
+/* ---------- deine Karten ---------- */
+.hcard{width:80px;height:112px;border-radius:7px;transform-origin:50% 100%;box-shadow:0 1px 1px rgba(0,0,0,.4),0 14px 24px rgba(0,0,0,.6);transition:transform 520ms var(--ease),opacity 420ms var(--ease)}
+.hcard .ix b{font-size:24px}.hcard .ix i{font-size:17px;font-style:normal}.hcard .pp{font-size:42px;padding-left:10px}
+/* ---------- HUD ---------- */
+.rbtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(228,196,60,.45);background:rgba(12,5,2,.82);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 180ms var(--ease-out),filter 180ms,border-color .2s}
+.rbtn:hover{transform:translateY(-1px);filter:brightness(1.15)}
+.rbtn:focus-visible,.cbtn:focus-visible,.gbtn:focus-visible,.obtn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.rbtn svg{width:18px;height:18px}
+#coachBtn{color:var(--gold);border-color:rgba(228,196,60,.25)}
+#coachBtn.ready{animation:glow 2.6s cubic-bezier(.45,0,.55,1) infinite}
+.panel{background:var(--glass);border:1px solid rgba(228,196,60,.33);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.6)}
+.kick{font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+#coach{left:262px;top:10px;width:320px;padding:9px 13px 10px;opacity:0;transform:translateY(-6px);transition:opacity .3s var(--ease-out),transform .3s var(--ease-out);pointer-events:none}
+#coach.on{opacity:1;transform:none;pointer-events:auto}
+#coach p{margin:3px 0 0;font-size:10.5px;line-height:1.42;font-weight:300}
+#coach p b{font-weight:500;color:var(--gold)}
+#coach .rec{margin-top:6px;padding-top:6px;border-top:1px solid rgba(228,196,60,.18);font-size:11px}
+#coach .x{position:absolute;right:6px;top:4px;width:28px;height:28px;border:0;background:none;color:rgba(249,236,229,.6);font-size:16px;cursor:pointer}
+#toast{left:50%;top:14px;transform:translate(-50%,-8px);padding:6px 16px;opacity:0;transition:opacity .35s var(--ease-out),transform .35s var(--ease-out);white-space:nowrap;pointer-events:none;display:flex;gap:10px;align-items:baseline}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#toast b{font-family:'Bodoni Moda',serif;font-style:italic;font-weight:400;font-size:16px}
+#toast span{font-size:10px;color:rgba(249,236,229,.8)}
+#handl{left:14px;top:278px;padding:7px 14px;border-radius:10px;min-width:140px;transition:opacity .3s,border-color .3s}
+#handl .k{font-size:8px;letter-spacing:.3em;text-transform:uppercase;color:rgba(249,236,229,.6)}
+#handl .v{font-family:'Bodoni Moda',serif;font-size:15px;color:var(--gold);white-space:nowrap}
+#handl.turn{border-color:rgba(228,196,60,.85)}
+#me{left:16px;top:338px;display:flex;align-items:center;gap:10px}
+#me .av{width:36px;height:36px;border-radius:11px;background:linear-gradient(160deg,#E4C43C,#9c7c2c);display:flex;align-items:center;justify-content:center;font-family:'Bodoni Moda',serif;font-size:17px;color:#2e1c06;box-shadow:0 6px 14px rgba(0,0,0,.7)}
+#me .k{font-size:8px;letter-spacing:.24em;text-transform:uppercase;color:rgba(249,236,229,.65)}
+#me .v{font-family:'Bodoni Moda',serif;font-size:17px;font-variant-numeric:lining-nums tabular-nums}
+#actions{left:598px;top:292px;display:flex;gap:12px;align-items:flex-end;transition:opacity .35s var(--ease)}
+#actions.off{opacity:.35;pointer-events:none}
+.act{display:flex;flex-direction:column;align-items:center;gap:5px}
+.act span{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:rgba(249,236,229,.88);white-space:nowrap}
+.cbtn{cursor:pointer;border:0;padding:0;border-radius:50%;display:flex;align-items:center;justify-content:center;transition:transform 200ms var(--ease-out),filter 200ms var(--ease-out)}
+.cbtn:hover{transform:translateY(-3px);filter:brightness(1.08)}
+.cbtn:active{transform:translateY(1px) scale(.96)}
+.cbtn .in{border-radius:50%;display:flex;align-items:center;justify-content:center}
+#bFold{width:52px;height:52px;background:repeating-conic-gradient(#361E0D 0deg 16deg,#F9ECE5 16deg 60deg);box-shadow:0 4px 0 #8a7a6c,0 10px 16px rgba(0,0,0,.65)}
+#bFold .in{width:38px;height:38px;background:#F9ECE5;border:1px solid rgba(54,30,13,.35);color:#361E0D}
+#bCall{width:52px;height:52px;background:repeating-conic-gradient(#F9ECE5 0deg 16deg,#68150A 16deg 60deg);box-shadow:0 4px 0 #2e0804,0 10px 16px rgba(0,0,0,.65)}
+#bCall .in{width:38px;height:38px;background:#68150A;border:1px solid rgba(228,196,60,.6);font-family:'Bodoni Moda',serif;font-size:14px;font-weight:600;color:#F9ECE5}
+#bRaise{width:66px;height:66px;background:repeating-conic-gradient(#361E0D 0deg 16deg,#E4C43C 16deg 60deg);box-shadow:0 5px 0 #6e561c,0 12px 20px rgba(0,0,0,.7),0 0 22px rgba(228,196,60,.25)}
+#bRaise .in{width:50px;height:50px;background:radial-gradient(circle at 40% 35%,#f0d870,#E4C43C 55%,#b8962e);border:1px solid rgba(54,30,13,.4);color:#2e1c06;font-family:'Bodoni Moda',serif;font-size:13px;font-weight:600}
+#actions.my #bRaise{animation:raisepulse 2.6s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes raisepulse{0%,100%{box-shadow:0 5px 0 #6e561c,0 12px 20px rgba(0,0,0,.7),0 0 16px rgba(228,196,60,.2)}50%{box-shadow:0 5px 0 #6e561c,0 12px 20px rgba(0,0,0,.7),0 0 30px rgba(228,196,60,.5)}}
+#raise{left:540px;top:150px;width:290px;padding:12px 14px 12px;opacity:0;transform:translateY(8px);transition:opacity .25s var(--ease-out),transform .25s var(--ease-out);pointer-events:none}
+#raise.on{opacity:1;transform:none;pointer-events:auto}
+#raise .amt{font-family:'Bodoni Moda',serif;font-size:26px;line-height:1;color:var(--cream);font-variant-numeric:lining-nums tabular-nums}
+#raise input[type=range]{width:100%;margin:10px 0 8px;-webkit-appearance:none;appearance:none;height:28px;background:transparent}
+#raise input[type=range]::-webkit-slider-runnable-track{height:3px;background:linear-gradient(90deg,var(--gold) var(--p,0%),rgba(249,236,229,.18) var(--p,0%));border-radius:2px}
+#raise input[type=range]::-moz-range-track{height:3px;background:rgba(249,236,229,.18);border-radius:2px}
+#raise input[type=range]::-moz-range-progress{height:3px;background:var(--gold)}
+#raise input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;margin-top:-9.5px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f0d870,#E4C43C 60%,#b8962e);box-shadow:0 2px 6px rgba(0,0,0,.6);border:0}
+#raise input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#E4C43C;border:0}
+.presets{display:flex;gap:6px}
+.presets button{flex:1;height:30px;border-radius:6px;border:1px solid rgba(228,196,60,.35);background:rgba(249,236,229,.04);font-size:9px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;transition:background .2s,border-color .2s}
+.presets button:hover{background:rgba(228,196,60,.12);border-color:var(--gold)}
+#raise .x{position:absolute;right:6px;top:4px;width:30px;height:30px;border:0;background:none;color:rgba(249,236,229,.6);font-size:17px;cursor:pointer}
+/* ---------- Overlays ---------- */
+.ovl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .35s var(--ease-out);z-index:20}
+.ovl.on{opacity:1;pointer-events:auto}
+.ovl.dim{background:rgba(0,0,0,.55)}
+.gbtn{height:42px;padding:0 22px;border-radius:6px;border:1px solid var(--gold);background:linear-gradient(180deg,#efd76a,#E4C43C 55%,#c4a238);color:#2e1c06;font-size:11px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.5);transition:transform .18s var(--ease-out),filter .18s}
+.gbtn:hover{transform:translateY(-1px);filter:brightness(1.06)}
+.obtn{height:42px;padding:0 20px;border-radius:6px;border:1px solid rgba(249,236,229,.4);background:rgba(12,5,2,.6);font-size:11px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:border-color .2s,background .2s}
+.obtn:hover{border-color:var(--gold);background:rgba(228,196,60,.08)}
+.lbtn{border:0;background:none;color:var(--gold);font-size:11px;letter-spacing:.06em;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:10px 6px}
+.velvetcard{background:linear-gradient(170deg,#7a1c0d,#68150A 40%,#4e0f06);border:1px solid rgba(228,196,60,.5);border-radius:12px;box-shadow:0 20px 50px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,220,180,.15)}
+#learn .velvetcard{width:410px;padding:18px 22px 16px;transform:translateY(10px);transition:transform .4s var(--ease-out)}
+#learn.on .velvetcard{transform:none}
+#learn h3,.mtitle{margin:4px 0 6px;font-family:'Bodoni Moda',serif;font-style:italic;font-weight:400;font-size:26px;line-height:1.1}
+#learn p{margin:0 0 8px;font-size:12.5px;line-height:1.5;font-weight:300}
+#learn ul{margin:0 0 8px;padding:0;list-style:none;font-size:12px;line-height:1.45;font-weight:300}
+#learn li{margin:0 0 4px;padding-left:14px;position:relative}
+#learn li::before{content:'';position:absolute;left:0;top:7px;width:5px;height:5px;background:var(--gold);transform:rotate(45deg)}
+#learn li b{font-weight:500;color:var(--gold)}
+.row{display:flex;gap:12px;align-items:center}
+#result{align-items:flex-start;padding-top:8px}
+#result .box{width:600px;padding:12px 18px 12px 20px;display:flex;align-items:center;gap:18px;background:rgba(12,5,2,.94);transform:translateY(-10px);transition:transform .45s var(--spring)}
+#result.on .box{transform:none}
+#result .txt{flex:1}
+#result .big{font-family:'Bodoni Moda',serif;font-size:24px;line-height:1.1;margin:3px 0 1px}
+#result .big.me{color:var(--gold)}
+#result .sub{font-size:11.5px;color:rgba(249,236,229,.85);margin-bottom:4px}
+#result .why{font-size:11px;line-height:1.4;font-weight:300;margin-bottom:3px}
+#result .why b{font-weight:500;color:var(--gold)}
+#result .lines{font-size:10px;color:rgba(249,236,229,.68);line-height:1.5}
+#result .lines b{font-weight:500;color:var(--cream)}
+#result .gbtn{flex:none}
+.shimmer{position:relative;overflow:hidden}
+.shimmer::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 30%,rgba(255,240,190,.22) 50%,transparent 70%);transform:translateX(-120%);animation:sh 2.2s var(--ease) .2s 2;pointer-events:none}
+@keyframes sh{to{transform:translateX(120%)}}
+/* Startbildschirm */
+#start{background:radial-gradient(ellipse 60% 70% at 50% 50%,rgba(0,0,0,.35),rgba(0,0,0,.92))}
+#start .t{font-family:'Bodoni Moda',serif;font-weight:500;font-size:64px;letter-spacing:.3em;padding-left:.3em;line-height:1;text-shadow:0 6px 30px rgba(0,0,0,.8)}
+#start .orn{margin:12px auto 10px;display:block}
+#start p{margin:0 0 22px;font-size:13px;font-weight:300;color:rgba(249,236,229,.85);letter-spacing:.04em}
+/* Regelbuch & Einstellungen */
+.sheet{width:760px;height:340px;display:flex;overflow:hidden;transform:translateY(12px);transition:transform .4s var(--ease-out)}
+.ovl.on .sheet{transform:none}
+.tabs{width:170px;flex:none;padding:16px 10px;border-right:1px solid rgba(228,196,60,.18);display:flex;flex-direction:column;gap:2px}
+.tabs .mtitle{font-size:22px;margin:0 8px 10px}
+.tabs button{height:38px;text-align:left;padding:0 12px;border:0;border-radius:6px;background:none;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(249,236,229,.75);cursor:pointer;transition:background .2s,color .2s}
+.tabs button.on{background:rgba(228,196,60,.12);color:var(--gold)}
+.tabs button:hover{color:var(--cream)}
+.tabs .sp{flex:1}
+.pane{flex:1;overflow-y:auto;padding:18px 22px 20px;font-size:12px;line-height:1.55;font-weight:300}
+.pane h4{margin:0 0 8px;font-family:'Bodoni Moda',serif;font-style:italic;font-weight:400;font-size:20px}
+.pane p{margin:0 0 10px}
+.pane b{font-weight:500;color:var(--gold)}
+.pane ol{margin:0 0 10px;padding-left:18px}.pane ol li{margin-bottom:6px}
+.hr{display:grid;grid-template-columns:22px 150px auto 1fr;gap:12px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(228,196,60,.1)}
+.hr .no{font-family:'Bodoni Moda',serif;color:var(--gold);font-size:14px;text-align:right}
+.hr .nm{font-family:'Bodoni Moda',serif;font-size:14px}
+.hr .cs{display:flex;gap:3px}
+.hr .ds{font-size:11px;color:rgba(249,236,229,.75)}
+.mini{width:24px;height:34px;border-radius:3px;position:relative;font-family:'Bodoni Moda',serif;box-shadow:0 2px 4px rgba(0,0,0,.4)}
+.mini .ix{top:3px;left:4px}.mini .ix b{font-size:10px}.mini .ix i{font-size:8px;font-style:normal}
+.mini.dim{opacity:.35}
+.pane .mini b{color:inherit;font-weight:600}
+.sheet.panel{background:rgba(12,5,2,.96)}
+#settings .pane{max-height:370px}
+.dl{display:grid;grid-template-columns:120px 1fr;gap:6px 16px}
+.dl dt{font-family:'Bodoni Moda',serif;font-size:13px;color:var(--gold)}
+.dl dd{margin:0}
+.set{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid rgba(228,196,60,.12)}
+.set .l b{display:block;font-weight:500;color:var(--cream);font-size:13px}
+.set .l span{font-size:11px;color:rgba(249,236,229,.65)}
+.tog{width:50px;height:28px;border-radius:999px;border:1px solid rgba(228,196,60,.4);background:rgba(249,236,229,.06);position:relative;cursor:pointer;flex:none;transition:background .25s}
+.tog::after{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:rgba(249,236,229,.7);transition:transform .25s var(--ease),background .25s}
+.tog[aria-checked=true]{background:rgba(228,196,60,.25)}
+.tog[aria-checked=true]::after{transform:translateX(22px);background:var(--gold)}
+.tog:disabled{opacity:.4;cursor:default}
+.seg{display:flex;border:1px solid rgba(228,196,60,.35);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;border:0;background:none;font-size:10px;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.seg button.on{background:rgba(228,196,60,.18);color:var(--gold)}
+#rot{position:fixed;inset:0;background:#0c0302;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:30px;z-index:50}
+#rot.on{display:flex}
+#rot b{font-family:'Bodoni Moda',serif;font-weight:400;font-style:italic;font-size:26px}
+#rot span{font-size:14px;color:rgba(249,236,229,.75);max-width:260px;line-height:1.5}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="fit">
+<div id="stage">
+  <div id="scene"><div id="world"></div></div>
+  <div id="light" class="abs"></div>
+  <canvas id="smoke" class="abs" style="left:0;top:0;width:844px;height:390px;pointer-events:none" aria-hidden="true"></canvas>
+  <div id="vignette" class="abs"></div>
+  <div id="labels" class="abs" style="inset:0;pointer-events:none"></div>
+  <div id="hand" class="abs" style="inset:0;pointer-events:none"></div>
+
+  <button id="bookBtn" class="rbtn abs" style="left:16px;top:14px" aria-label="Regelbuch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5a2 2 0 0 1 2-2h14v15H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 0 2 2h14"/><path d="M9 7h7"/></svg></button>
+  <button id="setBtn" class="rbtn abs" style="left:66px;top:14px" aria-label="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10"/><path d="M18 7h2"/><circle cx="16" cy="7" r="2"/><path d="M4 17h4"/><path d="M12 17h8"/><circle cx="10" cy="17" r="2"/></svg></button>
+  <button id="coachBtn" class="rbtn abs" style="left:786px;top:14px" aria-label="Coach fragen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6"/><path d="M10 21h4"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.2h5c0-.9.4-1.7 1.1-2.2A6 6 0 0 0 12 3z"/></svg></button>
+
+  <div id="coach" class="panel abs" role="status" aria-live="polite"><button class="x" id="coachX" aria-label="Coach schließen">×</button><div class="kick">Coach</div><div id="coachBody"></div></div>
+  <div id="toast" class="panel abs"><b id="toastT"></b><span id="toastS"></span></div>
+
+  <div id="handl" class="panel abs"><div class="k" id="handK">Deine Hand</div><div class="v tglow" id="handV">–</div></div>
+  <div id="me" class="abs"><div class="av">F</div><div><div class="k">Deine Chips</div><div class="v" id="myStack">1.500</div></div></div>
+
+  <div id="raise" class="panel abs" aria-label="Betrag wählen">
+    <button class="x" id="raiseX" aria-label="Schließen">×</button>
+    <div class="kick" id="raiseK">Erhöhen auf</div>
+    <div class="amt" id="raiseAmt">0</div>
+    <input type="range" id="raiseR" min="0" max="100" step="10" aria-label="Betrag">
+    <div class="presets"><button data-p="min">Min</button><button data-p="half">½ Pot</button><button data-p="pot">Pot</button><button data-p="all">All-in</button></div>
+  </div>
+
+  <div id="actions" class="abs off">
+    <div class="act"><button class="cbtn" id="bFold" aria-label="Passen"><span class="in"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></span></button><span>Passen</span></div>
+    <div class="act"><button class="cbtn" id="bCall" aria-label="Mitgehen"><span class="in" id="callIn">✓</span></button><span id="callL">Check</span></div>
+    <div class="act"><button class="cbtn" id="bRaise" aria-label="Erhöhen"><span class="in" id="raiseIn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg></span></button><span id="raiseL" style="color:var(--gold)">Erhöhen</span></div>
+  </div>
+
+  <!-- Lernkarte -->
+  <div id="learn" class="ovl dim"><div class="velvetcard"><div class="kick" id="learnK">Lernmodus</div><h3 id="learnT"></h3><div id="learnB"></div><div class="row" style="margin-top:8px"><button class="gbtn" id="learnOk">Verstanden</button><button class="lbtn" id="learnOff">Lernmodus ausschalten</button></div></div></div>
+
+  <!-- Ergebnis -->
+  <div id="result" class="ovl"><div class="box panel" id="resBox"><div class="txt"><div class="kick" id="resK">Showdown</div><div class="big" id="resBig"></div><div class="sub" id="resSub"></div><div class="why" id="resWhy"></div><div class="lines" id="resLines"></div></div><button class="gbtn" id="resNext">Nächste Hand</button></div></div>
+
+  <!-- Regelbuch -->
+  <div id="book" class="ovl dim"><div class="sheet panel"><div class="tabs" id="bookTabs"><div class="mtitle">Regelbuch</div>
+    <button data-t="ablauf" class="on">Ablauf</button><button data-t="haende">Hände</button><button data-t="aktionen">Aktionen</button><button data-t="begriffe">Begriffe</button><div class="sp"></div><button id="bookClose">Schließen</button></div>
+    <div class="pane" id="bookPane"></div></div></div>
+
+  <!-- Einstellungen -->
+  <div id="settings" class="ovl dim"><div class="sheet panel" style="width:520px;height:auto"><div class="pane" style="padding:18px 24px 14px">
+    <h4>Einstellungen</h4>
+    <div class="set"><div class="l"><b>Lernmodus</b><span>Erklärt jede Phase und gibt dir automatisch Tipps.</span></div><button class="tog" id="tLearn" role="switch" aria-checked="true" aria-label="Lernmodus"></button></div>
+    <div class="set"><div class="l"><b>Klänge</b><span>Karten, Chips und Glocke.</span></div><button class="tog" id="tSound" role="switch" aria-checked="true" aria-label="Klänge"></button></div>
+    <div class="set"><div class="l"><b>Atmosphäre</b><span>Leiser Raumklang: Chips, Gläser, Gemurmel.</span></div><button class="tog" id="tAmb" role="switch" aria-checked="true" aria-label="Atmosphäre"></button></div>
+    <div class="set"><div class="l"><b>Musik</b><span id="musicNote">Leiser Jazz der 1920er und 30er.</span></div><button class="tog" id="tMusic" role="switch" aria-checked="false" aria-label="Musik"></button></div>
+    <div class="set"><div class="l"><b>Tempo der Gegner</b><span>Wie lange die anderen nachdenken.</span></div><div class="seg" id="tSpeed"><button data-s="1.25">Ruhig</button><button data-s="1" class="on">Normal</button><button data-s="0.55">Zügig</button></div></div>
+    <div class="row" style="justify-content:space-between;margin-top:14px"><button class="obtn" id="newGame">Neues Spiel</button><button class="gbtn" id="setClose">Fertig</button></div>
+  </div></div></div>
+
+  <!-- Start -->
+  <div id="start" class="ovl on"><div style="text-align:center">
+    <div class="t">SALON</div>
+    <svg class="orn" width="190" height="20" viewBox="0 0 190 20" aria-hidden="true"><line x1="0" y1="10" x2="78" y2="10" stroke="#E4C43C" stroke-opacity=".55"/><path d="M95 1 L104 10 L95 19 L86 10 Z" fill="none" stroke="#E4C43C"/><path d="M95 6 L99 10 L95 14 L91 10 Z" fill="#E4C43C"/><line x1="112" y1="10" x2="190" y2="10" stroke="#E4C43C" stroke-opacity=".55"/></svg>
+    <p>Texas Hold'em lernen – an einem Tisch wie um 1925.</p>
+    <div class="row" style="justify-content:center"><button class="gbtn" id="goLearn">Mit Lernmodus starten</button><button class="obtn" id="goFree">Freies Spiel</button></div>
+    <button class="lbtn" id="goBook" style="margin-top:10px">Erst das Regelbuch lesen</button>
+  </div></div>
+
+  <!-- Pleite -->
+  <div id="bust" class="ovl dim"><div class="velvetcard" style="width:380px;padding:18px 22px;text-align:center"><div class="kick">Keine Chips mehr</div><div class="mtitle" style="margin:6px 0 8px">Das war's – fürs Erste.</div><p style="margin:0 0 14px;font-size:12.5px;line-height:1.5;font-weight:300">Jeder Profi hat so angefangen. Kauf für 1.500 nach und spiel weiter, oder starte den ganzen Tisch neu.</p><div class="row" style="justify-content:center"><button class="gbtn" id="rebuy">Nachkaufen</button><button class="obtn" id="restart">Neu starten</button></div></div></div>
+</div>
+</div>
+<div id="rot"><svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#E4C43C" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M3 14a9 9 0 0 0 6 6"/><path d="M3 14l-1 3"/><path d="M3 14l3 0"/></svg><b>Bitte quer halten</b><span>Der Salon ist für das Querformat gebaut – dreh dein Handy einfach zur Seite.</span><button class="obtn" id="rotAnyway">Trotzdem spielen</button></div>
+<script src="engine.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
