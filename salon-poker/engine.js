@@ -164,6 +164,64 @@
     return win / iters;
   }
 
+  /* Gewinnchance gegen Gegner mit eingegrenztem Bereich.
+     fracs: je Gegner der Anteil der stärksten Hände, die er hier realistisch hält (1 = jede Hand).
+     Rangfolge: vor dem Flop nach Starthand-Stärke, danach nach aktueller Hand mit dem Board. */
+  function equityRange(hole, board, fracs, iters) {
+    iters = iters || 1200;
+    const nOpp = fracs.length; if (!nOpp) return 1;
+    const used = new Set([...hole, ...board]);
+    const rest = []; for (let i = 0; i < 52; i++) if (!used.has(i)) rest.push(i);
+    let combos = null;
+    if (fracs.some(f => f < 1)) {
+      combos = [];
+      for (let i = 0; i < rest.length; i++) for (let j = i + 1; j < rest.length; j++) {
+        const h = [rest[i], rest[j]];
+        combos.push({ h, s: board.length >= 3 ? score(h.concat(board)) : preflopStrength(h) });
+      }
+      combos.sort((a, b) => b.s - a.s);
+    }
+    const lists = fracs.map(f => f < 1 ? combos.slice(0, Math.max(12, Math.ceil(combos.length * f))) : null);
+    let win = 0, n = 0;
+    for (let it = 0; it < iters; it++) {
+      const taken = new Set(), hands = [];
+      let ok = true;
+      for (const L of lists) {
+        let h = null;
+        if (L) { for (let t = 0; t < 30 && !h; t++) { const c = L[Math.floor(Math.random() * L.length)].h; if (!taken.has(c[0]) && !taken.has(c[1])) h = c; } }
+        else { for (let t = 0; t < 60 && !h; t++) { const a = rest[Math.floor(Math.random() * rest.length)], b = rest[Math.floor(Math.random() * rest.length)]; if (a !== b && !taken.has(a) && !taken.has(b)) h = [a, b]; } }
+        if (!h) { ok = false; break; }
+        taken.add(h[0]); taken.add(h[1]); hands.push(h);
+      }
+      if (!ok) continue;
+      const b = board.slice();
+      while (b.length < 5) { const c = rest[Math.floor(Math.random() * rest.length)]; if (!taken.has(c)) { taken.add(c); b.push(c); } }
+      const my = score(hole.concat(b));
+      let lose = false, ties = 0;
+      for (const h of hands) { const sc = score(h.concat(b)); if (sc > my) { lose = true; break; } if (sc === my) ties++; }
+      n++;
+      if (!lose) win += ties ? 1 / (ties + 1) : 1;
+    }
+    return n ? win / n : 0;
+  }
+
+  /* Outs: Karten im Stapel, die deine Hand in eine bessere Kategorie heben –
+     und zwar mit deinen eigenen Karten (eine Karte, die nur das Board verbessert, zählt nicht). */
+  function outs(hole, board) {
+    if (board.length < 3 || board.length > 4) return null;
+    const cur = catOf(score(hole.concat(board)));
+    const used = new Set([...hole, ...board]);
+    const byCat = {}; let count = 0;
+    for (let c = 0; c < 52; c++) {
+      if (used.has(c)) continue;
+      const nb = board.concat(c), mine = catOf(score(hole.concat(nb)));
+      if (mine > cur && mine > catOf(score(nb))) { count++; byCat[mine] = (byCat[mine] || 0) + 1; }
+    }
+    const left = 52 - used.size;
+    const prob = board.length === 3 ? 1 - ((left - count) / left) * ((left - 1 - count) / (left - 1)) : count / left;
+    return { count, byCat, cur, prob, rule: count * (board.length === 3 ? 4 : 2) };
+  }
+
   // Vorab-Einschätzung der Starthand (0..1)
   function preflopStrength(hole) {
     const a = rankOf(hole[0]), b = rankOf(hole[1]);
@@ -240,6 +298,6 @@
     return act;
   }
 
-  const api = { RANKS, SUITS, RANK_NAME, RANK_PLURAL, RANK_LABEL, CAT_NAME, rankOf, suitOf, newDeck, score, catOf, kicksOf, describe, best5, keyCards, buildPots, equity, preflopStrength, startingHandName, PERSONAS, botDecide };
+  const api = { RANKS, SUITS, RANK_NAME, RANK_PLURAL, RANK_LABEL, CAT_NAME, rankOf, suitOf, newDeck, score, catOf, kicksOf, describe, best5, keyCards, buildPots, equity, equityRange, outs, preflopStrength, startingHandName, PERSONAS, botDecide };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.PokerEngine = api;
 })(typeof window !== 'undefined' ? window : globalThis);

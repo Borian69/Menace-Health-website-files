@@ -13,7 +13,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('salon.' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('salon.' + k, JSON.stringify(v)); } catch (e) {} }
 };
-const S = { learn: store.get('learn', true), sound: store.get('sound', true), music: store.get('music', true), amb: store.get('amb', true), speed: store.get('speed', 1) };
+const S = { learn: store.get('learn', true), sound: store.get('sound', true), music: store.get('music', true), amb: store.get('amb', true), speed: store.get('speed', 1), musicVol: store.get('musicVol', 0.5), ambVol: store.get('ambVol', 0.5) };
 
 /* ---------- Bühne skalieren ---------- */
 let forceLandscape = false;
@@ -81,10 +81,10 @@ const SLOT_U = [-168, -84, 0, 84, 168];
 /* ---------- Sitzplätze ---------- */
 const SEATS = [
   { key: 'you', you: true, dealer: [-140, 108], betPos: [-62, 94], from: [0, 170], bub: { x: 416, y: 258, al: 'c' } },
-  { key: 'vivienne', dealer: [-262, 72], betPos: [-236, 36], from: [-330, -40], cards: [[-270, -50, -18], [-250, -44, -6]], pill: [26, 124], bub: { x: 65, y: 166, al: 'c' } },
-  { key: 'baron', dealer: [-205, -100], betPos: [-112, -84], from: [-160, -190], cards: [[-172, -124, -12], [-148, -124, 8]], pill: [242, 100], bub: { x: 236, y: 72, al: 'r' } },
-  { key: 'maxim', dealer: [205, -100], betPos: [112, -84], from: [160, -190], cards: [[148, -124, -8], [172, -124, 12]], pill: [528, 100], bub: { x: 612, y: 72, al: 'l' } },
-  { key: 'ottilie', dealer: [262, 72], betPos: [236, 36], from: [330, -40], cards: [[250, -44, 6], [270, -50, 18]], pill: [744, 124], bub: { x: 783, y: 166, al: 'c' } }
+  { key: 'vivienne', dealer: [-262, 72], betPos: [-236, 36], from: [-330, -40], cards: [[-266, -30, -14], [-246, -26, -4]], pill: [26, 124], bub: { x: 65, y: 166, al: 'c' } },
+  { key: 'baron', dealer: [-132, -120], betPos: [-92, -72], from: [-160, -190], cards: [[-198, -92, -8], [-176, -92, 6]], pill: [242, 100], bub: { x: 236, y: 72, al: 'r' } },
+  { key: 'maxim', dealer: [132, -120], betPos: [92, -72], from: [160, -190], cards: [[176, -92, -6], [198, -92, 8]], pill: [528, 100], bub: { x: 612, y: 72, al: 'l' } },
+  { key: 'ottilie', dealer: [262, 72], betPos: [236, 36], from: [330, -40], cards: [[246, -26, 4], [266, -30, 14]], pill: [744, 124], bub: { x: 783, y: 166, al: 'c' } }
 ];
 const POT = [0, -108];
 const P = SEATS.map((s, i) => ({ i, ...s, persona: s.you ? null : E.PERSONAS[s.key], name: s.you ? 'Du' : E.PERSONAS[s.key].name, stack: START, hole: [], bet: 0, contrib: 0, folded: false, allIn: false, acted: false, shown: 0 }));
@@ -209,19 +209,20 @@ const Snd = (() => {
   }
   // Raumklang: Datei (Schleife) oder leiser synthetischer Salon
   let ambNode = null, ambGain = null, ambTimer = null;
-  let ambTries = 0;
+  let ambTries = 0, ambBase = 0.2;
+  const ambLevel = () => Math.max(0.0001, ambBase * 2 * S.ambVol);
   function ambStart() {
     if (!ctx || ambNode || !S.amb) return;
     if (!buf.ambience && ambTries++ < 12) { setTimeout(ambStart, 700); return; }
     ambGain = ctx.createGain(); ambGain.gain.value = 0.0001; ambGain.connect(master);
-    if (buf.ambience) { ambNode = ctx.createBufferSource(); ambNode.buffer = buf.ambience; ambNode.loop = true; ambNode.connect(ambGain); ambNode.start(); ambGain.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 4); return; }
+    if (buf.ambience) { ambNode = ctx.createBufferSource(); ambNode.buffer = buf.ambience; ambNode.loop = true; ambNode.connect(ambGain); ambNode.start(); ambBase = 0.2; ambGain.gain.exponentialRampToValueAtTime(ambLevel(), ctx.currentTime + 4); return; }
     // Raumrauschen
     const len = ctx.sampleRate * 4, b = ctx.createBuffer(1, len, ctx.sampleRate), d = b.getChannelData(0);
     let last = 0; for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
     ambNode = ctx.createBufferSource(); ambNode.buffer = b; ambNode.loop = true;
     const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
     ambNode.connect(lp); lp.connect(ambGain); ambNode.start();
-    ambGain.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 3);
+    ambBase = 0.05; ambGain.gain.exponentialRampToValueAtTime(ambLevel(), ctx.currentTime + 3);
     const ev = () => {
       if (!ambNode) return;
       const t = ctx.currentTime + 0.05, r = Math.random();
@@ -235,6 +236,7 @@ const Snd = (() => {
     ambTimer = setTimeout(ev, 2500);
   }
   function ambStop() { if (!ambNode) return; clearTimeout(ambTimer); const n = ambNode, g = ambGain; ambNode = null; try { g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1.2); setTimeout(() => { try { n.stop(); } catch (e) {} }, 1400); } catch (e) {} }
+  function ambVolume() { if (!ambNode || !ambGain) return; const g = ambGain.gain, t = ctx.currentTime; g.cancelScheduledValues(t); g.setValueAtTime(Math.max(0.0001, g.value), t); g.linearRampToValueAtTime(ambLevel(), t + 0.15); }
   // Mischung: Lautstärke und natürliche Variation je Klang
   const MIX = { deal: [0.5, 0.06], deal2: [0.5, 0.06], flip: [0.55, 0.05], chips: [0.3, 0.05], chips2: [0.24, 0.05], chipsBig: [0.3, 0.04], collect: [0.28, 0.04], shuffle: [0.16, 0.03], check: [0.55, 0.05], win: [0.55, 0], coach: [0.32, 0.02], whoosh: [0.13, 0.12], whoosh2: [0.08, 0.14], fold: [0.35, 0.06], tap: [0.4, 0], turn: [0.3, 0] };
   const VARIANTS = { deal: ['deal', 'deal2'], chips: ['chips', 'chips2'], fold: ['deal2'], whoosh: ['whoosh', 'whoosh3', 'whoosh4', 'whoosh5', 'whoosh2'], whoosh2: ['whoosh2', 'whoosh4', 'whoosh5'] };
@@ -259,17 +261,18 @@ const Snd = (() => {
       if (name === 'win' && buf.collect) playBuf('collect', 0.2, 0.03, 0.12);
     } else if (SYN[name]) SYN[name](ctx.currentTime + 0.01);
   }
-  return { init, play, ambStart, ambStop, ready: () => !!ctx };
+  return { init, play, ambStart, ambStop, ambVolume, ready: () => !!ctx };
 })();
 const snd = n => Snd.play(n);
 
 const Music = (() => {
   const TRACKS = ['music/track1.mp3', 'music/track2.mp3', 'music/track3.mp3'];
-  let avail = [], el = null, idx = 0, fadeT = null;
+  let avail = [], el = null, idx = 0, fadeT = null, on = false;
+  const level = () => 0.32 * S.musicVol;
   async function probe() {
     for (const t of TRACKS) { try { const r = await fetch(t, { method: 'HEAD' }); if (r.ok && !/text\/html/.test(r.headers.get('content-type') || '')) avail.push(t); } catch (e) {} }
     const tog = $('tMusic');
-    if (!avail.length) { tog.disabled = true; tog.setAttribute('aria-checked', 'false'); $('musicNote').textContent = 'Jazz der 1920er und 30er – die Musikdateien folgen.'; }
+    if (!avail.length) { tog.disabled = true; $('vMusic').disabled = true; tog.setAttribute('aria-checked', 'false'); $('musicNote').textContent = 'Jazz der 1920er und 30er – die Musikdateien folgen.'; }
     else tog.setAttribute('aria-checked', String(S.music));
   }
   function fade(to, done) {
@@ -287,10 +290,11 @@ const Music = (() => {
       el.addEventListener('ended', () => { idx = (idx + 1) % avail.length; el.src = avail[idx]; el.play().catch(() => {}); });
       el.src = avail[idx];
     }
-    el.play().then(() => fade(0.16)).catch(() => {});
+    on = true; el.play().then(() => fade(level())).catch(() => {});
   }
-  function stop() { if (el) fade(0, () => el.pause()); }
-  return { probe, start, stop };
+  function stop() { on = false; if (el) fade(0, () => el.pause()); }
+  function volume() { if (el && on && !el.paused) { clearInterval(fadeT); el.volume = Math.min(1, level()); } }
+  return { probe, start, stop, volume, has: () => avail.length > 0 };
 })();
 
 /* ---------- Ablaufsteuerung ---------- */
@@ -521,11 +525,18 @@ $('learnOff').onclick = () => { S.learn = false; store.set('learn', false); sync
 
 /* ---------- Coach ---------- */
 function halfPotTo() { const me = P[0]; const toCall = G.currentBet - me.bet; return clampRaise(G.currentBet + Math.round((potTotal() + toCall) * 0.5 / 10) * 10); }
+// Welchen Anteil aller Hände spielt jemand, der so hoch setzt? (grobe Faustregel)
+function rangeFor(p, betInc, potBefore) {
+  const r = betInc / Math.max(1, potBefore);
+  let f = r <= 0.35 ? 0.6 : r <= 0.75 ? 0.45 : r <= 1.25 ? 0.32 : r <= 2.5 ? 0.2 : r <= 5 ? 0.13 : 0.09;
+  f *= ({ maxim: 1.7, ottilie: 1.1, baron: 1, vivienne: 0.7 })[p.key] || 1;
+  return Math.max(0.06, Math.min(1, f));
+}
 function coachHTML() {
   const me = P[0];
   if (!me.hole.length) return '<p>Sobald du Karten hast, sage ich dir, wie gut sie sind und was ich tun würde.</p>';
   if (me.folded) return '<p>Du hast diese Runde gepasst. Schau in Ruhe zu, wie die anderen spielen – beim Showdown siehst du ihre Karten.</p>';
-  const nOpp = nonFolded().length - 1;
+  const opps = nonFolded().filter(p => !p.you), nOpp = opps.length;
   const eq = nOpp ? E.equity(me.hole, G.board, nOpp, G.board.length ? 1400 : 1000) : 1;
   const pct = Math.round(eq * 100);
   const L = [];
@@ -533,23 +544,52 @@ function coachHTML() {
     const ps = E.preflopStrength(me.hole);
     const cls = ps > 0.72 ? 'eine sehr starke Starthand' : ps > 0.55 ? 'eine gute Starthand' : ps > 0.4 ? 'spielbar, aber nichts Besonderes' : 'eine schwache Starthand';
     L.push(`Du hast <b>${E.startingHandName(me.hole)}</b> – ${cls}.`);
-  } else L.push(`Du hast gerade <b>${E.describe(E.score(me.hole.concat(G.board)))}</b>.`);
+  } else {
+    const mineSc = E.score(me.hole.concat(G.board)), boardOnly = E.catOf(E.score(G.board));
+    L.push(`Du hast gerade <b>${E.describe(mineSc)}</b>.` + (G.board.length >= 3 && E.catOf(mineSc) === boardOnly && boardOnly > 0 ? ' Achtung: Das liegt komplett in der Mitte – das hat jeder am Tisch.' : ''));
+    const o = E.outs(me.hole, G.board);
+    if (o && o.cur < 6) {
+      const toCome = G.board.length === 3 ? 'bis zum River' : 'auf dem River';
+      if (o.count) {
+        const parts = Object.entries(o.byCat).sort((a, b) => b[0] - a[0]).map(([c, n]) => `${n} zu ${E.CAT_NAME[c] === 'Ein Paar' ? 'einem Paar' : E.CAT_NAME[c] === 'Zwei Paare' ? 'Zwei Paaren' : E.CAT_NAME[c] === 'Drilling' ? 'einem Drilling' : E.CAT_NAME[c] === 'Straße' ? 'einer Straße' : E.CAT_NAME[c] === 'Flush' ? 'einem Flush' : E.CAT_NAME[c] === 'Full House' ? 'einem Full House' : E.CAT_NAME[c] === 'Vierling' ? 'einem Vierling' : E.CAT_NAME[c]}`);
+        L.push(`<b>Outs: ${o.count}</b> Karten verbessern dich (${parts.join(', ')}). Chance ${toCome}: <b>${Math.round(o.prob * 100)} %</b> – Faustregel: ${o.count} × ${G.board.length === 3 ? 4 : 2} ≈ ${o.rule} %.`);
+      } else L.push(`<b>Outs: 0</b> – keine Karte hebt deine Hand noch in eine bessere Kategorie.`);
+    }
+  }
   const often = eq >= 0.5 ? 'öfter als jedes zweite Mal' : `etwa jedes ${Math.max(2, Math.round(1 / Math.max(eq, 0.02)))}. Mal`;
-  L.push(`Gegen ${nOpp} Gegner gewinnst du etwa <b>${pct} %</b> – also ${often}.`);
+  L.push(`Gegen ${nOpp} Gegner mit beliebigen Karten gewinnst du etwa <b>${pct} %</b> – also ${often}.`);
   let rec = '';
   if (G.turn === me) {
-    const toCall = G.currentBet - me.bet, pot = potTotal(), fair = 1 / (nOpp + 1);
-    if (toCall > 0) {
-      const need = toCall / (pot + toCall);
-      L.push(`Du zahlst ${fmt(Math.min(toCall, me.stack))}, um ${fmt(pot + toCall)} zu gewinnen. Das lohnt sich ab etwa <b>${Math.round(need * 100)} %</b> Gewinnchance.`);
-      if (eq > fair * 1.8 && eq > need * 1.6 && me.stack > toCall) rec = 'Erhöhen – du bist sehr wahrscheinlich vorne. Hol mehr Chips in den Topf.';
-      else if (eq >= need) rec = 'Mitgehen – deine Chance ist größer als der Preis.';
-      else rec = 'Passen – auf Dauer verlierst du hier mehr, als du gewinnst.';
-    } else {
-      rec = eq > fair * 1.6 ? `Setzen – zum Beispiel ${fmt(halfPotTo())}. Wer schwächer ist, soll dafür bezahlen.` : 'Check – es kostet nichts, die nächste Karte anzusehen.';
+    const toCall = Math.min(G.currentBet - me.bet, me.stack), pot = potTotal(), fair = 1 / (nOpp + 1);
+    // Wer erhöht hat, hat selten Müll: Gewinnchance gegen seinen wahrscheinlichen Bereich
+    const ai = G.aggrInfo, ag = G.lastAggr;
+    let eqR = eq, rangeNote = '';
+    if (toCall > 0 && ag && !ag.you && !ag.folded && ai && ai.p === ag) {
+      const f = rangeFor(ag, toCall, ai.potBefore);
+      if (f <= 0.5) {
+        eqR = E.equityRange(me.hole, G.board, opps.map(p => p === ag ? f : 1), 1400);
+        const mult = toCall / Math.max(1, ai.potBefore);
+        const size = mult >= 1.5 ? `das ${mult >= 9.5 ? Math.round(mult) : mult.toFixed(1).replace('.', ',')}-Fache des Topfs` : mult >= 0.9 ? 'etwa so viel wie im Topf liegt' : `${Math.round(mult * 100)} % des Topfs`;
+        rangeNote = `<b>Aber:</b> ${ag.name} setzt ${size}. So hoch spielt man meist nur mit den besten ~${Math.round(f * 100)} % aller Hände. Dagegen gewinnst du nur noch etwa <b>${Math.round(eqR * 100)} %</b>.`;
+        L.push(rangeNote);
+      }
     }
-    const ag = G.lastAggr; if (ag && !ag.you && !ag.folded && G.currentBet > 0) L.push(ag.persona.read);
-  } else L.push('Wenn du dran bist, sage ich dir, was ich tun würde.');
+    if (toCall > 0) {
+      const need = toCall / (pot + toCall), stackShare = toCall / Math.max(1, me.stack);
+      // Puffer: je mehr vom eigenen Stapel auf dem Spiel steht, desto deutlicher muss die Chance über dem Preis liegen
+      const margin = 0.03 + 0.12 * Math.min(1, stackShare * 2);
+      L.push(`Du zahlst ${fmt(toCall)}, um ${fmt(pot + toCall)} zu gewinnen. Das lohnt sich ab etwa <b>${Math.round(need * 100)} %</b>${stackShare > 0.25 ? ` – plus Sicherheitsabstand, weil ${Math.round(stackShare * 100)} % deiner Chips auf dem Spiel stehen` : ''}.`);
+      if (eqR > Math.max(0.5, fair * 1.9) && eqR > need + margin + 0.1 && me.stack > toCall) rec = `Erhöhen – du liegst klar vorne. Starke Hände spielt man aktiv: so wird der Topf groß, den du wahrscheinlich gewinnst.`;
+      else if (eqR >= need + margin) rec = stackShare > 0.25 ? 'Mitgehen – die Chance reicht auch mit Sicherheitsabstand.' : 'Mitgehen – deine Chance liegt klar über dem Preis.';
+      else if (eqR >= need - 0.02 && stackShare < 0.08) rec = 'Grenzfall – es geht um wenig. Mitgehen ist vertretbar, Passen auch. Profis passen hier oft und warten auf eine bessere Gelegenheit.';
+      else rec = rangeNote ? `Passen – gegen eine Hand, mit der man so hoch setzt, bist du meist hinten. Lieber kleine Verluste vermeiden und auf eine starke Hand warten.` : 'Passen – auf Dauer verlierst du hier mehr, als du gewinnst.';
+    } else {
+      if (eq > Math.max(0.5, fair * 1.7)) rec = `Setzen – zum Beispiel ${fmt(halfPotTo())}. Du bist vorne, also lass die anderen für ihre schwächeren Karten zahlen.`;
+      else if (eq > fair * 1.25 && nOpp <= 2) rec = `Kleiner Einsatz oder Check – du bist leicht vorne. Ein kleiner Einsatz (${fmt(halfPotTo())}) holt Wert, ohne viel zu riskieren.`;
+      else rec = 'Check – es kostet nichts, die nächste Karte anzusehen.';
+    }
+    if (ag && !ag.you && !ag.folded && G.currentBet > 0) L.push(ag.persona.read);
+  } else L.push('Sobald du dran bist, erscheint hier mein Tipp. Lass das Fenster einfach offen.');
   return L.map(l => `<p>${l}</p>`).join('') + (rec ? `<div class="rec"><b>Mein Tipp:</b> ${rec}</div>` : '');
 }
 function openCoach() { $('coachBody').innerHTML = coachHTML(); $('coach').classList.add('on'); snd('coach'); }
@@ -644,6 +684,7 @@ async function apply(p, a) {
     if (to <= G.currentBet) { const amt = Math.min(toCall, p.stack); commit(p, amt); bubble(p, p.allIn ? 'All-in' : 'Geht mit ' + fmt(amt)); snd('chips'); }
     else {
       const inc = to - G.currentBet, wasBet = G.currentBet === 0;
+      G.aggrInfo = { p, to, potBefore: Math.max(BB, potTotal()) };
       commit(p, to - p.bet);
       if (inc >= G.minRaise) { G.minRaise = inc; P.forEach(q => { if (q !== p) q.acted = false; }); }
       G.currentBet = to; G.lastAggr = p;
@@ -667,6 +708,8 @@ async function botTurn(p) {
 }
 async function userTurn(p) {
   setTurn(p); configureActions(); enableActions(true); snd('turn');
+  // Coach schon offen (auch im freien Spiel)? Dann jetzt mit Tipp auffrischen.
+  if ($('coach').classList.contains('on')) openCoach();
   if (S.learn) { await learn('action'); if (G.turn === p) openCoach(); }
   const gid = G.gid;
   const a = await new Promise((res, rej) => { G.userResolve = res; G.userReject = rej; });
@@ -698,7 +741,7 @@ function resetHand() {
   dealtEls.opp = [[], [], [], [], []]; dealtEls.board = []; dealtEls.hand = [];
   betStacks.length = 0; potStack = null;
   P.forEach(p => { p.hole = []; p.bet = 0; p.contrib = 0; p.folded = false; p.allIn = false; p.acted = false; p.shown = 0; UI.pills[p.i] && UI.pills[p.i].classList.remove('win', 'out'); });
-  G.board = []; G.deck = E.newDeck(); G.pot = 0; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null;
+  G.board = []; G.deck = E.newDeck(); G.pot = 0; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null; G.aggrInfo = null;
   clearBubbles(); UI.betl.forEach(b => b.style.opacity = 0); renderPot(); updateHandLabel(); closeCoach();
 }
 async function playHand() {
@@ -724,7 +767,7 @@ async function playHand() {
     for (const st of ['flop', 'turn', 'river']) {
       await collectBets();
       if (actorsCount() < 2) for (const p of nonFolded()) if (!p.you) await revealOpp(p);
-      G.street = st; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null; P.forEach(p => { p.acted = false; });
+      G.street = st; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null; G.aggrInfo = null; P.forEach(p => { p.acted = false; });
       const n = st === 'flop' ? 3 : 1, idx = [];
       for (let k = 0; k < n; k++) { G.board.push(G.deck.pop()); idx.push(G.board.length - 1); }
       await dealBoard(idx); updateHandLabel();
@@ -757,6 +800,7 @@ let resultDone = null;
 async function showResult(o) {
   $('resK').textContent = o.k; $('resBig').textContent = o.big; $('resBig').className = 'big' + (o.me ? ' me tglow' : '');
   $('resSub').textContent = o.sub || ''; $('resWhy').innerHTML = o.why || ''; $('resLines').innerHTML = o.lines || '';
+  $('resMine').innerHTML = o.mine || ''; $('resMine').classList.toggle('on', !!o.mine);
   $('resBox').classList.toggle('shimmer', !!o.me);
   if (o.me) { $('resBox').classList.remove('shimmer'); void $('resBox').offsetWidth; $('resBox').classList.add('shimmer'); }
   $('result').classList.add('on'); snd('whoosh');
@@ -765,6 +809,30 @@ async function showResult(o) {
   $('result').classList.remove('on');
   if (gid !== G.gid) throw ABORT;
   await sleep(250);
+}
+// Was wären deine Karten wert gewesen? (immer im Ergebnis)
+function myHandVerdict(finalists, byFold) {
+  const me = P[0];
+  if (!me.hole.length) return '';
+  const cards = me.hole.map(c => `<div class="card mini paper${isRed(c) ? ' red' : ''}"><div class="ix"><b>${E.RANK_LABEL[E.rankOf(c)]}</b><i>${SYM[E.suitOf(c)]}</i></div></div>`).join('');
+  const need = 5 - G.board.length;
+  const board = need > 0 ? G.board.concat(G.deck.slice(-need).reverse()) : G.board;
+  const mine = E.score(me.hole.concat(board)), name = E.describe(mine);
+  const rest = need > 0 ? ', wenn alle fünf Karten ausgeteilt worden wären' : '';
+  if (!me.folded) {
+    if (byFold) return `<div class="cs">${cards}</div><div>Du hattest <b>${E.describe(E.score(me.hole.concat(G.board)))}</b>. Gezeigt werden musste sie nicht.</div>`;
+    const won = finalists.length && !byFold && G.lastWins && G.lastWins.has(me);
+    return `<div class="cs">${cards}</div><div${won ? '' : ' class="lost"'}>Du hattest <b>${name}</b> und hast ${won ? 'gewonnen' : 'verloren'}.</div>`;
+  }
+  const opp = finalists.filter(p => !p.you);
+  if (!opp.length) return '';
+  const best = opp.reduce((a, p) => { const s = E.score(p.hole.concat(board)); return s > a.s ? { p, s } : a; }, { p: null, s: -1 });
+  const nm = best.p.name;
+  let verdict;
+  if (mine > best.s) verdict = `<span>Mit <b>${name}</b> hättest du gewonnen${rest}. Das Passen hat dich diesen Topf gekostet.</span>`;
+  else if (mine === best.s) verdict = `<span>Mit <b>${name}</b> hättest du den Topf mit ${nm} geteilt${rest}.</span>`;
+  else { const theirs = E.describe(best.s); verdict = `<span class="lost">Mit <b>${name}</b> hättest du verloren${rest}. ${theirs === name ? `${nm} hatte dasselbe, aber die höhere Beikarte (Kicker)` : `${nm} hatte <b>${theirs}</b>`}. Passen war richtig.</span>`; }
+  return `<div class="cs">${cards}</div>${verdict}`;
 }
 $('resNext').onclick = () => { snd('tap'); resultDone && resultDone(); };
 async function winByFold() {
@@ -776,6 +844,7 @@ async function winByFold() {
     k: 'Alle anderen haben gepasst', me: w.you,
     big: w.you ? 'Du gewinnst ' + fmt(amt) : w.name + ' gewinnt ' + fmt(amt),
     sub: w.you ? 'Ohne Showdown – deine Karten bleiben geheim.' : 'Ohne Showdown.',
+    mine: myHandVerdict([w], true),
     why: w.you ? 'Wer als Letzter übrig bleibt, gewinnt den Topf – egal, welche Karten er hat. Darum funktioniert Bluffen.' : `${w.name} musste die Karten nicht zeigen. Vielleicht hatte ${({ vivienne: 'sie', baron: 'er', maxim: 'er', ottilie: 'sie' })[w.key]} etwas – vielleicht war es ein Bluff.`
   });
 }
@@ -801,6 +870,7 @@ async function showdown() {
   glowCards(E.best5(w0.hole.concat(G.board)).cards, w0);
   await sleep(500);
   await payout(wins);
+  G.lastWins = wins;
   const meWin = wins.has(P[0]);
   if (meWin) snd('win'); else snd('chips');
   const s0 = sc.get(w0);
@@ -817,7 +887,7 @@ async function showdown() {
   await showResult({
     k: 'Showdown', me: w0.you || meWin,
     big: (w0.you ? 'Du gewinnst ' : w0.name + ' gewinnt ') + fmt(a0),
-    sub: 'mit ' + E.describe(s0), why, lines
+    sub: 'mit ' + E.describe(s0), why, lines, mine: myHandVerdict(live, false)
   });
 }
 
@@ -905,14 +975,21 @@ $('goBook').onclick = () => { Snd.init(); $('start').classList.remove('on'); ope
 /* ---------- Einstellungen ---------- */
 function syncSettings() {
   $('tLearn').setAttribute('aria-checked', String(S.learn));
+  $('modeBtn').setAttribute('aria-checked', String(S.learn)); $('modeV').textContent = S.learn ? 'Lernmodus' : 'Freies Spiel';
   $('tSound').setAttribute('aria-checked', String(S.sound));
   $('tAmb').setAttribute('aria-checked', String(S.amb));
   if (!$('tMusic').disabled) $('tMusic').setAttribute('aria-checked', String(S.music));
   document.querySelectorAll('#tSpeed button').forEach(b => b.classList.toggle('on', +b.dataset.s === S.speed));
+  for (const [id, k] of [['vMusic', 'musicVol'], ['vAmb', 'ambVol']]) { const r = $(id); r.value = Math.round(S[k] * 100); r.style.setProperty('--p', r.value + '%'); }
+}
+for (const [id, k, apply] of [['vMusic', 'musicVol', () => Music.volume()], ['vAmb', 'ambVol', () => Snd.ambVolume()]]) {
+  $(id).oninput = e => { S[k] = e.target.value / 100; e.target.style.setProperty('--p', e.target.value + '%'); apply(); };
+  $(id).onchange = () => store.set(k, S[k]);
 }
 $('setBtn').onclick = () => { Snd.init(); syncSettings(); snd('whoosh'); $('settings').classList.add('on'); paused = true; };
 $('setClose').onclick = () => { $('settings').classList.remove('on'); paused = $('book').classList.contains('on'); };
 $('tLearn').onclick = () => { S.learn = !S.learn; store.set('learn', S.learn); syncSettings(); };
+$('modeBtn').onclick = () => { Snd.init(); S.learn = !S.learn; store.set('learn', S.learn); syncSettings(); snd('tap'); };
 $('tSound').onclick = () => { S.sound = !S.sound; store.set('sound', S.sound); syncSettings(); snd('tap'); };
 $('tAmb').onclick = () => { S.amb = !S.amb; store.set('amb', S.amb); syncSettings(); Snd.init(); S.amb ? Snd.ambStart() : Snd.ambStop(); };
 $('tMusic').onclick = () => { S.music = !S.music; store.set('music', S.music); syncSettings(); S.music ? Music.start() : Music.stop(); };
