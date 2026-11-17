@@ -525,11 +525,18 @@ $('learnOff').onclick = () => { S.learn = false; store.set('learn', false); sync
 
 /* ---------- Coach ---------- */
 function halfPotTo() { const me = P[0]; const toCall = G.currentBet - me.bet; return clampRaise(G.currentBet + Math.round((potTotal() + toCall) * 0.5 / 10) * 10); }
+// Welchen Anteil aller Hände spielt jemand, der so hoch setzt? (grobe Faustregel)
+function rangeFor(p, betInc, potBefore) {
+  const r = betInc / Math.max(1, potBefore);
+  let f = r <= 0.35 ? 0.6 : r <= 0.75 ? 0.45 : r <= 1.25 ? 0.32 : r <= 2.5 ? 0.2 : r <= 5 ? 0.13 : 0.09;
+  f *= ({ maxim: 1.7, ottilie: 1.1, baron: 1, vivienne: 0.7 })[p.key] || 1;
+  return Math.max(0.06, Math.min(1, f));
+}
 function coachHTML() {
   const me = P[0];
   if (!me.hole.length) return '<p>Sobald du Karten hast, sage ich dir, wie gut sie sind und was ich tun würde.</p>';
   if (me.folded) return '<p>Du hast diese Runde gepasst. Schau in Ruhe zu, wie die anderen spielen – beim Showdown siehst du ihre Karten.</p>';
-  const nOpp = nonFolded().length - 1;
+  const opps = nonFolded().filter(p => !p.you), nOpp = opps.length;
   const eq = nOpp ? E.equity(me.hole, G.board, nOpp, G.board.length ? 1400 : 1000) : 1;
   const pct = Math.round(eq * 100);
   const L = [];
@@ -537,22 +544,51 @@ function coachHTML() {
     const ps = E.preflopStrength(me.hole);
     const cls = ps > 0.72 ? 'eine sehr starke Starthand' : ps > 0.55 ? 'eine gute Starthand' : ps > 0.4 ? 'spielbar, aber nichts Besonderes' : 'eine schwache Starthand';
     L.push(`Du hast <b>${E.startingHandName(me.hole)}</b> – ${cls}.`);
-  } else L.push(`Du hast gerade <b>${E.describe(E.score(me.hole.concat(G.board)))}</b>.`);
+  } else {
+    const mineSc = E.score(me.hole.concat(G.board)), boardOnly = E.catOf(E.score(G.board));
+    L.push(`Du hast gerade <b>${E.describe(mineSc)}</b>.` + (G.board.length >= 3 && E.catOf(mineSc) === boardOnly && boardOnly > 0 ? ' Achtung: Das liegt komplett in der Mitte – das hat jeder am Tisch.' : ''));
+    const o = E.outs(me.hole, G.board);
+    if (o && o.cur < 6) {
+      const toCome = G.board.length === 3 ? 'bis zum River' : 'auf dem River';
+      if (o.count) {
+        const parts = Object.entries(o.byCat).sort((a, b) => b[0] - a[0]).map(([c, n]) => `${n} zu ${E.CAT_NAME[c] === 'Ein Paar' ? 'einem Paar' : E.CAT_NAME[c] === 'Zwei Paare' ? 'Zwei Paaren' : E.CAT_NAME[c] === 'Drilling' ? 'einem Drilling' : E.CAT_NAME[c] === 'Straße' ? 'einer Straße' : E.CAT_NAME[c] === 'Flush' ? 'einem Flush' : E.CAT_NAME[c] === 'Full House' ? 'einem Full House' : E.CAT_NAME[c] === 'Vierling' ? 'einem Vierling' : E.CAT_NAME[c]}`);
+        L.push(`<b>Outs: ${o.count}</b> Karten verbessern dich (${parts.join(', ')}). Chance ${toCome}: <b>${Math.round(o.prob * 100)} %</b> – Faustregel: ${o.count} × ${G.board.length === 3 ? 4 : 2} ≈ ${o.rule} %.`);
+      } else L.push(`<b>Outs: 0</b> – keine Karte hebt deine Hand noch in eine bessere Kategorie.`);
+    }
+  }
   const often = eq >= 0.5 ? 'öfter als jedes zweite Mal' : `etwa jedes ${Math.max(2, Math.round(1 / Math.max(eq, 0.02)))}. Mal`;
-  L.push(`Gegen ${nOpp} Gegner gewinnst du etwa <b>${pct} %</b> – also ${often}.`);
+  L.push(`Gegen ${nOpp} Gegner mit beliebigen Karten gewinnst du etwa <b>${pct} %</b> – also ${often}.`);
   let rec = '';
   if (G.turn === me) {
-    const toCall = G.currentBet - me.bet, pot = potTotal(), fair = 1 / (nOpp + 1);
-    if (toCall > 0) {
-      const need = toCall / (pot + toCall);
-      L.push(`Du zahlst ${fmt(Math.min(toCall, me.stack))}, um ${fmt(pot + toCall)} zu gewinnen. Das lohnt sich ab etwa <b>${Math.round(need * 100)} %</b> Gewinnchance.`);
-      if (eq > fair * 1.8 && eq > need * 1.6 && me.stack > toCall) rec = 'Erhöhen – du bist sehr wahrscheinlich vorne. Hol mehr Chips in den Topf.';
-      else if (eq >= need) rec = 'Mitgehen – deine Chance ist größer als der Preis.';
-      else rec = 'Passen – auf Dauer verlierst du hier mehr, als du gewinnst.';
-    } else {
-      rec = eq > fair * 1.6 ? `Setzen – zum Beispiel ${fmt(halfPotTo())}. Wer schwächer ist, soll dafür bezahlen.` : 'Check – es kostet nichts, die nächste Karte anzusehen.';
+    const toCall = Math.min(G.currentBet - me.bet, me.stack), pot = potTotal(), fair = 1 / (nOpp + 1);
+    // Wer erhöht hat, hat selten Müll: Gewinnchance gegen seinen wahrscheinlichen Bereich
+    const ai = G.aggrInfo, ag = G.lastAggr;
+    let eqR = eq, rangeNote = '';
+    if (toCall > 0 && ag && !ag.you && !ag.folded && ai && ai.p === ag) {
+      const f = rangeFor(ag, toCall, ai.potBefore);
+      if (f <= 0.5) {
+        eqR = E.equityRange(me.hole, G.board, opps.map(p => p === ag ? f : 1), 1400);
+        const mult = toCall / Math.max(1, ai.potBefore);
+        const size = mult >= 1.5 ? `das ${mult >= 9.5 ? Math.round(mult) : mult.toFixed(1).replace('.', ',')}-Fache des Topfs` : mult >= 0.9 ? 'etwa so viel wie im Topf liegt' : `${Math.round(mult * 100)} % des Topfs`;
+        rangeNote = `<b>Aber:</b> ${ag.name} setzt ${size}. So hoch spielt man meist nur mit den besten ~${Math.round(f * 100)} % aller Hände. Dagegen gewinnst du nur noch etwa <b>${Math.round(eqR * 100)} %</b>.`;
+        L.push(rangeNote);
+      }
     }
-    const ag = G.lastAggr; if (ag && !ag.you && !ag.folded && G.currentBet > 0) L.push(ag.persona.read);
+    if (toCall > 0) {
+      const need = toCall / (pot + toCall), stackShare = toCall / Math.max(1, me.stack);
+      // Puffer: je mehr vom eigenen Stapel auf dem Spiel steht, desto deutlicher muss die Chance über dem Preis liegen
+      const margin = 0.03 + 0.12 * Math.min(1, stackShare * 2);
+      L.push(`Du zahlst ${fmt(toCall)}, um ${fmt(pot + toCall)} zu gewinnen. Das lohnt sich ab etwa <b>${Math.round(need * 100)} %</b>${stackShare > 0.25 ? ` – plus Sicherheitsabstand, weil ${Math.round(stackShare * 100)} % deiner Chips auf dem Spiel stehen` : ''}.`);
+      if (eqR > Math.max(0.5, fair * 1.9) && eqR > need + margin + 0.1 && me.stack > toCall) rec = `Erhöhen – du liegst klar vorne. Starke Hände spielt man aktiv: so wird der Topf groß, den du wahrscheinlich gewinnst.`;
+      else if (eqR >= need + margin) rec = stackShare > 0.25 ? 'Mitgehen – die Chance reicht auch mit Sicherheitsabstand.' : 'Mitgehen – deine Chance liegt klar über dem Preis.';
+      else if (eqR >= need - 0.02 && stackShare < 0.08) rec = 'Grenzfall – es geht um wenig. Mitgehen ist vertretbar, Passen auch. Profis passen hier oft und warten auf eine bessere Gelegenheit.';
+      else rec = rangeNote ? `Passen – gegen eine Hand, mit der man so hoch setzt, bist du meist hinten. Lieber kleine Verluste vermeiden und auf eine starke Hand warten.` : 'Passen – auf Dauer verlierst du hier mehr, als du gewinnst.';
+    } else {
+      if (eq > Math.max(0.5, fair * 1.7)) rec = `Setzen – zum Beispiel ${fmt(halfPotTo())}. Du bist vorne, also lass die anderen für ihre schwächeren Karten zahlen.`;
+      else if (eq > fair * 1.25 && nOpp <= 2) rec = `Kleiner Einsatz oder Check – du bist leicht vorne. Ein kleiner Einsatz (${fmt(halfPotTo())}) holt Wert, ohne viel zu riskieren.`;
+      else rec = 'Check – es kostet nichts, die nächste Karte anzusehen.';
+    }
+    if (ag && !ag.you && !ag.folded && G.currentBet > 0) L.push(ag.persona.read);
   } else L.push('Sobald du dran bist, erscheint hier mein Tipp. Lass das Fenster einfach offen.');
   return L.map(l => `<p>${l}</p>`).join('') + (rec ? `<div class="rec"><b>Mein Tipp:</b> ${rec}</div>` : '');
 }
@@ -648,6 +684,7 @@ async function apply(p, a) {
     if (to <= G.currentBet) { const amt = Math.min(toCall, p.stack); commit(p, amt); bubble(p, p.allIn ? 'All-in' : 'Geht mit ' + fmt(amt)); snd('chips'); }
     else {
       const inc = to - G.currentBet, wasBet = G.currentBet === 0;
+      G.aggrInfo = { p, to, potBefore: Math.max(BB, potTotal()) };
       commit(p, to - p.bet);
       if (inc >= G.minRaise) { G.minRaise = inc; P.forEach(q => { if (q !== p) q.acted = false; }); }
       G.currentBet = to; G.lastAggr = p;
@@ -704,7 +741,7 @@ function resetHand() {
   dealtEls.opp = [[], [], [], [], []]; dealtEls.board = []; dealtEls.hand = [];
   betStacks.length = 0; potStack = null;
   P.forEach(p => { p.hole = []; p.bet = 0; p.contrib = 0; p.folded = false; p.allIn = false; p.acted = false; p.shown = 0; UI.pills[p.i] && UI.pills[p.i].classList.remove('win', 'out'); });
-  G.board = []; G.deck = E.newDeck(); G.pot = 0; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null;
+  G.board = []; G.deck = E.newDeck(); G.pot = 0; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null; G.aggrInfo = null;
   clearBubbles(); UI.betl.forEach(b => b.style.opacity = 0); renderPot(); updateHandLabel(); closeCoach();
 }
 async function playHand() {
@@ -730,7 +767,7 @@ async function playHand() {
     for (const st of ['flop', 'turn', 'river']) {
       await collectBets();
       if (actorsCount() < 2) for (const p of nonFolded()) if (!p.you) await revealOpp(p);
-      G.street = st; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null; P.forEach(p => { p.acted = false; });
+      G.street = st; G.currentBet = 0; G.minRaise = BB; G.lastAggr = null; G.aggrInfo = null; P.forEach(p => { p.acted = false; });
       const n = st === 'flop' ? 3 : 1, idx = [];
       for (let k = 0; k < n; k++) { G.board.push(G.deck.pop()); idx.push(G.board.length - 1); }
       await dealBoard(idx); updateHandLabel();
