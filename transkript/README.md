@@ -1,0 +1,56 @@
+# Transkript
+
+Audiodatei wählen, OpenRouter-Schlüssel eintragen, Text erhalten. Eine Stunde Audio kostet
+mit Whisper Large V3 höchstens ≈ 0,11 $, mit Turbo ≈ 0,04 $. Lange Pausen werden nicht
+mitgeschickt und deshalb auch nicht berechnet.
+
+**Online:** https://borian69.github.io/Menace-Health-website-files/transkript/
+(nach dem Merge nach `main`). Lokal reicht ein beliebiger Webserver im Repo-Wurzelordner,
+z. B. `python3 -m http.server`, dann `/transkript/` öffnen. Ein Build-Schritt entfällt.
+
+## Was mit der Aufnahme passiert
+
+Alles läuft im Browser. Nur die fertigen MP3-Abschnitte gehen an openrouter.ai.
+
+| Schritt | Warum |
+|---|---|
+| Dekodieren auf 16 kHz mono | Mit dieser Rate rechnet Whisper intern. Mehr ist nur zusätzliche Upload-Last. |
+| Hochpass 80 Hz | Entfernt Brummen, Wind und Trittschall. Stimmen liegen darüber. |
+| Schnitte an der leisesten Stelle zwischen 90 und 150 s | Kein Wort wird zerteilt. |
+| Stille Abschnitte überspringen | Whisper erfindet bei Stille Sätze („Untertitel im Auftrag des ZDF“). |
+| Pausen über 1,5 s auf 0,5 s kürzen | Spart Kosten (Abrechnung pro Sekunde) und erfundene Sätze. Grenze 24 dB unter dem Sprechpegel: Bei Rauschen bleibt alles stehen. |
+| Pegel je Abschnitt auf ≈ −20 dBFS, höchstens +30 dB, weich begrenzt | Leise Sprecher werden hörbar, der MP3-Kodierer verliert weniger Details. |
+| MP3 48 kbit/s | 2 min ≈ 720 KB. Etwas Reserve für verrauschte Aufnahmen. |
+| 3 Abschnitte gleichzeitig, bis zu 4 Versuche mit Wartezeit, 2 min Zeitlimit | Ein Hänger hält den Lauf nicht an. |
+| `temperature: 0`, Sprache fest (Standard Deutsch) | Whisper rät dann nicht, welche Sprache gesprochen wird. |
+| Namen und Fachbegriffe als `prompt` | Whisper übernimmt deren Schreibweise. Lehnt der Anbieter das Feld ab, entfällt es für die Sitzung. |
+| Aufräumen | Bekannte Abspann-Sätze aus TV-Untertiteln fallen weg. Ein Satz, der mehr als zweimal hintereinander kommt, und Wortschleifen werden gekürzt. |
+
+Scheitern Abschnitte, bleibt alles Fertige erhalten. Der Knopf heißt dann „n fehlende
+Abschnitte wiederholen“, und im Text steht an der Stelle `[Abschnitt 3:11–5:00 fehlt]`.
+Bei 401/402/403/404 bricht der Lauf sofort ab und nennt den Grund.
+
+## Schlüssel
+
+Der Schlüssel liegt in `localStorage` und geht nur an openrouter.ai. Steht in der Mitschrift
+auf demselben Gerät schon einer, wird er übernommen. Bei OpenRouter für diesen Schlüssel ein
+Ausgabenlimit setzen.
+
+## Grenzen
+
+- Der Browser dekodiert die ganze Datei auf einmal: 1 h ≈ 230 MB Arbeitsspeicher. Auf älteren
+  Handys Aufnahmen über etwa 1 h am Computer verarbeiten.
+- Während des Laufs muss die Seite offen bleiben. Der Bildschirm wird dafür wachgehalten.
+- Ohne Sprechererkennung und ohne Zeitmarken. Für Projekte mit Zusammenfassung gibt es die
+  Mitschrift (`../mitschrift/`).
+
+## Dateien
+
+`index.html` · `app.css` (nur Ergänzungen zu `../design/moch.css`) · `app.js` ·
+`vendor/lamejs.js` (MP3-Kodierer `@breezystack/lamejs` 1.2.7, LGPL, siehe `vendor/lamejs-LICENSE`).
+
+## Abweichungen vom Design-System
+
+- **Keine neuen Klassen.** Ablage, Ergebnisfeld und Knopfzeile sind über IDs gestaltet.
+- **`.aktion` und `.toast` sitzen tiefer**, weil die Seite keine Tab-Leiste hat.
+- **Die Seite ist auf 640 px begrenzt**, damit der Text am Computer nicht über die ganze Breite läuft.

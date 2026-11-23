@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="de" data-scheme="dunkel" data-farbe="amber">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Transkript</title>
+<meta name="description" content="Audiodatei wählen, OpenRouter-Schlüssel eintragen, Text erhalten. Whisper Large V3 für etwa 0,03–0,11 $ pro Stunde Audio.">
+<meta name="theme-color" content="#0D1824">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="../design/moch.css">
+<link rel="stylesheet" href="app.css">
+<script src="../design/moch-motion.js" defer></script>
+<script src="vendor/lamejs.js" defer></script>
+<script src="app.js" defer></script>
+</head>
+
+<body class="app">
+<div class="app-rahmen">
+
+<header class="leiste" id="leiste">
+  <span class="mini" id="leiste-titel"></span>
+</header>
+
+<main class="seite" id="seite">
+
+  <div class="app-kopf" id="kopf" data-auftritt>
+    <h1 id="titel">Transkript</h1>
+    <div class="kz" id="kennung">Audio zu Text · OpenRouter</div>
+  </div>
+
+  <!-- 1 · Schlüssel -->
+  <div class="gruppe rein">
+    <div class="field" id="feld-schluessel">
+      <label for="schluessel">OpenRouter-Schlüssel</label>
+      <input type="password" id="schluessel" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-…" aria-describedby="schluessel-msg">
+      <p class="field-msg" id="schluessel-msg" aria-live="polite">Bleibt auf diesem Gerät und geht nur an openrouter.ai.</p>
+    </div>
+  </div>
+
+  <!-- 2 · Datei -->
+  <div class="gruppe rein">
+    <span class="lb">Aufnahme</span>
+    <label id="ablage" for="datei">
+      <input type="file" id="datei" accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.opus,.flac,.aac,.webm,.mp4">
+      <span id="ablage-text">Audiodatei wählen oder hierher ziehen</span>
+      <span class="klein muted" id="ablage-sub">MP3, M4A, WAV, OGG, WebM, auch Video</span>
+    </label>
+    <div class="dataline offen" id="datei-daten" hidden></div>
+  </div>
+
+  <!-- 3 · Einstellungen -->
+  <div class="gruppe rein">
+    <span class="lb">Sprache</span>
+    <div class="wahl" id="chips-sprache" role="radiogroup" aria-label="Sprache">
+      <button type="button" class="chip" role="radio" data-wert="de">Deutsch</button>
+      <button type="button" class="chip" role="radio" data-wert="en">Englisch</button>
+      <button type="button" class="chip" role="radio" data-wert="">Automatisch</button>
+    </div>
+  </div>
+
+  <div class="gruppe rein">
+    <span class="lb">Modell</span>
+    <div class="wahl" id="chips-modell" role="radiogroup" aria-label="Modell">
+      <button type="button" class="chip" role="radio" data-wert="openai/whisper-large-v3">Genau · Large V3</button>
+      <button type="button" class="chip" role="radio" data-wert="openai/whisper-large-v3-turbo">Schnell · Turbo</button>
+    </div>
+    <p class="klein muted" id="modell-info"></p>
+  </div>
+
+  <div class="gruppe rein">
+    <div class="field">
+      <label for="begriffe">Namen und Fachbegriffe (optional)</label>
+      <input type="text" id="begriffe" autocomplete="off" placeholder="Menace Health, Dr. Moch, Ferritin" aria-describedby="begriffe-msg">
+      <p class="field-msg" id="begriffe-msg">Hilft bei Eigennamen. Kommagetrennt.</p>
+    </div>
+  </div>
+
+  <!-- 4 · Fortschritt und Ergebnis -->
+  <div class="gruppe" id="lauf" hidden>
+    <span class="lb" id="lauf-titel">Transkription</span>
+    <div class="mass" id="mass">
+      <div class="spur"><span class="tick"></span><span class="fill"></span><span class="jetzt"></span><span class="tick"></span></div>
+      <div class="unten"><span id="mass-links">0 von 0</span><span class="rest" id="mass-rechts"></span></div>
+    </div>
+    <div class="field" id="lauf-feld"><p class="field-msg" id="lauf-msg" aria-live="polite"></p></div>
+  </div>
+
+  <div class="gruppe" id="ergebnis" hidden>
+    <span class="lb">Text</span>
+    <div class="field" id="text-feld">
+      <textarea id="text" rows="12" aria-label="Transkript"></textarea>
+    </div>
+    <div class="dataline offen" id="ergebnis-daten"></div>
+    <div id="knoepfe">
+      <button type="button" class="btn btn-ghost" id="btn-kopieren">Text kopieren</button>
+      <button type="button" class="btn btn-quiet" id="btn-speichern">Als .txt speichern</button>
+    </div>
+  </div>
+
+</main>
+
+<div class="aktion" id="aktion">
+  <button type="button" class="btn btn-primary btn-block" id="btn-start">Transkribieren</button>
+</div>
+
+<div class="toast" id="toast" role="status"><span></span></div>
+</div>
+</body>
+</html>
