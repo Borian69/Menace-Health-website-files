@@ -9,10 +9,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="../design/moch.css">
-<link rel="stylesheet" href="app.css">
+<!-- ?v= bei jeder Änderung hochzählen: GitHub Pages und Browser halten Dateien bis zu 10 Minuten im Cache. -->
+<link rel="stylesheet" href="app.css?v=5">
 <script src="../design/moch-motion.js" defer></script>
-<script src="vendor/lamejs.js" defer></script>
-<script src="app.js" defer></script>
+<script src="vendor/lamejs.js?v=1.2.7" defer></script>
+<script src="app.js?v=5" defer></script>
 </head>
 
 <body class="app">
@@ -26,7 +27,7 @@
 
   <div class="app-kopf" id="kopf" data-auftritt>
     <h1 id="titel">Transkript</h1>
-    <div class="kz" id="kennung">Audio zu Text · OpenRouter</div>
+    <div class="kz" id="kennung">Audio zu Text · OpenRouter · v5</div>
   </div>
 
   <!-- 1 · Schlüssel -->
@@ -40,13 +41,15 @@
 
   <!-- 2 · Datei -->
   <div class="gruppe rein">
-    <span class="lb">Aufnahme</span>
+    <span class="lb">Aufnahmen</span>
     <label id="ablage" for="datei">
-      <input type="file" id="datei" accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.opus,.flac,.aac,.webm,.mp4">
-      <span id="ablage-text">Audiodatei wählen oder hierher ziehen</span>
-      <span class="klein muted" id="ablage-sub">MP3, M4A, WAV, OGG, WebM, auch Video</span>
+      <input type="file" id="datei" multiple accept="audio/*,video/*,.m4a,.mp3,.wav,.ogg,.opus,.flac,.aac,.webm,.mp4">
+      <span id="ablage-text">Audiodateien wählen oder hierher ziehen</span>
+      <span class="klein muted" id="ablage-sub">Mehrere möglich · MP3, M4A, WAV, OGG, WebM, auch Video</span>
     </label>
+    <div id="dateien"></div>
     <div class="dataline offen" id="datei-daten" hidden></div>
+    <button type="button" class="btn btn-quiet" id="btn-leeren" hidden>Liste leeren</button>
   </div>
 
   <!-- 3 · Einstellungen -->
@@ -94,6 +97,7 @@
     <div class="dataline offen" id="ergebnis-daten"></div>
     <div id="knoepfe">
       <button type="button" class="btn btn-ghost" id="btn-kopieren">Text kopieren</button>
+      <button type="button" class="btn btn-ghost" id="btn-pdf">Als PDF speichern</button>
       <button type="button" class="btn btn-quiet" id="btn-speichern">Als .txt speichern</button>
     </div>
   </div>

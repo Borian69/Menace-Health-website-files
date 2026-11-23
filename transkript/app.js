@@ -53,10 +53,10 @@
 
   // ───────────── Zustand ─────────────
 
-  let datei = null;          // File
-  let dauerMeta = 0;         // Sekunden laut <audio>, bevor dekodiert ist
-  let audio = null;          // { sig, pcm, frames }
-  let lauf = null;           // { sig, teile: [{ a, b, text, fehler }], kosten, kostenGemeldet }
+  // Eine Zeile je Datei: { file, dauer (Sekunden laut Metadaten), lauf, status, el }
+  // lauf = { sig, teile: [{ a, b, fa, fb, text, fehler, weg }], kosten, gemeldet }
+  const liste = [];
+  let audio = null;          // { sig, pcm, frames } – immer nur die Datei, die gerade läuft
   let laeuft = false;
   let keyStatus = 'unbekannt';   // unbekannt | ok | falsch
   // Was der Anbieter ablehnt, wird für die Sitzung weggelassen.
@@ -147,7 +147,7 @@
     });
     setze();
   }
-  const modellInfo = () => { $('modell-info').textContent = MODELLE[e.modell].info; zeigeDatei(); };
+  const modellInfo = () => { $('modell-info').textContent = MODELLE[e.modell].info; zeigeListe(); };
   chips('chips-sprache', 'sprache');
   chips('chips-modell', 'modell', () => { modellInfo(); if (keyStatus === 'ok') pruefeKey(); });
   modellInfo();
@@ -157,10 +157,11 @@
   inBegriffe.value = e.begriffe;
   inBegriffe.addEventListener('input', () => { e.begriffe = inBegriffe.value; merke(); pruefeAktion(); });
 
-  // ───────────── Datei ─────────────
+  // ───────────── Dateien ─────────────
 
   const ablage = $('ablage');
   const inDatei = $('datei');
+  const ohneEndung = (n) => n.replace(/\.[^.]+$/, '') || n;
 
   function setzeTitel(text) {
     const h = $('titel');
@@ -171,51 +172,91 @@
   }
   M.kopf($('seite'), $('leiste'))();
 
-  function zeigeDatei() {
-    if (!datei) return;
-    const paare = [['Größe', groesse(datei.size)]];
-    if (dauerMeta) {
-      paare.unshift(['Dauer', zeit(dauerMeta)]);
-      paare.push(['Kosten ≈', cent((dauerMeta / 3600) * MODELLE[e.modell].preis)]);
-    }
-    datenzeile($('datei-daten'), paare);
+  const fsig = (f) => [f.name, f.size, f.lastModified].join('|');
+  const sig = (x) => [fsig(x.file), e.modell, e.sprache, e.begriffe.trim()].join('|');
+  // Offene Abschnitte: −1 = noch nie gestartet (oder Einstellungen geändert), 0 = fertig.
+  const offen = (x) => (x.lauf && x.lauf.sig === sig(x) ? x.lauf.teile.filter((t) => t.text === null).length : -1);
+
+  function statusText(x) {
+    if (x.status) return x.status;
+    const n = offen(x);
+    if (n === 0) return 'Fertig';
+    if (n > 0) return `${zahl(n)} fehlen`;
+    return 'Wartet';
   }
 
-  function waehle(f) {
-    if (!f || laeuft) return;
-    datei = f; dauerMeta = 0; audio = null;
-    $('ablage-text').textContent = f.name;
-    $('ablage-sub').textContent = 'Andere Datei wählen';
-    setzeTitel(f.name.replace(/\.[^.]+$/, '') || 'Transkript');
-    zeigeDatei();
-    // Dauer aus den Metadaten: sofort, ohne die ganze Datei zu dekodieren.
-    const url = URL.createObjectURL(f);
-    const a = new Audio();
-    a.preload = 'metadata';
-    a.onloadedmetadata = () => { if (datei === f && Number.isFinite(a.duration)) { dauerMeta = a.duration; zeigeDatei(); } URL.revokeObjectURL(url); };
-    a.onerror = () => URL.revokeObjectURL(url);
-    a.src = url;
+  function zeigeListe() {
+    const box = $('dateien');
+    box.textContent = '';
+    liste.forEach((x, i) => {
+      if (!x.el) {
+        x.el = document.createElement('div'); x.el.className = 'eintrag';
+        x.el.innerHTML = '<span class="tag n"></span><span class="was"><span></span><small class="n"></small></span><span class="wert"></span>';
+      }
+      const [tag, was, wert] = x.el.children;
+      tag.textContent = String(i + 1).padStart(2, '0');
+      was.firstChild.textContent = x.file.name;
+      was.lastChild.textContent = [x.dauer ? zeit(x.dauer) : '', groesse(x.file.size)].filter(Boolean).join(' · ');
+      wert.textContent = statusText(x);
+      wert.className = 'wert' + (x.fehler ? ' fehler' : offen(x) === 0 ? ' fertig' : '');
+      box.append(x.el);
+    });
+    const dauer = liste.reduce((s, x) => s + (x.dauer || 0), 0);
+    if (liste.length) {
+      const paare = [];
+      if (liste.length > 1) paare.push(['Dateien', zahl(liste.length)]);
+      if (dauer) paare.push(['Dauer', zeit(dauer)], ['Kosten ≈', cent((dauer / 3600) * MODELLE[e.modell].preis)]);
+      paare.push(['Größe', groesse(liste.reduce((s, x) => s + x.file.size, 0))]);
+      datenzeile($('datei-daten'), paare);
+    } else $('datei-daten').hidden = true;
+    $('btn-leeren').hidden = !liste.length || laeuft;
+    $('ablage-text').textContent = liste.length ? 'Weitere Dateien hinzufügen' : 'Audiodateien wählen oder hierher ziehen';
+  }
+
+  function fuegeHinzu(files) {
+    if (laeuft) return;
+    const neu = [...(files || [])].filter((f) => !liste.some((x) => fsig(x.file) === fsig(f)));
+    if (!neu.length) return;
+    for (const f of neu) {
+      const x = { file: f, dauer: 0, lauf: null, status: '', fehler: null, el: null };
+      liste.push(x);
+      // Dauer aus den Metadaten: sofort, ohne die ganze Datei zu dekodieren.
+      const url = URL.createObjectURL(f);
+      const a = new Audio();
+      a.preload = 'metadata';
+      a.onloadedmetadata = () => { if (Number.isFinite(a.duration)) { x.dauer = a.duration; zeigeListe(); } URL.revokeObjectURL(url); };
+      a.onerror = () => URL.revokeObjectURL(url);
+      a.src = url;
+    }
+    setzeTitel(liste.length === 1 ? ohneEndung(liste[0].file.name) : `${liste.length} Aufnahmen`);
+    zeigeListe();
     pruefeAktion();
   }
 
-  inDatei.addEventListener('change', () => waehle(inDatei.files[0]));
+  inDatei.addEventListener('change', () => { fuegeHinzu(inDatei.files); inDatei.value = ''; });
   ['dragenter', 'dragover'].forEach((t) => ablage.addEventListener(t, (ev) => { ev.preventDefault(); ablage.classList.add('ueber'); }));
   ['dragleave', 'drop'].forEach((t) => ablage.addEventListener(t, () => ablage.classList.remove('ueber')));
-  ablage.addEventListener('drop', (ev) => { ev.preventDefault(); waehle(ev.dataTransfer.files[0]); });
-  // Daneben fallen gelassen: nicht die Seite verlassen.
+  // Überall auf der Seite fallen lassen geht; die Seite wird nie verlassen.
   window.addEventListener('dragover', (ev) => ev.preventDefault());
-  window.addEventListener('drop', (ev) => { ev.preventDefault(); if (!ev.target.closest('#ablage')) waehle(ev.dataTransfer.files[0]); });
+  window.addEventListener('drop', (ev) => { ev.preventDefault(); ablage.classList.remove('ueber'); fuegeHinzu(ev.dataTransfer.files); });
+
+  $('btn-leeren').addEventListener('click', () => {
+    if (laeuft) return;
+    liste.length = 0; audio = null;
+    setzeTitel('Transkript');
+    zeigeListe(); pruefeAktion();
+  });
 
   // ───────────── Hauptaktion ─────────────
 
-  const sig = () => datei && [datei.name, datei.size, datei.lastModified, e.modell, e.sprache, e.begriffe.trim()].join('|');
-  const offen = () => (lauf && lauf.sig === sig() ? lauf.teile.filter((t) => t.text === null).length : -1);
-
   function pruefeAktion() {
-    const n = offen();
+    const todo = liste.filter((x) => offen(x) !== 0);
+    const fehlend = todo.reduce((s, x) => s + Math.max(0, offen(x)), 0);
     const btn = $('btn-start');
-    btn.textContent = n > 0 ? `${n} fehlende ${n === 1 ? 'Abschnitt' : 'Abschnitte'} wiederholen` : 'Transkribieren';
-    aktion.zeige(!laeuft && !!datei && !!inKey.value.trim() && keyStatus !== 'falsch' && n !== 0);
+    if (todo.length && todo.every((x) => offen(x) > 0)) btn.textContent = `${zahl(fehlend)} fehlende ${fehlend === 1 ? 'Abschnitt' : 'Abschnitte'} wiederholen`;
+    else btn.textContent = todo.length > 1 ? `${zahl(todo.length)} Dateien transkribieren` : 'Transkribieren';
+    aktion.zeige(!laeuft && todo.length > 0 && !!inKey.value.trim() && keyStatus !== 'falsch');
+    if (!laeuft) liste.forEach((x) => { if (x.el) x.el.lastChild.textContent = statusText(x); });
   }
 
   $('btn-start').addEventListener('click', starte);
@@ -378,7 +419,7 @@
   }
   function gib() { platz.aktiv--; platz.warten.splice(0).forEach((f) => f()); }
 
-  async function whisper(b64) {
+  async function whisper(b64, hinweis) {
     let letzter = '', reserviert = 0;
     for (let v = 1; v <= VERSUCHE; v++) {
       const body = { model: e.modell, input_audio: { data: b64, format: 'mp3' } };
@@ -403,11 +444,19 @@
       }
       gib();
       const detail = d && d.error ? String(d.error.message || d.error).slice(0, 240) : '';
-      if (r.status === 402 && /in-flight|settle/i.test(detail) && (andere > 0 || reserviert < 2)) {
+      // 402 „in-flight“: OpenRouter hält für laufende Anfragen Guthaben zurück, das
+      // erst einige Sekunden nach der Antwort wieder frei wird. Ab jetzt einzeln,
+      // mit wachsender Pause (6, 12, 24, 48 s). Erst danach ist es echter Mangel.
+      if (r.status === 402 && /in-flight|settle/i.test(detail) && (andere > 0 || reserviert < 4)) {
         platz.grenze = 1;
-        reserviert++; v--;
+        if (!andere) reserviert++;
+        v--;
         letzter = 'Guthaben durch laufende Anfragen reserviert';
-        await schlaf(1500 + Math.random() * 1000); continue;
+        if (hinweis) hinweis('OpenRouter hält für laufende Anfragen Guthaben zurück. Es geht einzeln weiter, das dauert etwas länger.');
+        await schlaf(andere > 0 ? 1500 : 3000 * 2 ** reserviert); continue;
+      }
+      if (r.status === 402 && /in-flight|settle/i.test(detail)) {
+        throw new Endgueltig('OpenRouter gibt auch für eine einzelne Anfrage nicht genug Guthaben frei (402). Häufigste Ursache: Der Schlüssel hat ein eigenes Ausgabenlimit, das fast aufgebraucht ist – unter openrouter.ai/settings/keys erhöhen. Sonst unter openrouter.ai/credits aufladen.');
       }
       if (r.status in ENDGUELTIG) throw new Endgueltig(`${ENDGUELTIG[r.status]} ${detail}`.trim());
       if (r.status === 400) {
@@ -479,100 +528,141 @@
   }
 
   async function starte() {
-    if (laeuft || !datei) return;
-    laeuft = true; pruefeAktion();
+    if (laeuft) return;
+    const todo = liste.filter((x) => offen(x) !== 0);
+    if (!todo.length) return;
+    laeuft = true; pruefeAktion(); $('btn-leeren').hidden = true;
     const t0 = performance.now();
-    const s = sig();
-    $('lauf').hidden = false;
-    $('lauf-titel').textContent = 'Transkription';
     const msg = $('lauf-msg'), feldLauf = $('lauf-feld');
-    meldung(feldLauf, msg, 'Aufnahme wird gelesen …', '');
+    $('lauf').hidden = false;
     $('lauf').scrollIntoView({ behavior: M.reduziert ? 'auto' : 'smooth', block: 'center' });
     let wake = null;
     try { wake = await navigator.wakeLock.request('screen'); } catch { /* nicht überall verfügbar */ }
+    platz.grenze = PARALLEL;
+    let abbruch = null;
 
-    try {
-      const fsig = [datei.name, datei.size, datei.lastModified].join('|');
-      if (!audio || audio.sig !== fsig) {
-        audio = null;
-        await schlaf(30);  // Meldung zuerst zeichnen, dann rechnen
-        const pcm = await dekodiere(datei);
-        const frames = filtereUndMiss(pcm);
-        audio = { sig: fsig, pcm, frames };
-        dauerMeta = pcm.length / RATE; zeigeDatei();
+    for (let n = 0; n < todo.length && !abbruch; n++) {
+      const x = todo[n];
+      $('lauf-titel').textContent = todo.length > 1 ? `Datei ${n + 1} von ${todo.length} · ${x.file.name}` : 'Transkription';
+      x.fehler = null; x.status = 'Liest …'; zeigeListe();
+      meldung(feldLauf, msg, 'Aufnahme wird gelesen …', '');
+      try {
+        await verarbeite(x, t0, msg, feldLauf);
+      } catch (err) {
+        x.fehler = err.message;
+        if (err instanceof Endgueltig) abbruch = err;
       }
-      if (!lauf || lauf.sig !== s) lauf = { sig: s, teile: abschnitte(audio.frames), kosten: 0, gemeldet: true };
-
-      const teile = lauf.teile;
-      const zuTun = teile.filter((t) => t.text === null);
-      let fertig = teile.length - zuTun.length;
-      fortschritt(fertig, teile.length, t0);
-      platz.grenze = PARALLEL;
-      meldung(feldLauf, msg, `${zahl(teile.length)} Abschnitte, bis zu ${PARALLEL} gleichzeitig. Die Seite bitte offen lassen.`, '');
-
-      let abbruch = null, i = 0;
-      const arbeiter = async () => {
-        while (i < zuTun.length && !abbruch) {
-          const t = zuTun[i++];
-          try {
-            const pegel = sprechpegel(audio.frames, t.fa, t.fb);
-            if (pegel < STILLE) { t.text = ''; t.weg = (t.b - t.a) / RATE; }
-            else {
-              const gain = Math.min(MAX_GAIN, Math.max(1, ZIELPEGEL / pegel));
-              const v = verdichte(audio.pcm, audio.frames, t.fa, t.fb, pegel);
-              t.weg = v.weg;
-              const r = await whisper(await base64(mp3(v.x, gain)));
-              t.text = raeume(r.text);
-              if (r.kosten === null) lauf.gemeldet = false; else lauf.kosten += r.kosten;
-            }
-            t.fehler = null;
-          } catch (err) {
-            t.fehler = err.message;
-            if (err instanceof Endgueltig) abbruch = err;
-          }
-          fortschritt(teile.filter((x) => x.text !== null).length, teile.length, t0);
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(PARALLEL, zuTun.length) }, arbeiter));
-
+      x.status = x.fehler && offen(x) <= 0 ? 'Fehler' : '';
+      zeigeListe();
       zeigeErgebnis(t0);
-      const fehlend = teile.filter((t) => t.text === null);
-      if (abbruch) throw abbruch;
-      if (fehlend.length) {
-        meldung(feldLauf, msg, `${zahl(fehlend.length)} von ${zahl(teile.length)} Abschnitten fehlen: ${fehlend[0].fehler}. Unten erneut versuchen – Fertiges bleibt.`, 'fehler');
-      } else {
-        $('lauf').hidden = true;
-        $('ergebnis').scrollIntoView({ behavior: M.reduziert ? 'auto' : 'smooth', block: 'start' });
-        toast.zeige('Fertig.', `${zeit(dauerMeta)} Audio in ${zeit((performance.now() - t0) / 1000)} transkribiert.`);
-      }
-    } catch (err) {
-      meldung(feldLauf, msg, err.message, 'fehler');
-      if (err instanceof Endgueltig && /401/.test(err.message)) { keyStatus = 'falsch'; meldung(feldKey, $('schluessel-msg'), err.message, 'fehler'); }
-    } finally {
-      laeuft = false;
-      if (wake) wake.release().catch(() => {});
-      pruefeAktion();
     }
+    audio = null;   // Speicher freigeben; ein Wiederholen liest die Datei neu
+
+    const fehler = liste.filter((x) => x.fehler || offen(x) > 0);
+    if (abbruch) {
+      meldung(feldLauf, msg, abbruch.message, 'fehler');
+      if (/401/.test(abbruch.message)) { keyStatus = 'falsch'; meldung(feldKey, $('schluessel-msg'), abbruch.message, 'fehler'); }
+    } else if (fehler.length) {
+      const fehlend = fehler.reduce((s, x) => s + Math.max(0, offen(x)), 0);
+      meldung(feldLauf, msg, `${fehlend ? `${zahl(fehlend)} Abschnitte fehlen` : `${zahl(fehler.length)} Dateien fehlen`}: ${fehler[0].fehler || 'siehe Liste'}. Unten erneut versuchen – Fertiges bleibt.`, 'fehler');
+    } else {
+      $('lauf').hidden = true;
+      $('ergebnis').scrollIntoView({ behavior: M.reduziert ? 'auto' : 'smooth', block: 'start' });
+      const dauer = todo.reduce((s, x) => s + (x.dauer || 0), 0);
+      toast.zeige('Fertig.', `${zeit(dauer)} Audio in ${zeit((performance.now() - t0) / 1000)} transkribiert.`);
+    }
+    laeuft = false;
+    if (wake) wake.release().catch(() => {});
+    zeigeListe();
+    pruefeAktion();
   }
 
+  async function verarbeite(x, t0, msg, feldLauf) {
+    const s = sig(x);
+    if (!audio || audio.sig !== fsig(x.file)) {
+      audio = null;   // vorige Datei zuerst freigeben
+      await schlaf(30);  // Meldung zuerst zeichnen, dann rechnen
+      const pcm = await dekodiere(x.file);
+      const frames = filtereUndMiss(pcm);
+      audio = { sig: fsig(x.file), pcm, frames };
+      x.dauer = pcm.length / RATE;
+    }
+    if (!x.lauf || x.lauf.sig !== s) x.lauf = { sig: s, teile: abschnitte(audio.frames), kosten: 0, gemeldet: true };
+
+    const teile = x.lauf.teile;
+    const zuTun = teile.filter((t) => t.text === null);
+    const zaehle = () => {
+      const f = teile.filter((t) => t.text !== null).length;
+      fortschritt(f, teile.length, t0);
+      x.status = `${zahl(f)} / ${zahl(teile.length)}`; x.el.lastChild.textContent = x.status;
+    };
+    zaehle();
+    meldung(feldLauf, msg, `${zahl(teile.length)} Abschnitte, bis zu ${PARALLEL} gleichzeitig. Die Seite bitte offen lassen.`, '');
+
+    let abbruch = null, i = 0;
+    const arbeiter = async () => {
+      while (i < zuTun.length && !abbruch) {
+        const t = zuTun[i++];
+        try {
+          const pegel = sprechpegel(audio.frames, t.fa, t.fb);
+          if (pegel < STILLE) { t.text = ''; t.weg = (t.b - t.a) / RATE; }
+          else {
+            const gain = Math.min(MAX_GAIN, Math.max(1, ZIELPEGEL / pegel));
+            const v = verdichte(audio.pcm, audio.frames, t.fa, t.fb, pegel);
+            t.weg = v.weg;
+            const r = await whisper(await base64(mp3(v.x, gain)), (hinweis) => meldung(feldLauf, msg, hinweis, ''));
+            t.text = raeume(r.text);
+            if (r.kosten === null) x.lauf.gemeldet = false; else x.lauf.kosten += r.kosten;
+          }
+          t.fehler = null;
+        } catch (err) {
+          t.fehler = err.message;
+          if (err instanceof Endgueltig) abbruch = err;
+        }
+        zaehle();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(PARALLEL, zuTun.length) }, arbeiter));
+    if (abbruch) throw abbruch;
+    const fehlt = teile.find((t) => t.text === null);
+    if (fehlt) x.fehler = fehlt.fehler;
+  }
+
+  // Alle Dateien mit Ergebnis, in Listenreihenfolge. Bei mehreren steht der Dateiname über jedem Text.
+  function bloecke() {
+    return liste.filter((x) => x.lauf && x.lauf.teile.some((t) => t.text)).map((x) => ({
+      titel: ohneEndung(x.file.name),
+      text: x.lauf.teile
+        .map((t) => (t.text === null ? `[Abschnitt ${zeit(t.a / RATE)}–${zeit(t.b / RATE)} fehlt]` : t.text))
+        .filter(Boolean).join('\n\n'),
+    }));
+  }
+
+  let ergebnis = null;   // { name, titel: [..], text, paare }
+
   function zeigeErgebnis(t0) {
-    const teile = lauf.teile;
+    const b = bloecke();
     // Noch nichts Erkanntes: kein Ergebnis zeigen und kein früheres überschreiben.
-    if (!teile.some((t) => t.text)) return;
-    // Ein Abschnitt = ein Absatz; fehlende werden mit Zeitmarke sichtbar markiert.
-    const text = teile
-      .map((t) => (t.text === null ? `[Abschnitt ${zeit(t.a / RATE)}–${zeit(t.b / RATE)} fehlt]` : t.text))
-      .filter(Boolean).join('\n\n');
+    if (!b.length) return;
+    const text = b.length === 1 ? b[0].text : b.map((x) => `${x.titel}\n\n${x.text}`).join('\n\n\n');
     $('text').value = text;
     $('ergebnis').hidden = false;
-    const woerter = teile.reduce((n, t) => n + (t.text ? t.text.split(' ').length : 0), 0);
-    const weg = teile.reduce((s, t) => s + (t.weg || 0), 0);
-    const paare = [['Dauer', zeit(dauerMeta)], ['Wörter', zahl(woerter)], ['Abschnitte', zahl(teile.length)]];
+    const mit = liste.filter((x) => x.lauf);
+    const alle = mit.flatMap((x) => x.lauf.teile);
+    const woerter = alle.reduce((n, t) => n + (t.text ? t.text.split(' ').length : 0), 0);
+    const weg = alle.reduce((s, t) => s + (t.weg || 0), 0);
+    const kosten = mit.reduce((s, x) => s + x.lauf.kosten, 0);
+    const gemeldet = mit.every((x) => x.lauf.gemeldet);
+    const paare = [];
+    if (b.length > 1) paare.push(['Dateien', zahl(b.length)]);
+    paare.push(['Dauer', zeit(mit.reduce((s, x) => s + (x.dauer || 0), 0))], ['Wörter', zahl(woerter)]);
     if (weg >= 1) paare.push(['Stille gespart', zeit(weg)]);
-    if (lauf.kosten || lauf.gemeldet) paare.push([lauf.gemeldet ? 'Kosten' : 'Kosten mind.', cent(lauf.kosten)]);
+    if (kosten || gemeldet) paare.push([gemeldet ? 'Kosten' : 'Kosten mind.', cent(kosten)]);
     if (t0) paare.push(['Zeit', zeit((performance.now() - t0) / 1000)]);
     datenzeile($('ergebnis-daten'), paare);
-    schreib(KEY_LETZTER, { name: datei.name, text, paare });
+    const name = b.length === 1 ? b[0].titel : `Transkripte ${new Date().toLocaleDateString('de-DE')}`;
+    ergebnis = { name, titel: b.length > 1 ? b.map((x) => x.titel) : [], text, paare };
+    schreib(KEY_LETZTER, ergebnis);
   }
 
   // ───────────── Ergebnis ─────────────
@@ -584,24 +674,84 @@
     toast.zeige('Kopiert.', `${zahl(t.value.length)} Zeichen in der Zwischenablage.`);
   });
 
-  $('btn-speichern').addEventListener('click', () => {
-    const name = ((datei && datei.name) || (lies(KEY_LETZTER) || {}).name || 'transkript').replace(/\.[^.]+$/, '');
+  const dateiname = () => ((ergebnis && ergebnis.name) || 'Transkript').replace(/[\\/:*?"<>|]+/g, '-').trim();
+
+  function lade(blob, name) {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([$('text').value], { type: 'text/plain;charset=utf-8' }));
-    a.download = `${name}.txt`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  }
+
+  $('btn-speichern').addEventListener('click', () => {
+    lade(new Blob([$('text').value], { type: 'text/plain;charset=utf-8' }), `${dateiname()}.txt`);
+  });
+
+  // jsPDF erst laden, wenn jemand ein PDF will (420 KB).
+  let jspdfLaden = null;
+  const ladeJsPDF = () => jspdfLaden || (jspdfLaden = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = 'vendor/jspdf.js?v=4.2.1';
+    sc.onload = () => res(window.jspdf.jsPDF);
+    sc.onerror = () => { jspdfLaden = null; rej(new Error('PDF-Baustein konnte nicht geladen werden. Internetverbindung prüfen.')); };
+    document.head.append(sc);
+  }));
+
+  // Die Standardschrift im PDF kennt nur Windows-1252 (alle deutschen Zeichen,
+  // „“ – …). Was darüber hinausgeht, wird ersetzt statt falsch gedruckt.
+  const CP1252 = '€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ';
+  const pdfText = (t) => t.replace(/[^\n\x20-\x7e\xa0-\xff]/g, (c) => (CP1252.includes(c) ? c : ({ '\u2009': ' ', '\u202f': ' ', '\u2011': '-', '\u2212': '-', '\u201f': '"', '\u2033': '"' }[c] || '?')));
+
+  $('btn-pdf').addEventListener('click', async () => {
+    const btn = $('btn-pdf');
+    btn.disabled = true;
+    try {
+      const JsPDF = await ladeJsPDF();
+      const doc = new JsPDF({ unit: 'mm', format: 'a4' });
+      const L = 22, B = 210 - 2 * L, UNTEN = 297 - 22;
+      const titel = new Set((ergebnis && ergebnis.titel) || []);
+      let y = 28;
+      const platzFuer = (h) => { if (y + h > UNTEN) { doc.addPage(); y = 24; } };
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(20); doc.setTextColor(34, 39, 44);
+      doc.splitTextToSize(pdfText(dateiname()), B).forEach((z) => { doc.text(z, L, y); y += 8.5; });
+      doc.setFontSize(8.5); doc.setTextColor(110, 116, 122);
+      const kopf = [new Date().toLocaleDateString('de-DE'), ...((ergebnis && ergebnis.paare) || []).filter(([k]) => k !== 'Zeit').map(([k, v]) => `${k} ${v}`)].join('   ·   ');
+      doc.text(pdfText(kopf), L, y); y += 3;
+      doc.setDrawColor(180, 184, 188); doc.setLineWidth(0.2); doc.line(L, y, L + B, y); y += 9;
+      doc.setTextColor(34, 39, 44);
+      for (const abs of $('text').value.split(/\n{2,}/)) {
+        const t = abs.trim(); if (!t) continue;
+        if (titel.has(t)) {
+          platzFuer(20); y += 4;
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5);
+          doc.splitTextToSize(pdfText(t), B).forEach((z) => { doc.text(z, L, y); y += 6; });
+          y += 2;
+          continue;
+        }
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5);
+        for (const z of doc.splitTextToSize(pdfText(t.replace(/\n/g, ' ')), B)) { platzFuer(5.2); doc.text(z, L, y); y += 5.2; }
+        y += 3;
+      }
+      const seiten = doc.getNumberOfPages();
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(140, 146, 152);
+      for (let i = 1; i <= seiten; i++) { doc.setPage(i); doc.text(`${i} / ${seiten}`, L + B, 297 - 12, { align: 'right' }); }
+      lade(doc.output('blob'), `${dateiname()}.pdf`);
+    } catch (err) {
+      toast.zeige('PDF nicht erstellt.', err.message, 5000);
+    } finally { btn.disabled = false; }
   });
 
   // ───────────── Start ─────────────
 
   const letzter = lies(KEY_LETZTER);
   if (letzter && letzter.text) {
+    ergebnis = letzter;
     $('text').value = letzter.text;
     $('ergebnis').hidden = false;
     datenzeile($('ergebnis-daten'), letzter.paare || []);
   }
-  setzeTitel(letzter && letzter.name ? letzter.name.replace(/\.[^.]+$/, '') : 'Transkript');
+  setzeTitel('Transkript');
   M.staffel(document.querySelectorAll('.rein'));
   pruefeKey();
 })();

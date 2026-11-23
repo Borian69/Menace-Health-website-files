@@ -1,6 +1,7 @@
 # Transkript
 
-Audiodatei wählen, OpenRouter-Schlüssel eintragen, Text erhalten. Eine Stunde Audio kostet
+Eine oder mehrere Audiodateien wählen, OpenRouter-Schlüssel eintragen, Text erhalten – zum Kopieren,
+als .txt oder als PDF. Eine Stunde Audio kostet
 mit Whisper Large V3 höchstens ≈ 0,11 $, mit Turbo ≈ 0,04 $. Lange Pausen werden nicht
 mitgeschickt und deshalb auch nicht berechnet.
 
@@ -26,6 +27,15 @@ Alles läuft im Browser. Nur die fertigen MP3-Abschnitte gehen an openrouter.ai.
 | Namen und Fachbegriffe als `prompt` | Whisper übernimmt deren Schreibweise. Lehnt der Anbieter das Feld ab, entfällt es für die Sitzung. |
 | Aufräumen | Bekannte Abspann-Sätze aus TV-Untertiteln fallen weg. Ein Satz, der mehr als zweimal hintereinander kommt, und Wortschleifen werden gekürzt. |
 
+Mehrere Dateien laufen nacheinander. Immer nur eine ist dekodiert im Speicher. Bei mehreren Dateien
+steht im Ergebnis über jedem Text der Dateiname, im PDF fett.
+
+**402 „in-flight requests“:** OpenRouter hält für jede laufende Anfrage Guthaben zurück. Bei
+kleinem Guthaben oder Schlüssel-Limit scheitern parallele Anfragen, obwohl jede einzeln durchginge.
+Das Tool schickt dann nur noch eine Anfrage gleichzeitig und wartet bei Bedarf 6, 12, 24 und 48 s.
+Erst wenn auch eine einzelne Anfrage abgelehnt wird, bricht es ab und verweist auf das Limit des
+Schlüssels (openrouter.ai/settings/keys).
+
 Scheitern Abschnitte, bleibt alles Fertige erhalten. Der Knopf heißt dann „n fehlende
 Abschnitte wiederholen“, und im Text steht an der Stelle `[Abschnitt 3:11–5:00 fehlt]`.
 Bei 401/402/403/404 bricht der Lauf sofort ab und nennt den Grund.
@@ -47,7 +57,12 @@ Ausgabenlimit setzen.
 ## Dateien
 
 `index.html` · `app.css` (nur Ergänzungen zu `../design/moch.css`) · `app.js` ·
+`vendor/jspdf.js` (jsPDF 4.2.1, MIT, wird erst beim ersten PDF geladen) ·
 `vendor/lamejs.js` (MP3-Kodierer `@breezystack/lamejs` 1.2.7, LGPL, siehe `vendor/lamejs-LICENSE`).
+
+**Cache:** GitHub Pages und Browser halten Dateien bis zu 10 Minuten. Bei jeder Änderung `?v=` in
+`index.html` und die Version im Kopf (`v5`) hochzählen. So sieht man auf dem Gerät sofort, welche
+Fassung läuft.
 
 ## Abweichungen vom Design-System
 
