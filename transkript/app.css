@@ -1,0 +1,27 @@
+/* Transkript – nur, was moch.css nicht schon kann. */
+
+/* Ohne Tab-Leiste: Hauptaktion sitzt unten am Rand, nicht über den Tabs. */
+.aktion{bottom:calc(var(--f4) + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(var(--f4) + 64px + env(safe-area-inset-bottom,0px))}
+.seite{max-width:640px;margin-inline:auto}
+
+/* Ablage: eine Linie oben und unten, keine Box. Der ganze Streifen ist das Ziel. */
+#ablage{display:flex;flex-direction:column;gap:4px;justify-content:center;min-height:96px;padding:var(--f3) 0;
+  border-top:1px solid var(--line-strong);border-bottom:1px solid var(--line-strong);cursor:pointer;
+  transition:border-color 200ms var(--ease)}
+#ablage input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+#ablage:focus-within{border-color:var(--focus)}
+#ablage.ueber,#ablage:hover{border-color:var(--accent-ink)}
+#ablage-text{font-weight:500;overflow-wrap:anywhere}
+#ablage:has(+ .dataline:not([hidden])){border-bottom:0}
+#ablage + .dataline{margin-top:0}
+
+#modell-info{margin-top:var(--f2)}
+
+/* Ergebnis: Text als Linie, volle Breite. */
+#text-feld{max-width:none}
+#text-feld textarea{min-height:240px;resize:vertical;line-height:1.55}
+#knoepfe{display:flex;flex-wrap:wrap;gap:var(--f2);margin-top:var(--f3)}
+#ergebnis .dataline{margin-top:var(--f2)}
+#lauf-feld{max-width:none;margin-bottom:0}
+.app-kopf + .gruppe{margin-top:var(--f5)}
