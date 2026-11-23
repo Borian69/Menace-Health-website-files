@@ -14,8 +14,12 @@
 #ablage:focus-within{border-color:var(--focus)}
 #ablage.ueber,#ablage:hover{border-color:var(--accent-ink)}
 #ablage-text{font-weight:500;overflow-wrap:anywhere}
-#ablage:has(+ .dataline:not([hidden])){border-bottom:0}
-#ablage + .dataline{margin-top:0}
+/* Dateiliste: Einträge aus moch.css, Status rechts in Mono. */
+#dateien .eintrag:first-child{border-top:0}
+#dateien .was{overflow-wrap:anywhere}
+#dateien .wert.fehler{color:var(--error)}
+#dateien .wert.fertig{color:var(--success)}
+#btn-leeren{margin-top:var(--f2);padding-inline:0}
 
 #modell-info{margin-top:var(--f2)}
 
