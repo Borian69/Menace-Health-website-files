@@ -53,4 +53,7 @@ Ausgabenlimit setzen.
 
 - **Keine neuen Klassen.** Ablage, Ergebnisfeld und Knopfzeile sind über IDs gestaltet.
 - **`.aktion` und `.toast` sitzen tiefer**, weil die Seite keine Tab-Leiste hat.
+- **Farbe (Regel 1–3), auf Wunsch:** Grund Anthrazit mit 30 % Blau (`#22272C`) statt Blau `#0F1A26`.
+  Amber nur noch auf der Hauptaktion (≈ 5 % der Fläche). Auswahl, Fokuslinie, Fortschritt und Toast
+  laufen neutral. Die Werte stehen am Ende von `app.css`.
 - **Die Seite ist auf 640 px begrenzt**, damit der Text am Computer nicht über die ganze Breite läuft.

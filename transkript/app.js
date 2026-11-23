@@ -366,17 +366,28 @@
     404: 'Das Modell ist bei OpenRouter gerade nicht verfügbar (404). Das andere Modell wählen.',
   };
   const schlaf = (ms) => new Promise((r) => setTimeout(r, ms));
-  const fehlertext = async (r) => { try { const j = await r.json(); const x = j && j.error; return String((x && x.message) || x || '').slice(0, 240); } catch { return ''; } };
+  
+  // Gleichzeitige Anfragen begrenzen. OpenRouter reserviert für jede laufende
+  // Anfrage vorab Guthaben; bei kleinem Guthaben lehnt es parallele Anfragen
+  // mit 402 „in-flight requests“ ab, obwohl jede einzeln durchginge. Dann geht
+  // es einzeln weiter – nur ein 402 ohne andere laufende Anfrage ist echt.
+  const platz = { aktiv: 0, grenze: PARALLEL, warten: [] };
+  async function belege() {
+    while (platz.aktiv >= platz.grenze) await new Promise((r) => platz.warten.push(r));
+    platz.aktiv++;
+  }
+  function gib() { platz.aktiv--; platz.warten.splice(0).forEach((f) => f()); }
 
   async function whisper(b64) {
-    let letzter = '';
+    let letzter = '', reserviert = 0;
     for (let v = 1; v <= VERSUCHE; v++) {
       const body = { model: e.modell, input_audio: { data: b64, format: 'mp3' } };
       if (e.sprache) body.language = e.sprache;
       if (!ohne.temperature) body.temperature = 0;   // kein Raten: weniger erfundene Sätze
       // Begriffe als Satz: Whisper übernimmt Schreibweise und Stil des Prompts.
       if (!ohne.prompt && e.begriffe.trim()) body.prompt = `${e.begriffe.trim().replace(/[.,;\s]+$/, '')}.`;
-      let r;
+      await belege();
+      let r, d = null, andere = 0;
       try {
         r = await fetch(`${API}/audio/transcriptions`, {
           method: 'POST',
@@ -384,24 +395,32 @@
           headers: { Authorization: `Bearer ${inKey.value.trim()}`, 'Content-Type': 'application/json', 'X-Title': 'Transkript', 'HTTP-Referer': location.origin },
           body: JSON.stringify(body),
         });
+        andere = platz.aktiv - 1;
+        try { d = await r.json(); } catch { d = null; }
       } catch (err) {
         letzter = err && err.name === 'TimeoutError' ? 'keine Antwort nach 2 Minuten' : navigator.onLine ? 'Netzwerkfehler' : 'keine Internetverbindung';
-        await warte(v); continue;
+        gib(); await warte(v); continue;
       }
-      if (r.status in ENDGUELTIG) throw new Endgueltig(`${ENDGUELTIG[r.status]} ${await fehlertext(r)}`.trim());
+      gib();
+      const detail = d && d.error ? String(d.error.message || d.error).slice(0, 240) : '';
+      if (r.status === 402 && /in-flight|settle/i.test(detail) && (andere > 0 || reserviert < 2)) {
+        platz.grenze = 1;
+        reserviert++; v--;
+        letzter = 'Guthaben durch laufende Anfragen reserviert';
+        await schlaf(1500 + Math.random() * 1000); continue;
+      }
+      if (r.status in ENDGUELTIG) throw new Endgueltig(`${ENDGUELTIG[r.status]} ${detail}`.trim());
       if (r.status === 400) {
-        const d = await fehlertext(r);
-        const weg = ['prompt', 'temperature'].find((k) => !ohne[k] && k in body && new RegExp(k, 'i').test(d));
+        const weg = ['prompt', 'temperature'].find((k) => !ohne[k] && k in body && new RegExp(k, 'i').test(detail));
         if (weg) { ohne[weg] = true; v--; continue; }
-        throw new Endgueltig(`OpenRouter lehnt den Abschnitt ab (400). ${d}`.trim());
+        throw new Endgueltig(`OpenRouter lehnt den Abschnitt ab (400). ${detail}`.trim());
       }
       if (r.status === 429 || r.status >= 500 || r.status === 408) {
         letzter = `OpenRouter antwortet mit ${r.status}`;
         await warte(v, r.headers.get('retry-after')); continue;
       }
-      let d;
-      try { d = await r.json(); } catch { letzter = 'Antwort war kein JSON'; await warte(v); continue; }
-      if (d.error && d.text === undefined) { letzter = String(d.error.message || d.error); await warte(v); continue; }
+      if (!d) { letzter = 'Antwort war kein JSON'; await warte(v); continue; }
+      if (d.error && d.text === undefined) { letzter = detail; await warte(v); continue; }
       const kosten = d.usage && typeof d.usage.cost === 'number' ? d.usage.cost : null;
       return { text: String(d.text || ''), kosten };
     }
@@ -488,7 +507,8 @@
       const zuTun = teile.filter((t) => t.text === null);
       let fertig = teile.length - zuTun.length;
       fortschritt(fertig, teile.length, t0);
-      meldung(feldLauf, msg, `${zahl(teile.length)} Abschnitte, ${PARALLEL} gleichzeitig. Die Seite bitte offen lassen.`, '');
+      platz.grenze = PARALLEL;
+      meldung(feldLauf, msg, `${zahl(teile.length)} Abschnitte, bis zu ${PARALLEL} gleichzeitig. Die Seite bitte offen lassen.`, '');
 
       let abbruch = null, i = 0;
       const arbeiter = async () => {
