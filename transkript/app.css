@@ -1,7 +1,8 @@
 /* Transkript – nur, was moch.css nicht schon kann. */
 
 /* Ohne Tab-Leiste: Hauptaktion sitzt unten am Rand, nicht über den Tabs. */
-.aktion{bottom:calc(var(--f4) + env(safe-area-inset-bottom,0px))}
+.aktion{bottom:calc(var(--f4) + env(safe-area-inset-bottom,0px));max-width:calc(640px - 2 * var(--app-rand));margin-inline:auto}
+.toast{max-width:calc(640px - 2 * var(--app-rand));margin-inline:auto}
 .toast{bottom:calc(var(--f4) + 64px + env(safe-area-inset-bottom,0px))}
 .seite{max-width:640px;margin-inline:auto}
 
@@ -25,3 +26,20 @@
 #ergebnis .dataline{margin-top:var(--f2)}
 #lauf-feld{max-width:none;margin-bottom:0}
 .app-kopf + .gruppe{margin-top:var(--f5)}
+/* Scrollleisten und Formularteile im dunklen Schema dunkel zeichnen. */
+html[data-scheme="dunkel"]{color-scheme:dark}
+
+/* ───── Farbe: Anthrazit statt Blau, Amber nur als Hauptaktion ─────
+   Abweichung von Regel 1–3, auf Wunsch: Grund = neutrales Anthrazit #2A2C2F
+   zu 70 % + Blau #0F1A26 zu 30 % → #22272C. Amber trägt nur noch .btn-primary
+   (≈ 5 % der Fläche, und nur wenn es etwas zu starten gibt). Alles andere,
+   was sonst Amber war – Fokuslinie, Auswahl, Fortschritt, Toast –, läuft neutral. */
+html[data-scheme="dunkel"][data-farbe="amber"]{
+  --ground:#22272C; --surface:#2A2F35; --surface-2:#1C2025;
+  --line:#353B42; --line-strong:#4A5159;
+  --muted:#A9AFB6; --label:#A9AFB6;
+  --accent-ink:#D9DDE1; --focus:#D9DDE1; --auf-accent:#22272C;
+}
+.chip::before{background:var(--line-strong)}
+.chip[aria-checked="true"]{border-color:var(--muted);color:var(--text)}
+.toast::before{background:var(--muted)}
